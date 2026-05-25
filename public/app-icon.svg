@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFB152"/>
+      <stop offset="55%" stop-color="#FF5E62"/>
+      <stop offset="100%" stop-color="#D81B60"/>
+    </linearGradient>
+
+    <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFE2C8"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFD9B8"/>
+    </linearGradient>
+
+    <linearGradient id="fin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F0394A"/>
+      <stop offset="100%" stop-color="#A4151F"/>
+    </linearGradient>
+
+    <radialGradient id="flameOuter" cx="50%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#FFEE58"/>
+      <stop offset="55%" stop-color="#FF9800"/>
+      <stop offset="100%" stop-color="#FF5722" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="flameInner" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFEB3B"/>
+    </linearGradient>
+
+    <clipPath id="bodyClip">
+      <path d="M 512,180
+               C 432,180 372,260 372,400
+               L 372,720
+               Q 372,750 402,750
+               L 622,750
+               Q 652,750 652,720
+               L 652,400
+               C 652,260 592,180 512,180 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- iOS-style squircle background -->
+  <rect width="1024" height="1024" rx="228" ry="228" fill="url(#bg)"/>
+
+  <!-- Subtle stars -->
+  <circle cx="200" cy="220" r="4" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="820" cy="180" r="3" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="160" cy="450" r="2.5" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="860" cy="380" r="5" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="140" cy="700" r="3" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="880" cy="640" r="2.5" fill="#FFFFFF" opacity="0.4"/>
+
+  <!-- Flame (rendered before rocket so fins sit on top) -->
+  <ellipse cx="512" cy="820" rx="110" ry="130" fill="url(#flameOuter)"/>
+  <path d="M 462,720 Q 452,830 512,895 Q 572,830 562,720 Z" fill="#FFAB40"/>
+  <path d="M 484,720 Q 482,820 512,870 Q 542,820 540,720 Z" fill="url(#flameInner)"/>
+
+  <!-- Fins -->
+  <path d="M 372,600 L 296,758 Q 290,770 304,770 L 390,770 Q 392,770 392,758 L 392,600 Z" fill="url(#fin)"/>
+  <path d="M 652,600 L 728,758 Q 734,770 720,770 L 634,770 Q 632,770 632,758 L 632,600 Z" fill="url(#fin)"/>
+
+  <!-- Rocket body + nose (single unified shape) -->
+  <path d="M 512,180
+           C 432,180 372,260 372,400
+           L 372,720
+           Q 372,750 402,750
+           L 622,750
+           Q 652,750 652,720
+           L 652,400
+           C 652,260 592,180 512,180 Z"
+        fill="url(#body)"/>
+
+  <!-- Abs grooves (clipped to body so lines never escape silhouette) -->
+  <g clip-path="url(#bodyClip)" stroke="#E8A87C" stroke-width="9" stroke-linecap="round" fill="none" opacity="0.75">
+    <!-- vertical centerline -->
+    <path d="M 512,440 L 512,720"/>
+    <!-- upper groove -->
+    <path d="M 392,525 Q 512,548 632,525"/>
+    <!-- lower groove -->
+    <path d="M 392,635 Q 512,658 632,635"/>
+  </g>
+
+  <!-- Soft left-edge highlight for dimension -->
+  <path d="M 512,180
+           C 462,180 422,210 400,260
+           L 400,720
+           Q 400,750 430,750
+           L 412,750
+           Q 372,750 372,720
+           L 372,400
+           C 372,260 432,180 512,180 Z"
+        fill="#FFFFFF" opacity="0.28"/>
+
+  <!-- Soft top sheen on nose -->
+  <ellipse cx="470" cy="270" rx="55" ry="18" fill="#FFFFFF" opacity="0.55"/>
+</svg>
