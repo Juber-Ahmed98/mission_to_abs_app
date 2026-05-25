@@ -3,9 +3,10 @@ type Props = {
   totalDays: number;
   size?: number;
   stroke?: number;
+  centerOverride?: React.ReactNode;
 };
 
-export default function MissionRing({ day, totalDays, size = 180, stroke = 14 }: Props) {
+export default function MissionRing({ day, totalDays, size = 180, stroke = 14, centerOverride }: Props) {
   const clampedDay = Math.max(0, Math.min(totalDays, day));
   const progress = totalDays === 0 ? 0 : clampedDay / totalDays;
   const center = size / 2;
@@ -64,14 +65,22 @@ export default function MissionRing({ day, totalDays, size = 180, stroke = 14 }:
         </>
       )}
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-sm text-text-muted tabular">{percent}%</div>
-        <div className="mt-1 text-5xl font-bold tabular leading-none">
-          {clampedDay}
-        </div>
-        <div className="mt-2 text-sm text-text-muted tabular">
-          {remaining > 0 ? `${remaining} days to go` : `Day ${totalDays}`}
-        </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+        {centerOverride ?? (
+          <>
+            <div className="flex items-baseline gap-1 leading-none tabular">
+              <span className="text-5xl font-bold">{clampedDay}</span>
+              <span className="text-2xl font-semibold text-text-muted">
+                / {totalDays}
+              </span>
+            </div>
+            <div className="mt-2 text-sm text-text-muted tabular">
+              {remaining > 0
+                ? `${percent}% · ${remaining} left`
+                : 'Complete'}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

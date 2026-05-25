@@ -1,10 +1,11 @@
-import type { DayEntry, WeekPhoto } from '../types';
+import type { DayEntry, WeekMeasurement, WeekPhoto } from '../types';
 
 export const XP = {
   diet: 30,
   exercise: 30,
   perfectDayBonus: 40,
   photo: 50,
+  waist: 20,
 } as const;
 
 export function xpForDay(entry: DayEntry | undefined): number {
@@ -16,8 +17,14 @@ export function xpForDay(entry: DayEntry | undefined): number {
   return total;
 }
 
-export function totalXp(days: Record<string, DayEntry>, photos: WeekPhoto[]): number {
+export function totalXp(
+  days: Record<string, DayEntry>,
+  photos: WeekPhoto[],
+  measurements: WeekMeasurement[] = [],
+): number {
   let total = photos.length * XP.photo;
+  const measuredWeeks = measurements.filter((m) => typeof m.waistCm === 'number').length;
+  total += measuredWeeks * XP.waist;
   for (const date of Object.keys(days)) {
     total += xpForDay(days[date]);
   }

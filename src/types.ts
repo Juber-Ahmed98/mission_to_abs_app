@@ -6,6 +6,7 @@ export type DayEntry = {
   weight?: number;
   diet?: DietState;
   exercise?: ExerciseState;
+  rest?: boolean;
   notes?: string;
 };
 
@@ -15,13 +16,24 @@ export type WeekPhoto = {
   photoKey: string;
 };
 
+export type WeekMeasurement = {
+  weekNumber: number;
+  date: string;
+  waistCm?: number;
+};
+
 export type ThemePreference = 'light' | 'dark' | 'system';
 
 export type Settings = {
   startDate: string;
   durationWeeks: number;
   weightUnit: 'kg' | 'lb';
+  waistUnit: 'cm' | 'in';
   theme: ThemePreference;
+  goalWeight?: number;
+  goalWaistCm?: number;
+  onboarded: boolean;
+  streakShieldsRemaining: number;
 };
 
-export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed';
+export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';

@@ -29,6 +29,10 @@ export function totalDays(durationWeeks: number): number {
   return durationWeeks * 7;
 }
 
+export function halfwayDay(total: number): number {
+  return Math.ceil(total / 2);
+}
+
 export function isEndOfWeek(dayNumber: number): boolean {
   return dayNumber > 0 && dayNumber % 7 === 0;
 }

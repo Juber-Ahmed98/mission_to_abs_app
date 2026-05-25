@@ -110,7 +110,12 @@ export default function SettingsPage() {
         }
         photoMetas.push(meta);
       }
-      replaceAll({ settings: data.settings, days: data.days as never, photos: photoMetas });
+      replaceAll({
+        settings: data.settings,
+        days: data.days as never,
+        photos: photoMetas,
+        measurements: [],
+      });
       alert('Backup restored.');
     } catch (err) {
       console.error(err);

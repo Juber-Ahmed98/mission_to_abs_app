@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, X } from 'lucide-react';
 
 type Props = {
   label: string;
   hint?: string;
   doneLabel?: string;
+  failedLabel?: string;
+  xpReward?: number;
   icon?: React.ReactNode;
   confirmed: boolean;
+  failed?: boolean;
   onConfirm: () => void;
+  onClear?: () => void;
 };
 
 const THRESHOLD = 0.8;
@@ -27,9 +31,13 @@ export default function SlideToConfirm({
   label,
   hint = 'Slide to confirm',
   doneLabel,
+  failedLabel = 'Tap to clear',
+  xpReward,
   icon,
   confirmed,
+  failed = false,
   onConfirm,
+  onClear,
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(confirmed ? 1 : 0);
@@ -51,7 +59,7 @@ export default function SlideToConfirm({
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (confirmed) return;
+    if (confirmed || failed) return;
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const t = trackRef.current;
@@ -63,43 +71,85 @@ export default function SlideToConfirm({
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging || confirmed) return;
+    if (!dragging || confirmed || failed) return;
     const delta = e.clientX - startXRef.current;
     const pct = Math.max(
       0,
       Math.min(1, startProgressRef.current + delta / usableRef.current),
     );
     setProgress(pct);
-    if (pct >= THRESHOLD) fire();
   };
 
   const onPointerUp = () => {
-    if (!dragging || confirmed) return;
+    if (!dragging || confirmed || failed) return;
     setDragging(false);
-    setProgress(0);
+    if (progress >= THRESHOLD) {
+      fire();
+    } else {
+      setProgress(0);
+    }
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (confirmed) return;
+    if (failed) return;
+    if (confirmed) {
+      if ((e.key === 'Enter' || e.key === ' ') && onClear) {
+        e.preventDefault();
+        onClear();
+      }
+      return;
+    }
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       fire();
     }
   };
 
+  const handleClick = () => {
+    if (confirmed && onClear) onClear();
+  };
+
+  if (failed) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${label}, failed. ${failedLabel}`}
+        onClick={onClear}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && onClear) {
+            e.preventDefault();
+            onClear();
+          }
+        }}
+        className="relative h-14 rounded-pill border border-failed/40 bg-failed-bg/60 px-5 flex items-center select-none cursor-pointer"
+      >
+        <span className="mr-3 flex h-9 w-9 items-center justify-center rounded-pill bg-coral-soft text-failed">
+          <X size={18} strokeWidth={2.4} />
+        </span>
+        <span className="text-base font-medium text-failed">{label}</span>
+        <span className="ml-auto text-sm text-failed/80">{failedLabel}</span>
+      </div>
+    );
+  }
+
   const done = confirmed;
 
   return (
     <div
       ref={trackRef}
-      role="button"
-      tabIndex={done ? -1 : 0}
+      role="slider"
+      tabIndex={0}
       aria-label={`${label}, ${done ? 'done' : hint}`}
+      aria-valuenow={progress}
+      aria-valuemin={0}
+      aria-valuemax={1}
       aria-pressed={done}
       onKeyDown={onKeyDown}
+      onClick={handleClick}
       className={[
         'relative h-14 rounded-pill bg-surface border overflow-hidden select-none touch-none',
-        done ? 'border-success/40' : 'border-border',
+        done ? 'border-success/40 cursor-pointer' : 'border-border',
       ].join(' ')}
     >
       <div
@@ -109,7 +159,10 @@ export default function SlideToConfirm({
           transition: dragging ? 'none' : 'width 350ms var(--ease-apple)',
         }}
       />
-      <div className="pointer-events-none absolute inset-0 flex items-center pl-16 pr-5">
+      <div
+        className="pointer-events-none absolute inset-0 flex items-center pl-16"
+        style={{ paddingRight: done ? THUMB_PX + 12 : 20 }}
+      >
         {icon && (
           <span className={done ? 'mr-3 text-success' : 'mr-3 text-text-muted'}>
             {icon}
@@ -123,8 +176,19 @@ export default function SlideToConfirm({
         >
           {label}
         </span>
-        <span className="ml-auto text-sm text-text-subtle">
-          {done ? doneLabel : hint}
+        <span className="ml-auto flex items-center gap-2 text-sm text-text-subtle whitespace-nowrap">
+          {done ? (
+            doneLabel
+          ) : (
+            <>
+              <span>{hint}</span>
+              {xpReward !== undefined && (
+                <span className="text-xs text-text-subtle tabular-nums">
+                  +{xpReward} XP
+                </span>
+              )}
+            </>
+          )}
         </span>
       </div>
       <div

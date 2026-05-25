@@ -1,12 +1,21 @@
 import { useEffect } from 'react';
-import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  HashRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 import BottomNav from './components/BottomNav';
+import ErrorBoundary from './components/ErrorBoundary';
+import UndoToast from './components/UndoToast';
 import Dashboard from './pages/Dashboard';
 import JourneyPage from './pages/Journey';
 import ProgressPage from './pages/Progress';
 import PhotosPage from './pages/Photos';
 import Compare from './pages/Compare';
 import SettingsPage from './pages/Settings';
+import OnboardingPage from './pages/Onboarding';
 import { useMission } from './store/mission';
 import { useApplyTheme } from './lib/theme';
 import { requestPersistence } from './lib/storage';
@@ -15,9 +24,12 @@ const PERSISTENCE_FLAG = 'mission.persistenceRequested';
 
 function Shell() {
   const themePref = useMission((s) => s.settings.theme);
+  const onboarded = useMission((s) => s.settings.onboarded);
+  const dayCount = useMission((s) => Object.keys(s.days).length);
+  const setSettings = useMission((s) => s.setSettings);
   useApplyTheme(themePref);
   const { pathname } = useLocation();
-  const hideNav = pathname.startsWith('/compare');
+  const hideNav = pathname.startsWith('/compare') || pathname.startsWith('/onboarding');
 
   useEffect(() => {
     if (localStorage.getItem(PERSISTENCE_FLAG)) return;
@@ -25,16 +37,44 @@ function Shell() {
       localStorage.setItem(PERSISTENCE_FLAG, '1');
     });
   }, []);
+
+  // Existing-user migration: prior data exists but onboarded was defaulted false.
+  // Auto-flip to onboarded and flag for the welcome-back banner.
+  useEffect(() => {
+    if (!onboarded && dayCount > 0) {
+      setSettings({ onboarded: true });
+      if (localStorage.getItem('mission.welcomeBackDismissed') !== '1') {
+        localStorage.setItem('mission.welcomeBack', '1');
+      }
+    }
+  }, [onboarded, dayCount, setSettings]);
+
+  const onOnboarding = pathname.startsWith('/onboarding');
+  const needsOnboarding = !onboarded && dayCount === 0 && !onOnboarding;
+
   return (
     <div className="min-h-dvh bg-bg text-text font-sans">
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/journey" element={<JourneyPage />} />
-        <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/photos" element={<PhotosPage />} />
-        <Route path="/compare/:a/:b" element={<Compare />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route
+            path="/"
+            element={
+              needsOnboarding ? (
+                <Navigate to="/onboarding" replace />
+              ) : (
+                <Dashboard />
+              )
+            }
+          />
+          <Route path="/journey" element={<JourneyPage />} />
+          <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/photos" element={<PhotosPage />} />
+          <Route path="/compare/:a/:b" element={<Compare />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
+      </ErrorBoundary>
+      <UndoToast />
       {!hideNav && <BottomNav />}
     </div>
   );

@@ -10,7 +10,9 @@ export function calcStreak(
   let cursor = subDaysISO(today, 1);
   while (cursor >= startDate) {
     const e = days[cursor];
-    if (e?.diet === 'success' && e?.exercise === 'success') {
+    const bothWin = e?.diet === 'success' && e?.exercise === 'success';
+    const rest = e?.rest === true;
+    if (bothWin || rest) {
       streak += 1;
       cursor = subDaysISO(cursor, 1);
     } else {

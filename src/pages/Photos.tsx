@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera } from 'lucide-react';
+import { Camera, Ruler } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { savePhoto, deletePhoto } from '../storage/photos';
 import { todayISO, weekNumberFor } from '../lib/date';
@@ -8,13 +8,18 @@ import { resizeImage } from '../lib/image';
 import { XP } from '../lib/xp';
 import PhotoThumb from '../components/PhotoThumb';
 import XpToast, { type Toast } from '../components/XpToast';
+import WaistInput from '../components/WaistInput';
+import { showUndo } from '../components/UndoToast';
 
 export default function PhotosPage() {
   const navigate = useNavigate();
   const settings = useMission((s) => s.settings);
   const photos = useMission((s) => s.photos);
+  const measurements = useMission((s) => s.measurements);
   const addPhoto = useMission((s) => s.addPhoto);
   const removePhoto = useMission((s) => s.removePhoto);
+  const setMeasurement = useMission((s) => s.setMeasurement);
+  const removeMeasurement = useMission((s) => s.removeMeasurement);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<number[]>([]);
@@ -40,19 +45,24 @@ export default function PhotosPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || uploadingWeek == null) return;
+    const week = uploadingWeek;
     setBusy(true);
     try {
-      const existing = findPhoto(uploadingWeek);
+      const existing = findPhoto(week);
       const isNew = !existing;
       if (existing) await deletePhoto(existing.photoKey);
       const blob = await resizeImage(file, 1600);
-      const key = `week-${uploadingWeek}-${Date.now()}`;
+      const key = `week-${week}-${Date.now()}`;
       await savePhoto(key, blob);
-      addPhoto({ weekNumber: uploadingWeek, date: today, photoKey: key });
+      addPhoto({ weekNumber: week, date: today, photoKey: key });
       if (isNew) {
         setToast({ id: Date.now(), amount: XP.photo });
         setTimeout(() => setToast(null), 1700);
       }
+      showUndo(`Logged week ${week} photo`, async () => {
+        await deletePhoto(key);
+        removePhoto(week);
+      });
     } finally {
       setBusy(false);
       setUploadingWeek(null);
@@ -74,6 +84,40 @@ export default function PhotosPage() {
         return [];
       }
       return next;
+    });
+  };
+
+  const currentMeasurement = measurements.find((m) => m.weekNumber === currentWeek);
+  const isCurrentInMission = currentWeek >= 1 && currentWeek <= settings.durationWeeks;
+
+  const onWaistChange = (next: number | undefined) => {
+    if (!isCurrentInMission) return;
+    const prev = currentMeasurement?.waistCm;
+    if (prev === next) return;
+    const wasNew = prev === undefined;
+    if (next === undefined) {
+      removeMeasurement(currentWeek);
+    } else {
+      setMeasurement({ weekNumber: currentWeek, date: today, waistCm: next });
+    }
+    if (wasNew && next !== undefined) {
+      setToast({ id: Date.now(), amount: XP.waist });
+      setTimeout(() => setToast(null), 1700);
+    }
+    const label =
+      next === undefined
+        ? `Cleared week ${currentWeek} waist`
+        : `Logged week ${currentWeek} waist`;
+    showUndo(label, () => {
+      if (prev === undefined) {
+        removeMeasurement(currentWeek);
+      } else {
+        setMeasurement({
+          weekNumber: currentWeek,
+          date: currentMeasurement?.date ?? today,
+          waistCm: prev,
+        });
+      }
     });
   };
 
@@ -121,6 +165,7 @@ export default function PhotosPage() {
             <button
               key={week}
               disabled={isLocked}
+              aria-label={photo ? `Week ${week}, logged` : `Week ${week}, empty`}
               onClick={() => tapSlot(week)}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -151,6 +196,25 @@ export default function PhotosPage() {
           );
         })}
       </div>
+
+      {isCurrentInMission && (
+        <section className="mt-6">
+          <h2 className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
+            <Ruler size={12} strokeWidth={1.75} />
+            Week {currentWeek} waist
+          </h2>
+          <WaistInput
+            valueCm={currentMeasurement?.waistCm}
+            unit={settings.waistUnit}
+            onChangeCm={onWaistChange}
+          />
+          {!currentMeasurement && (
+            <div className="mt-2 text-xs text-text-muted">
+              +{XP.waist} XP for logging this week.
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
