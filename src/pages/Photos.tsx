@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Ruler } from 'lucide-react';
+import { Camera, GitCompareArrows, Ruler } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { savePhoto, deletePhoto } from '../storage/photos';
 import { todayISO, weekNumberFor } from '../lib/date';
@@ -10,10 +10,13 @@ import PhotoThumb from '../components/PhotoThumb';
 import XpToast, { type Toast } from '../components/XpToast';
 import WaistInput from '../components/WaistInput';
 import { showUndo } from '../components/UndoToast';
+import PhotoActionSheet from '../components/PhotoActionSheet';
+import PhotoViewer from '../components/PhotoViewer';
 
 export default function PhotosPage() {
   const navigate = useNavigate();
   const settings = useMission((s) => s.settings);
+  const days = useMission((s) => s.days);
   const photos = useMission((s) => s.photos);
   const measurements = useMission((s) => s.measurements);
   const addPhoto = useMission((s) => s.addPhoto);
@@ -22,10 +25,13 @@ export default function PhotosPage() {
   const removeMeasurement = useMission((s) => s.removeMeasurement);
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const [selected, setSelected] = useState<number[]>([]);
   const [uploadingWeek, setUploadingWeek] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [uploadIsReplace, setUploadIsReplace] = useState(false);
+  const [busyWeek, setBusyWeek] = useState<number | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+
+  const [sheetWeek, setSheetWeek] = useState<number | null>(null);
+  const [viewerWeek, setViewerWeek] = useState<number | null>(null);
 
   const today = todayISO();
   const currentWeek = Math.max(
@@ -35,9 +41,15 @@ export default function PhotosPage() {
   const slots = Array.from({ length: settings.durationWeeks }, (_, i) => i + 1);
 
   const findPhoto = (week: number) => photos.find((p) => p.weekNumber === week);
+  const filledWeeks = photos.map((p) => p.weekNumber).sort((a, b) => a - b);
+  const latestFilledWeek = filledWeeks.length ? filledWeeks[filledWeeks.length - 1] : null;
 
-  const openPicker = (week: number) => {
+  const formatWeight = (n: number) =>
+    `${n.toFixed(1).replace(/\.0$/, '')} ${settings.weightUnit}`;
+
+  const openPicker = (week: number, isReplace: boolean) => {
     setUploadingWeek(week);
+    setUploadIsReplace(isReplace);
     fileRef.current?.click();
   };
 
@@ -46,7 +58,8 @@ export default function PhotosPage() {
     e.target.value = '';
     if (!file || uploadingWeek == null) return;
     const week = uploadingWeek;
-    setBusy(true);
+    const isReplace = uploadIsReplace;
+    setBusyWeek(week);
     try {
       const existing = findPhoto(week);
       const isNew = !existing;
@@ -55,36 +68,40 @@ export default function PhotosPage() {
       const key = `week-${week}-${Date.now()}`;
       await savePhoto(key, blob);
       addPhoto({ weekNumber: week, date: today, photoKey: key });
-      if (isNew) {
+      if (isNew && !isReplace) {
         setToast({ id: Date.now(), amount: XP.photo });
         setTimeout(() => setToast(null), 1700);
       }
-      showUndo(`Logged week ${week} photo`, async () => {
+      const undoLabel = isReplace
+        ? `Replaced week ${week} photo`
+        : `Logged week ${week} photo`;
+      showUndo(undoLabel, async () => {
         await deletePhoto(key);
         removePhoto(week);
       });
     } finally {
-      setBusy(false);
+      setBusyWeek(null);
       setUploadingWeek(null);
+      setUploadIsReplace(false);
     }
   };
 
-  const tapSlot = (week: number) => {
-    const has = !!findPhoto(week);
-    if (!has) {
-      if (week <= currentWeek) openPicker(week);
+  const handleSlotTap = (week: number) => {
+    if (busyWeek === week) return;
+    const photo = findPhoto(week);
+    if (photo) {
+      setSheetWeek(week);
       return;
     }
-    setSelected((prev) => {
-      if (prev.includes(week)) return prev.filter((w) => w !== week);
-      const next = [...prev, week];
-      if (next.length === 2) {
-        const [a, b] = next.sort((x, y) => x - y);
-        navigate(`/compare/${a}/${b}`);
-        return [];
-      }
-      return next;
-    });
+    if (week <= currentWeek) openPicker(week, false);
+  };
+
+  const handleDeleteFromSheet = async (week: number) => {
+    const existing = findPhoto(week);
+    if (!existing) return;
+    await deletePhoto(existing.photoKey);
+    removePhoto(week);
+    setSheetWeek(null);
   };
 
   const currentMeasurement = measurements.find((m) => m.weekNumber === currentWeek);
@@ -121,24 +138,29 @@ export default function PhotosPage() {
     });
   };
 
-  const longPressDelete = async (week: number) => {
-    const existing = findPhoto(week);
-    if (!existing) return;
-    if (!confirm(`Delete photo for week ${week}?`)) return;
-    await deletePhoto(existing.photoKey);
-    removePhoto(week);
-    setSelected((prev) => prev.filter((w) => w !== week));
+  const startCompareWithCurrent = () => {
+    if (latestFilledWeek == null) return;
+    setSheetWeek(latestFilledWeek);
   };
+
+  const sheetPhoto = sheetWeek != null ? findPhoto(sheetWeek) : null;
 
   return (
     <div className="pb-28 px-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="pt-8 pb-2 flex items-end justify-between">
+      <header className="pt-8 pb-2 flex items-end justify-between gap-3">
         <div>
           <div className="text-sm text-text-muted">Photos</div>
           <div className="mt-1 text-3xl font-bold tracking-tight">Weekly</div>
         </div>
-        {selected.length === 1 && (
-          <div className="text-xs text-text-muted">Tap another to compare</div>
+        {latestFilledWeek != null && filledWeeks.length >= 2 && (
+          <button
+            type="button"
+            onClick={startCompareWithCurrent}
+            className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs text-text hover:border-accent/40 hover:text-accent transition-colors duration-150 ease-apple"
+          >
+            <GitCompareArrows size={14} strokeWidth={1.75} />
+            Compare with current
+          </button>
         )}
       </header>
 
@@ -158,41 +180,53 @@ export default function PhotosPage() {
       <div className="mt-4 grid grid-cols-3 gap-2">
         {slots.map((week) => {
           const photo = findPhoto(week);
-          const isSelected = selected.includes(week);
           const isCurrent = week === currentWeek;
           const isLocked = !photo && week > currentWeek;
+          const isBusy = busyWeek === week;
+          const weight = photo ? days[photo.date]?.weight : undefined;
           return (
-            <button
-              key={week}
-              disabled={isLocked}
-              aria-label={photo ? `Week ${week}, logged` : `Week ${week}, empty`}
-              onClick={() => tapSlot(week)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                longPressDelete(week);
-              }}
-              className={[
-                'relative aspect-[3/4] overflow-hidden rounded-card border bg-surface',
-                isSelected ? 'border-accent ring-2 ring-accent' : 'border-border',
-                isCurrent && !photo ? 'border-accent border-dashed' : '',
-                isCurrent && photo ? 'border-accent' : '',
-                isLocked ? 'opacity-40' : 'active:opacity-80',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              {photo ? (
-                <PhotoThumb photoKey={photo.photoKey} className="absolute inset-0 h-full w-full" />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-text-muted">
-                  {isCurrent && !busy && <Camera size={20} strokeWidth={1.75} />}
-                  {isCurrent && busy && <div className="text-xs">Saving…</div>}
+            <div key={week} className="flex flex-col">
+              <button
+                disabled={isLocked || isBusy}
+                aria-label={photo ? `Week ${week}, logged` : `Week ${week}, empty`}
+                onClick={() => handleSlotTap(week)}
+                className={[
+                  'relative aspect-[3/4] overflow-hidden rounded-card border bg-surface',
+                  isCurrent && !photo ? 'border-accent border-dashed' : '',
+                  isCurrent && photo ? 'border-accent' : '',
+                  !isCurrent ? 'border-border' : '',
+                  isLocked ? 'opacity-40' : '',
+                  !isLocked && !isBusy ? 'active:opacity-80' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {photo && !isBusy && (
+                  <PhotoThumb
+                    photoKey={photo.photoKey}
+                    className="absolute inset-0 h-full w-full"
+                  />
+                )}
+                {isBusy && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-surface-2 animate-slot-shimmer">
+                    <div className="text-xs text-text-muted">Saving…</div>
+                  </div>
+                )}
+                {!photo && !isBusy && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-text-muted">
+                    {isCurrent && <Camera size={20} strokeWidth={1.75} />}
+                  </div>
+                )}
+                <div className="absolute left-2 top-2 rounded-md bg-black/45 px-1.5 py-0.5 text-2xs font-medium tracking-wide text-white">
+                  W{week}
+                </div>
+              </button>
+              {photo && weight !== undefined && (
+                <div className="mt-1 text-center text-2xs tabular text-text-muted">
+                  {formatWeight(weight)}
                 </div>
               )}
-              <div className="absolute left-2 top-2 rounded-md bg-black/45 px-1.5 py-0.5 text-2xs font-medium tracking-wide text-white">
-                W{week}
-              </div>
-            </button>
+            </div>
           );
         })}
       </div>
@@ -215,6 +249,25 @@ export default function PhotosPage() {
           )}
         </section>
       )}
+
+      <PhotoActionSheet
+        open={sheetWeek != null}
+        week={sheetWeek}
+        photoKey={sheetPhoto?.photoKey ?? null}
+        filledWeeks={filledWeeks}
+        onClose={() => setSheetWeek(null)}
+        onView={(week) => setViewerWeek(week)}
+        onReplace={(week) => openPicker(week, true)}
+        onCompare={(a, b) => navigate(`/compare/${a}/${b}`)}
+        onDelete={handleDeleteFromSheet}
+      />
+
+      <PhotoViewer
+        open={viewerWeek != null}
+        week={viewerWeek}
+        photoKey={viewerWeek != null ? findPhoto(viewerWeek)?.photoKey ?? null : null}
+        onClose={() => setViewerWeek(null)}
+      />
     </div>
   );
 }

@@ -8,6 +8,8 @@ export default function Compare() {
   const params = useParams<{ a: string; b: string }>();
   const navigate = useNavigate();
   const photos = useMission((s) => s.photos);
+  const days = useMission((s) => s.days);
+  const weightUnit = useMission((s) => s.settings.weightUnit);
   const [urlA, setUrlA] = useState<string | undefined>();
   const [urlB, setUrlB] = useState<string | undefined>();
   const [splitPct, setSplitPct] = useState(50);
@@ -15,10 +17,14 @@ export default function Compare() {
 
   const aWeek = Number(params.a);
   const bWeek = Number(params.b);
+  const aPhoto = photos.find((p) => p.weekNumber === aWeek);
+  const bPhoto = photos.find((p) => p.weekNumber === bWeek);
+  const aWeight = aPhoto ? days[aPhoto.date]?.weight : undefined;
+  const bWeight = bPhoto ? days[bPhoto.date]?.weight : undefined;
+  const formatWeight = (n: number) =>
+    `${n.toFixed(1).replace(/\.0$/, '')} ${weightUnit}`;
 
   useEffect(() => {
-    const aPhoto = photos.find((p) => p.weekNumber === aWeek);
-    const bPhoto = photos.find((p) => p.weekNumber === bWeek);
     const created: string[] = [];
     let cancelled = false;
     (async () => {
@@ -121,8 +127,22 @@ export default function Compare() {
         className="flex justify-between px-5 py-3 text-sm text-text-muted"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
-        <div>Week {aWeek}</div>
-        <div>Week {bWeek}</div>
+        <div className="flex flex-col">
+          <span>Week {aWeek}</span>
+          {aWeight !== undefined && (
+            <span className="text-2xs tabular text-text-subtle">
+              {formatWeight(aWeight)}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col items-end">
+          <span>Week {bWeek}</span>
+          {bWeight !== undefined && (
+            <span className="text-2xs tabular text-text-subtle">
+              {formatWeight(bWeight)}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

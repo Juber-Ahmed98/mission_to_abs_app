@@ -76,10 +76,15 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'slot-shimmer': {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         'ring-pulse': 'ring-pulse 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite',
         'fade-up': 'fade-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both',
+        'slot-shimmer': 'slot-shimmer 1.2s cubic-bezier(0.32, 0.72, 0, 1) infinite',
       },
     },
   },
