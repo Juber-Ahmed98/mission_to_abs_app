@@ -6,8 +6,8 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
 
-const DISMISS_KEY = 'mission.installDismissed';
-const SESSION_KEY = 'mission.sessionCount';
+export const DISMISS_KEY = 'mission.installDismissed';
+export const SESSION_KEY = 'mission.sessionCount';
 
 function bumpSessions(): number {
   const current = parseInt(localStorage.getItem(SESSION_KEY) ?? '0', 10) || 0;

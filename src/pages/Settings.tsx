@@ -7,6 +7,7 @@ import {
   isPersisted,
   type StorageEstimate,
 } from '../lib/storage';
+import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import type { Settings, ThemePreference, WeekPhoto } from '../types';
 
 type ExportPayload = {
@@ -127,8 +128,8 @@ export default function SettingsPage() {
       await clearAllPhotos();
       await useMission.persist.clearStorage();
       resetAll();
-      localStorage.removeItem('mission.installDismissed');
-      localStorage.removeItem('mission.sessionCount');
+      localStorage.removeItem(INSTALL_DISMISS_KEY);
+      localStorage.removeItem(INSTALL_SESSION_KEY);
       location.reload();
     } catch (err) {
       console.error(err);

@@ -30,7 +30,6 @@ function Shell() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/journey" element={<JourneyPage />} />
-        <Route path="/calendar" element={<JourneyPage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/photos" element={<PhotosPage />} />
         <Route path="/compare/:a/:b" element={<Compare />} />
