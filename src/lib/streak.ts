@@ -1,5 +1,5 @@
 import type { DayEntry } from '../types';
-import { subDaysISO } from './date';
+import { addDaysISO, subDaysISO } from './date';
 
 export function calcStreak(
   days: Record<string, DayEntry>,
@@ -20,4 +20,27 @@ export function calcStreak(
     }
   }
   return streak;
+}
+
+export function longestStreak(
+  days: Record<string, DayEntry>,
+  startDate: string,
+  todayLimit: string,
+): number {
+  let longest = 0;
+  let current = 0;
+  let cursor = startDate;
+  while (cursor <= todayLimit) {
+    const e = days[cursor];
+    const bothWin = e?.diet === 'success' && e?.exercise === 'success';
+    const rest = e?.rest === true;
+    if (bothWin || rest) {
+      current += 1;
+      if (current > longest) longest = current;
+    } else {
+      current = 0;
+    }
+    cursor = addDaysISO(cursor, 1);
+  }
+  return longest;
 }

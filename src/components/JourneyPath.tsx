@@ -124,13 +124,15 @@ export default function JourneyPath({
             ? 'var(--tangerine)'
             : status === 'perfect'
               ? 'var(--lime)'
-              : status === 'partial'
-                ? 'var(--tangerine)'
-                : status === 'failed'
-                  ? 'var(--coral)'
-                  : status === 'missed'
-                    ? 'var(--missed)'
-                    : 'transparent';
+              : status === 'rest'
+                ? 'var(--lemon)'
+                : status === 'partial'
+                  ? 'var(--tangerine)'
+                  : status === 'failed'
+                    ? 'var(--coral)'
+                    : status === 'missed'
+                      ? 'var(--missed)'
+                      : 'transparent';
           const r = isToday ? 7 : isFuture ? 3.5 : status === 'missed' ? 4 : 5;
 
           return (

@@ -30,6 +30,8 @@ export default {
 
         success: 'var(--success)',
         'success-bg': 'var(--success-bg)',
+        rest: 'var(--rest)',
+        'rest-bg': 'var(--rest-bg)',
         partial: 'var(--partial)',
         'partial-bg': 'var(--partial-bg)',
         failed: 'var(--failed)',

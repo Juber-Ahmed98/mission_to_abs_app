@@ -7,6 +7,7 @@ import type {
   WeekPhoto,
 } from '../types';
 import { todayISO } from '../lib/date';
+import { clearAllPhotos } from '../storage/photos';
 
 type State = {
   settings: Settings;
@@ -24,6 +25,7 @@ type Actions = {
   removeMeasurement: (weekNumber: number) => void;
   replaceAll: (next: State) => void;
   resetAll: () => void;
+  startNewMission: () => Promise<void>;
 };
 
 const makeInitialSettings = (): Settings => ({
@@ -85,6 +87,20 @@ export const useMission = create<State & Actions>()(
           measurements: next.measurements ?? [],
         })),
       resetAll: () => set(() => makeInitial()),
+      startNewMission: async () => {
+        await clearAllPhotos();
+        set((s) => ({
+          settings: {
+            ...s.settings,
+            startDate: todayISO(),
+            streakShieldsRemaining: 1,
+            onboarded: true,
+          },
+          days: {},
+          photos: [],
+          measurements: [],
+        }));
+      },
     }),
     {
       name: 'mission',

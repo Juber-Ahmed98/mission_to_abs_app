@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
+import { Dumbbell, Moon, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
 import { useMission } from '../store/mission';
 import {
   dayNumberFor,
@@ -16,6 +16,7 @@ import { encouragement } from '../lib/encouragement';
 import { stageForDay } from '../lib/stage';
 import { XP, levelFromXp, tierName, totalXp } from '../lib/xp';
 import MissionRing from '../components/MissionRing';
+import MissionCompleted from '../components/MissionCompleted';
 import LevelBadge from '../components/LevelBadge';
 import TodayRow from '../components/TodayRow';
 import XpToast, { type Toast } from '../components/XpToast';
@@ -204,6 +205,30 @@ export default function Dashboard() {
     onClear: () => setPillar(date, pillar, undefined, `Restored ${name}`),
   });
 
+  const toggleRestToday = () => {
+    const prev = days[today];
+    const wasRest = prev?.rest === true;
+    if (wasRest) {
+      setDayEntry(today, { rest: undefined });
+      showUndo('Cleared rest day', () => {
+        setDayEntry(today, {
+          rest: prev?.rest,
+          diet: prev?.diet,
+          exercise: prev?.exercise,
+        });
+      });
+    } else {
+      setDayEntry(today, { rest: true, diet: undefined, exercise: undefined });
+      showUndo('Marked rest day', () => {
+        setDayEntry(today, {
+          rest: prev?.rest,
+          diet: prev?.diet,
+          exercise: prev?.exercise,
+        });
+      });
+    }
+  };
+
   const daysUntilStart = isPreMission ? 1 - rawDay : 0;
 
   const [welcomeBackDismissed, setWelcomeBackDismissed] = useState(false);
@@ -237,6 +262,10 @@ export default function Dashboard() {
   const showStreakPill = canLogToday && streak >= 2;
   const showShieldPill = showStreakPill && shieldsAvailable;
   const isHalfwayDay = canLogToday && dayNum === halfwayDay(total);
+
+  if (isPostMission) {
+    return <MissionCompleted />;
+  }
 
   return (
     <div className="pb-32" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -383,24 +412,50 @@ export default function Dashboard() {
           <h2 className="mb-2 text-xs uppercase tracking-wider text-text-muted">
             Today
           </h2>
-          <div className="space-y-2">
-            <TodayRow
-              label="Diet"
-              icon={<Utensils size={18} strokeWidth={1.75} />}
-              xpReward={XP.diet}
-              doneLabel={`Done · +${XP.diet} XP`}
-              status={entry?.diet}
-              {...pillarHandlers('diet', today, 'Diet')}
-            />
-            <TodayRow
-              label="Exercise"
-              icon={<Dumbbell size={18} strokeWidth={1.75} />}
-              xpReward={XP.exercise}
-              doneLabel={`Done · +${XP.exercise} XP`}
-              status={entry?.exercise}
-              {...pillarHandlers('exercise', today, 'Exercise')}
-            />
-          </div>
+          {entry?.rest ? (
+            <div className="rounded-card border border-rest/30 bg-rest-bg px-4 py-4 text-center">
+              <div className="text-sm font-medium text-text">Rest day.</div>
+              <div className="text-xs text-text-muted">Rest is part of the work.</div>
+              <button
+                type="button"
+                onClick={toggleRestToday}
+                className="mt-2 text-xs text-text-muted hover:text-text"
+              >
+                Undo rest
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <TodayRow
+                  label="Diet"
+                  icon={<Utensils size={18} strokeWidth={1.75} />}
+                  xpReward={XP.diet}
+                  doneLabel={`Done · +${XP.diet} XP`}
+                  status={entry?.diet}
+                  {...pillarHandlers('diet', today, 'Diet')}
+                />
+                <TodayRow
+                  label="Exercise"
+                  icon={<Dumbbell size={18} strokeWidth={1.75} />}
+                  xpReward={XP.exercise}
+                  doneLabel={`Done · +${XP.exercise} XP`}
+                  status={entry?.exercise}
+                  {...pillarHandlers('exercise', today, 'Exercise')}
+                />
+              </div>
+              <div className="mt-3 text-center">
+                <button
+                  type="button"
+                  onClick={toggleRestToday}
+                  className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-text"
+                >
+                  <Moon size={12} strokeWidth={1.75} />
+                  Rest day
+                </button>
+              </div>
+            </>
+          )}
         </section>
       )}
 

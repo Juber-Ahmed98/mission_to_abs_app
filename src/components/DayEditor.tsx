@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Moon } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { dayNumberFor, isEndOfWeek, weekNumberFor } from '../lib/date';
 import { XP } from '../lib/xp';
@@ -42,19 +42,45 @@ export default function DayEditor({ date, showNotes = true }: Props) {
     }
   };
 
+  const isRest = entry?.rest === true;
+  const toggleRest = () => {
+    if (isRest) {
+      setDayEntry(date, { rest: undefined });
+    } else {
+      setDayEntry(date, { rest: true, diet: undefined, exercise: undefined });
+    }
+  };
+
   return (
     <div className="space-y-5 px-5 py-4">
       <div className="space-y-3">
         <Toggle
           label="Diet"
           value={entry?.diet}
-          onChange={(v) => setDayEntry(date, { diet: v })}
+          onChange={(v) => setDayEntry(date, { diet: v, rest: undefined })}
         />
         <Toggle
           label="Exercise"
           value={entry?.exercise}
-          onChange={(v) => setDayEntry(date, { exercise: v })}
+          onChange={(v) => setDayEntry(date, { exercise: v, rest: undefined })}
         />
+        <div className="flex items-center justify-between">
+          <span className="text-base text-text">Rest day</span>
+          <button
+            type="button"
+            aria-label="Toggle rest day"
+            aria-pressed={isRest}
+            onClick={toggleRest}
+            className={[
+              'flex h-11 w-11 items-center justify-center rounded-pill border transition-colors duration-150 ease-apple',
+              isRest
+                ? 'border-rest/40 bg-rest-bg text-rest'
+                : 'border-border bg-surface-2 text-text-muted',
+            ].join(' ')}
+          >
+            <Moon size={20} strokeWidth={1.75} />
+          </button>
+        </div>
       </div>
       <div className="space-y-2">
         <div className="text-xs uppercase tracking-wider text-text-muted">Weight</div>

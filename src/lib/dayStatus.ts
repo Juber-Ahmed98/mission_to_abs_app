@@ -2,6 +2,7 @@ import type { DayEntry, DayStatus } from '../types';
 
 export function dayStatus(entry: DayEntry | undefined): DayStatus {
   if (!entry) return 'missed';
+  if (entry.rest === true) return 'rest';
   const d = entry.diet;
   const e = entry.exercise;
   if (!d && !e) return 'missed';

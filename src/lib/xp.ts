@@ -6,10 +6,12 @@ export const XP = {
   perfectDayBonus: 40,
   photo: 50,
   waist: 20,
+  rest: 30,
 } as const;
 
 export function xpForDay(entry: DayEntry | undefined): number {
   if (!entry) return 0;
+  if (entry.rest === true) return XP.rest;
   let total = 0;
   if (entry.diet === 'success') total += XP.diet;
   if (entry.exercise === 'success') total += XP.exercise;
