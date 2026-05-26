@@ -3,6 +3,7 @@ import { stagesFor } from '../lib/stage';
 import { dayStatus } from '../lib/dayStatus';
 import type { DayEntry, DayStatus } from '../types';
 import { addDaysISO } from '../lib/date';
+import { useIsNarrow } from '../lib/viewport';
 
 type Props = {
   startDate: string;
@@ -12,11 +13,13 @@ type Props = {
   onSelect: (date: string) => void;
 };
 
-const ROWS = 5;
+const DESKTOP_ROWS = 5;
+const NARROW_PER_ROW = 7;
+const NARROW_ROW_SPACING = 32;
 const X_PAD = 22;
 const Y_PAD = 32;
 const VIEW_W = 360;
-const VIEW_H = 240;
+const DESKTOP_VIEW_H = 240;
 
 type JourneyNode = {
   dayNum: number;
@@ -58,10 +61,19 @@ export default function JourneyPath({
   days,
   onSelect,
 }: Props) {
+  const isNarrow = useIsNarrow();
   const stages = useMemo(() => stagesFor(totalDays), [totalDays]);
-  const perRow = Math.max(1, Math.ceil(totalDays / ROWS));
+  const rows = isNarrow
+    ? Math.max(1, Math.ceil(totalDays / NARROW_PER_ROW))
+    : DESKTOP_ROWS;
+  const perRow = isNarrow
+    ? NARROW_PER_ROW
+    : Math.max(1, Math.ceil(totalDays / rows));
+  const VIEW_H = isNarrow
+    ? 2 * Y_PAD + Math.max(0, rows - 1) * NARROW_ROW_SPACING
+    : DESKTOP_VIEW_H;
   const spacingX = perRow > 1 ? (VIEW_W - 2 * X_PAD) / (perRow - 1) : 0;
-  const spacingY = ROWS > 1 ? (VIEW_H - 2 * Y_PAD) / (ROWS - 1) : 0;
+  const spacingY = rows > 1 ? (VIEW_H - 2 * Y_PAD) / (rows - 1) : 0;
 
   const nodes = useMemo<JourneyNode[]>(() => {
     const arr: JourneyNode[] = [];
@@ -109,7 +121,7 @@ export default function JourneyPath({
       }
     };
 
-    for (let row = 0; row < ROWS; row += 1) {
+    for (let row = 0; row < rows; row += 1) {
       const rowStartIdx = row * perRow;
       const rowEndIdx = Math.min(totalDays - 1, (row + 1) * perRow - 1);
       if (rowStartIdx > totalDays - 1) break;
@@ -160,7 +172,7 @@ export default function JourneyPath({
       pastPathD: pastParts.join(' '),
       futurePathD: futureParts.join(' '),
     };
-  }, [nodes, perRow, totalDays, spacingY, todayIdx]);
+  }, [nodes, perRow, rows, totalDays, spacingY, todayIdx]);
 
   return (
     <div className="w-full">

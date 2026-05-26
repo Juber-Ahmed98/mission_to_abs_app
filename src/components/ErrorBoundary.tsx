@@ -6,7 +6,19 @@ type State = { error: Error | null };
 function downloadCurrentData() {
   try {
     const raw = localStorage.getItem('mission');
-    const payload = raw ? JSON.parse(raw) : { mission: null };
+    if (!raw) return;
+    const persisted = JSON.parse(raw);
+    const state =
+      persisted && typeof persisted === 'object' && persisted.state && typeof persisted.state === 'object'
+        ? (persisted.state as Record<string, unknown>)
+        : {};
+    const payload = {
+      version: typeof persisted?.version === 'number' ? persisted.version : 5,
+      settings: state.settings ?? {},
+      days: state.days ?? {},
+      photos: Array.isArray(state.photos) ? state.photos : [],
+      measurements: Array.isArray(state.measurements) ? state.measurements : [],
+    };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json',
     });

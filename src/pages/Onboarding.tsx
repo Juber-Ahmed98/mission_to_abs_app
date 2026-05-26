@@ -285,7 +285,9 @@ function Screen2(p: Screen2Props) {
           <input
             type="date"
             value={p.startDate}
-            onChange={(e) => p.setStartDate(e.target.value)}
+            onChange={(e) => {
+              if (e.target.value) p.setStartDate(e.target.value);
+            }}
             className="h-10 rounded-card border border-border bg-surface-2 px-3 text-sm text-text outline-none"
           />
         </FieldRow>

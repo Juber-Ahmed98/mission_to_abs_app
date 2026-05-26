@@ -51,6 +51,7 @@ export default function JourneyPage() {
         <Legend dotClass="bg-tangerine" label="Partial / Today" />
         <Legend dotClass="bg-coral" label="Failed" />
         <Legend dotClass="bg-missed" label="Missed" />
+        <Legend dotClass="bg-lemon" label="Rest day" />
         <Legend dotClass="border border-border-strong" label="Future" />
       </div>
 

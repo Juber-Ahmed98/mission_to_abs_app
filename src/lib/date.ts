@@ -13,7 +13,11 @@ export function subDaysISO(s: string, n: number): string {
 }
 
 export function diffDays(a: string, b: string): number {
-  return differenceInCalendarDays(parseISO(a), parseISO(b));
+  if (!a || !b) return 0;
+  const da = parseISO(a);
+  const db = parseISO(b);
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return 0;
+  return differenceInCalendarDays(da, db);
 }
 
 export function dayNumberFor(date: string, startDate: string): number {

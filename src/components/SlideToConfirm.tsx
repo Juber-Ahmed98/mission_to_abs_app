@@ -181,7 +181,7 @@ export default function SlideToConfirm({
             doneLabel
           ) : (
             <>
-              <span>{hint}</span>
+              <span className="hidden sm:inline">{hint}</span>
               {xpReward !== undefined && (
                 <span className="text-xs text-text-subtle tabular-nums">
                   +{xpReward} XP

@@ -289,7 +289,9 @@ export default function SettingsPage() {
             <input
               type="date"
               value={settings.startDate}
-              onChange={(e) => setSettings({ startDate: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value) setSettings({ startDate: e.target.value });
+              }}
               className="h-10 rounded-card border border-border bg-surface-2 px-3 text-sm text-text outline-none"
             />
           </Row>
