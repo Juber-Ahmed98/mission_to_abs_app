@@ -27,6 +27,7 @@ import BottomSheet from '../components/BottomSheet';
 import WeightInput from '../components/WeightInput';
 import InstallBanner from '../components/InstallBanner';
 import { showUndo } from '../components/UndoToast';
+import { bump } from '../lib/analytics';
 import type { DayEntry } from '../types';
 
 const QUICK_LOG_CUTOFF_HOUR = 11;
@@ -184,9 +185,16 @@ export default function Dashboard() {
     next: 'success' | 'fail' | undefined,
     undoLabel: string,
   ) => {
-    const prev = days[date]?.[pillar];
+    const dayBefore = days[date];
+    const prev = dayBefore?.[pillar];
     if (prev === next) return;
+    const wasEmpty =
+      !dayBefore ||
+      (dayBefore.diet === undefined &&
+        dayBefore.exercise === undefined &&
+        dayBefore.rest !== true);
     setDayEntry(date, { [pillar]: next } as Partial<DayEntry>);
+    if (wasEmpty && next !== undefined) bump('daysLogged');
     showUndo(undoLabel, () => {
       setDayEntry(date, { [pillar]: prev } as Partial<DayEntry>);
     });
@@ -221,7 +229,13 @@ export default function Dashboard() {
         });
       });
     } else {
+      const wasEmpty =
+        !prev ||
+        (prev.diet === undefined &&
+          prev.exercise === undefined &&
+          prev.rest !== true);
       setDayEntry(today, { rest: true, diet: undefined, exercise: undefined });
+      if (wasEmpty) bump('daysLogged');
       showUndo('Marked rest day', () => {
         setDayEntry(today, {
           rest: prev?.rest,

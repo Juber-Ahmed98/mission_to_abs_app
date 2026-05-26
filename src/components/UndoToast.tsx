@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Undo2 } from 'lucide-react';
+import { bump } from '../lib/analytics';
 
 type UndoEntry = {
   id: number;
@@ -65,6 +66,7 @@ export default function UndoToast() {
             type="button"
             onClick={() => {
               entry.undo();
+              bump('undosUsed');
               clearUndo();
             }}
             className="flex h-9 items-center gap-1.5 rounded-pill px-3 text-sm font-medium text-accent hover:text-accent-hover"

@@ -10,6 +10,7 @@ import PhotoThumb from '../components/PhotoThumb';
 import XpToast, { type Toast } from '../components/XpToast';
 import WaistInput from '../components/WaistInput';
 import { showUndo } from '../components/UndoToast';
+import { bump } from '../lib/analytics';
 import PhotoActionSheet from '../components/PhotoActionSheet';
 import PhotoViewer from '../components/PhotoViewer';
 
@@ -71,6 +72,7 @@ export default function PhotosPage() {
       if (isNew && !isReplace) {
         setToast({ id: Date.now(), amount: XP.photo });
         setTimeout(() => setToast(null), 1700);
+        bump('photosUploaded');
       }
       const undoLabel = isReplace
         ? `Replaced week ${week} photo`
@@ -120,6 +122,7 @@ export default function PhotosPage() {
     if (wasNew && next !== undefined) {
       setToast({ id: Date.now(), amount: XP.waist });
       setTimeout(() => setToast(null), 1700);
+      bump('measurementsLogged');
     }
     const label =
       next === undefined

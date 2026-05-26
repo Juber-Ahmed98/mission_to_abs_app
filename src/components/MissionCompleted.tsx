@@ -13,6 +13,7 @@ import {
   buildMissionArchive,
   downloadMissionArchive,
 } from '../lib/archive';
+import { bump } from '../lib/analytics';
 
 const CM_PER_INCH = 2.54;
 
@@ -121,6 +122,7 @@ export default function MissionCompleted() {
         finalXp: xp,
       });
       downloadMissionArchive(archive);
+      bump('missionsCompleted');
       await startNewMission();
       setConfirmOpen(false);
     } finally {

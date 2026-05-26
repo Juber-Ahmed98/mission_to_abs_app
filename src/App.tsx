@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import {
   HashRouter,
   Navigate,
@@ -11,14 +11,18 @@ import ErrorBoundary from './components/ErrorBoundary';
 import UndoToast from './components/UndoToast';
 import Dashboard from './pages/Dashboard';
 import JourneyPage from './pages/Journey';
-import ProgressPage from './pages/Progress';
-import PhotosPage from './pages/Photos';
-import Compare from './pages/Compare';
-import SettingsPage from './pages/Settings';
 import OnboardingPage from './pages/Onboarding';
 import { useMission } from './store/mission';
 import { useApplyTheme } from './lib/theme';
 import { requestPersistence } from './lib/storage';
+import { bump } from './lib/analytics';
+
+const ProgressPage = lazy(() => import('./pages/Progress'));
+const PhotosPage = lazy(() => import('./pages/Photos'));
+const Compare = lazy(() => import('./pages/Compare'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+
+const SESSION_FLAG = 'mission.analytics.sessionSeen';
 
 const PERSISTENCE_FLAG = 'mission.persistenceRequested';
 
@@ -38,6 +42,12 @@ function Shell() {
     });
   }, []);
 
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_FLAG)) return;
+    sessionStorage.setItem(SESSION_FLAG, '1');
+    bump('sessionsOpened');
+  }, []);
+
   // Existing-user migration: prior data exists but onboarded was defaulted false.
   // Auto-flip to onboarded and flag for the welcome-back banner.
   useEffect(() => {
@@ -55,24 +65,26 @@ function Shell() {
   return (
     <div className="min-h-dvh bg-bg text-text font-sans">
       <ErrorBoundary>
-        <Routes>
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route
-            path="/"
-            element={
-              needsOnboarding ? (
-                <Navigate to="/onboarding" replace />
-              ) : (
-                <Dashboard />
-              )
-            }
-          />
-          <Route path="/journey" element={<JourneyPage />} />
-          <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/photos" element={<PhotosPage />} />
-          <Route path="/compare/:a/:b" element={<Compare />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route
+              path="/"
+              element={
+                needsOnboarding ? (
+                  <Navigate to="/onboarding" replace />
+                ) : (
+                  <Dashboard />
+                )
+              }
+            />
+            <Route path="/journey" element={<JourneyPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/photos" element={<PhotosPage />} />
+            <Route path="/compare/:a/:b" element={<Compare />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
       <UndoToast />
       {!hideNav && <BottomNav />}

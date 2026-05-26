@@ -35,6 +35,7 @@ export type Settings = {
   onboarded: boolean;
   streakShieldsRemaining: number;
   lastExportedAt: string | null;
+  analyticsEnabled: boolean;
 };
 
 export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';

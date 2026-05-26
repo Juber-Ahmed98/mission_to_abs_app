@@ -10,6 +10,10 @@ import {
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
 import { formatNice } from '../lib/date';
+import {
+  readAnalytics,
+  resetAnalytics as clearAnalytics,
+} from '../lib/analytics';
 import type {
   DayEntry,
   Settings,
@@ -110,7 +114,7 @@ export default function SettingsPage() {
         }),
       );
       const payload: ExportPayload = {
-        version: 4,
+        version: 5,
         settings,
         days,
         measurements,
@@ -201,6 +205,7 @@ export default function SettingsPage() {
       await clearAllPhotos();
       await useMission.persist.clearStorage();
       resetAll();
+      clearAnalytics();
       localStorage.removeItem(INSTALL_DISMISS_KEY);
       localStorage.removeItem(INSTALL_SESSION_KEY);
       location.reload();
@@ -208,6 +213,26 @@ export default function SettingsPage() {
       console.error(err);
       setBusy(null);
     }
+  };
+
+  const onExportAnalytics = () => {
+    const counters = readAnalytics();
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    downloadJSON(
+      {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        counters,
+      },
+      `mission-analytics-${today}.json`,
+    );
+  };
+
+  const setAnalyticsEnabled = (v: 'off' | 'on') => {
+    const next = v === 'on';
+    if (next === settings.analyticsEnabled) return;
+    setSettings({ analyticsEnabled: next });
+    if (!next) clearAnalytics();
   };
 
   const requestWeightUnitChange = (next: 'kg' | 'lb') => {
@@ -308,6 +333,27 @@ export default function SettingsPage() {
               onChange={(v) => setSettings({ waistUnit: v })}
             />
           </Row>
+        </Section>
+
+        <Section title="Analytics">
+          <Row label="Local analytics">
+            <Segmented<'off' | 'on'>
+              options={['off', 'on']}
+              value={settings.analyticsEnabled ? 'on' : 'off'}
+              onChange={setAnalyticsEnabled}
+            />
+          </Row>
+          <div className="px-1 text-xs text-text-subtle">
+            Counts only — never leaves device. Turning off clears stored counts.
+          </div>
+          <button
+            type="button"
+            disabled={!settings.analyticsEnabled}
+            onClick={onExportAnalytics}
+            className="block h-12 w-full rounded-card border border-border bg-surface px-4 text-left text-text disabled:opacity-50"
+          >
+            Export analytics
+          </button>
         </Section>
 
         <Section title="Data">

@@ -38,7 +38,10 @@ export function isEndOfWeek(dayNumber: number): boolean {
 }
 
 export function formatNice(s: string): string {
-  return format(parseISO(s), 'EEE, MMM d');
+  if (!s) return '—';
+  const d = parseISO(s);
+  if (Number.isNaN(d.getTime())) return '—';
+  return format(d, 'EEE, MMM d');
 }
 
 export function yesterdayISO(today: string): string {
