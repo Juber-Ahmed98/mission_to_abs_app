@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMission } from '../store/mission';
 import { clearAllPhotos, getPhoto, savePhoto } from '../storage/photos';
 import {
@@ -8,14 +8,26 @@ import {
   type StorageEstimate,
 } from '../lib/storage';
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
-import type { Settings, ThemePreference, WeekPhoto } from '../types';
+import BottomSheet from '../components/BottomSheet';
+import { formatNice } from '../lib/date';
+import type {
+  DayEntry,
+  Settings,
+  ThemePreference,
+  WeekMeasurement,
+  WeekPhoto,
+} from '../types';
 
 type ExportPayload = {
   version: number;
   settings: Settings;
-  days: Record<string, unknown>;
+  days: Record<string, DayEntry>;
+  measurements?: WeekMeasurement[];
   photos: (WeekPhoto & { base64?: string })[];
 };
+
+const KG_PER_LB = 1 / 2.20462;
+const LB_PER_KG = 2.20462;
 
 function downloadJSON(obj: unknown, filename: string) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
@@ -41,10 +53,23 @@ async function dataURLToBlob(dataURL: string): Promise<Blob> {
   return res.blob();
 }
 
+function isValidPayload(data: unknown): data is ExportPayload {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.settings === 'object' &&
+    d.settings !== null &&
+    typeof d.days === 'object' &&
+    d.days !== null &&
+    Array.isArray(d.photos)
+  );
+}
+
 export default function SettingsPage() {
   const settings = useMission((s) => s.settings);
   const days = useMission((s) => s.days);
   const photos = useMission((s) => s.photos);
+  const measurements = useMission((s) => s.measurements);
   const setSettings = useMission((s) => s.setSettings);
   const replaceAll = useMission((s) => s.replaceAll);
   const resetAll = useMission((s) => s.resetAll);
@@ -52,6 +77,11 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState<'export' | 'import' | 'reset' | null>(null);
   const [storage, setStorage] = useState<StorageEstimate | null>(null);
   const [persisted, setPersisted] = useState(false);
+
+  const [resetSheetOpen, setResetSheetOpen] = useState(false);
+  const [resetInput, setResetInput] = useState('');
+  const [importPreview, setImportPreview] = useState<ExportPayload | null>(null);
+  const [pendingWeightUnit, setPendingWeightUnit] = useState<'kg' | 'lb' | null>(null);
 
   const refreshStorage = async () => {
     const [est, pers] = await Promise.all([getStorageEstimate(), isPersisted()]);
@@ -62,6 +92,11 @@ export default function SettingsPage() {
   useEffect(() => {
     refreshStorage();
   }, []);
+
+  const weightCount = useMemo(
+    () => Object.values(days).filter((d) => typeof d.weight === 'number').length,
+    [days],
+  );
 
   const onExport = async () => {
     setBusy('export');
@@ -74,9 +109,16 @@ export default function SettingsPage() {
           return { ...p, base64: b64 };
         }),
       );
-      const payload: ExportPayload = { version: 2, settings, days, photos: photosOut };
+      const payload: ExportPayload = {
+        version: 4,
+        settings,
+        days,
+        measurements,
+        photos: photosOut,
+      };
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       downloadJSON(payload, `mission-${today}.json`);
+      setSettings({ lastExportedAt: new Date().toISOString() });
     } finally {
       setBusy(null);
       refreshStorage();
@@ -91,18 +133,32 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!confirm('Replace all current data with this backup?')) return;
-    setBusy('import');
     try {
       const text = await file.text();
-      const data = JSON.parse(text) as ExportPayload;
-      if (!data?.settings || !data?.days || !Array.isArray(data.photos)) {
+      const data = JSON.parse(text);
+      if (!isValidPayload(data)) {
         alert('Invalid backup file.');
         return;
       }
+      setImportPreview(data);
+    } catch (err) {
+      console.error(err);
+      alert('Could not read backup file.');
+    }
+  };
+
+  const cancelImport = () => {
+    if (busy === 'import') return;
+    setImportPreview(null);
+  };
+
+  const commitImport = async () => {
+    if (!importPreview) return;
+    setBusy('import');
+    try {
       await clearAllPhotos();
       const photoMetas: WeekPhoto[] = [];
-      for (const p of data.photos) {
+      for (const p of importPreview.photos) {
         const { base64, ...meta } = p;
         if (base64) {
           const blob = await dataURLToBlob(base64);
@@ -111,11 +167,12 @@ export default function SettingsPage() {
         photoMetas.push(meta);
       }
       replaceAll({
-        settings: data.settings,
-        days: data.days as never,
+        settings: importPreview.settings,
+        days: importPreview.days,
         photos: photoMetas,
-        measurements: [],
+        measurements: importPreview.measurements ?? [],
       });
+      setImportPreview(null);
       alert('Backup restored.');
     } catch (err) {
       console.error(err);
@@ -126,8 +183,19 @@ export default function SettingsPage() {
     }
   };
 
-  const onReset = async () => {
-    if (!confirm('Erase all entries, photos, and settings? This cannot be undone.')) return;
+  const openResetSheet = () => {
+    setResetInput('');
+    setResetSheetOpen(true);
+  };
+
+  const closeResetSheet = () => {
+    if (busy === 'reset') return;
+    setResetSheetOpen(false);
+    setResetInput('');
+  };
+
+  const confirmReset = async () => {
+    if (resetInput !== 'RESET') return;
     setBusy('reset');
     try {
       await clearAllPhotos();
@@ -141,6 +209,47 @@ export default function SettingsPage() {
       setBusy(null);
     }
   };
+
+  const requestWeightUnitChange = (next: 'kg' | 'lb') => {
+    if (next === settings.weightUnit) return;
+    if (weightCount === 0 && settings.goalWeight === undefined) {
+      setSettings({ weightUnit: next });
+      return;
+    }
+    setPendingWeightUnit(next);
+  };
+
+  const cancelWeightUnitChange = () => setPendingWeightUnit(null);
+
+  const confirmWeightUnitChange = () => {
+    if (!pendingWeightUnit) return;
+    const from = settings.weightUnit;
+    const to = pendingWeightUnit;
+    const factor = from === 'kg' && to === 'lb' ? LB_PER_KG : KG_PER_LB;
+    const nextDays: Record<string, DayEntry> = {};
+    for (const [date, d] of Object.entries(days)) {
+      nextDays[date] =
+        typeof d.weight === 'number'
+          ? { ...d, weight: Math.round(d.weight * factor * 10) / 10 }
+          : d;
+    }
+    useMission.setState((s) => ({
+      days: nextDays,
+      settings: {
+        ...s.settings,
+        weightUnit: to,
+        ...(typeof s.settings.goalWeight === 'number'
+          ? { goalWeight: Math.round(s.settings.goalWeight * factor * 10) / 10 }
+          : {}),
+      },
+    }));
+    setPendingWeightUnit(null);
+  };
+
+  const importEntries = importPreview ? Object.keys(importPreview.days).length : 0;
+  const importPhotos = importPreview?.photos.length ?? 0;
+  const importMeasurements = importPreview?.measurements?.length ?? 0;
+  const importStart = importPreview?.settings?.startDate;
 
   return (
     <div className="pb-28 px-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -189,7 +298,14 @@ export default function SettingsPage() {
             <Segmented<'kg' | 'lb'>
               options={['kg', 'lb']}
               value={settings.weightUnit}
-              onChange={(v) => setSettings({ weightUnit: v })}
+              onChange={requestWeightUnitChange}
+            />
+          </Row>
+          <Row label="Waist">
+            <Segmented<'cm' | 'in'>
+              options={['cm', 'in']}
+              value={settings.waistUnit}
+              onChange={(v) => setSettings({ waistUnit: v })}
             />
           </Row>
         </Section>
@@ -204,6 +320,11 @@ export default function SettingsPage() {
           >
             {busy === 'export' ? 'Exporting…' : 'Export JSON'}
           </button>
+          {settings.lastExportedAt && (
+            <div className="px-1 text-xs text-text-subtle">
+              Last export {formatRelative(settings.lastExportedAt)}.
+            </div>
+          )}
           <button
             type="button"
             disabled={busy !== null}
@@ -225,7 +346,7 @@ export default function SettingsPage() {
           <button
             type="button"
             disabled={busy !== null}
-            onClick={onReset}
+            onClick={openResetSheet}
             className="block h-12 w-full rounded-card border border-coral/40 bg-coral-soft px-4 text-left text-failed disabled:opacity-50"
           >
             {busy === 'reset' ? 'Resetting…' : 'Reset all data'}
@@ -236,8 +357,138 @@ export default function SettingsPage() {
           Mission to Abs · {Object.keys(days).length} entries · {photos.length} photos
         </div>
       </div>
+
+      <BottomSheet open={resetSheetOpen} onClose={closeResetSheet}>
+        <div className="px-5 pt-2 pb-5">
+          <div className="text-lg font-semibold tracking-tight">Erase everything?</div>
+          <div className="mt-1 text-sm text-text-muted">
+            Wipes settings, daily entries, photos, and measurements. Type{' '}
+            <span className="font-semibold text-text">RESET</span> to confirm.
+          </div>
+          <input
+            type="text"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            value={resetInput}
+            onChange={(e) => setResetInput(e.target.value)}
+            placeholder="RESET"
+            className="mt-4 block h-12 w-full rounded-card border border-border bg-surface-2 px-3 text-base tracking-widest tabular text-text outline-none"
+          />
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              disabled={busy === 'reset'}
+              onClick={closeResetSheet}
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-text disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={resetInput !== 'RESET' || busy === 'reset'}
+              onClick={confirmReset}
+              className="h-11 flex-1 rounded-card bg-coral text-white disabled:opacity-50"
+            >
+              {busy === 'reset' ? 'Erasing…' : 'Erase'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={importPreview !== null} onClose={cancelImport}>
+        <div className="px-5 pt-2 pb-5">
+          <div className="text-lg font-semibold tracking-tight">Restore backup?</div>
+          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-card border border-border bg-surface px-3 py-3">
+              <div className="text-xs uppercase tracking-wider text-text-muted">Backup</div>
+              <div className="mt-2 space-y-0.5 tabular text-text">
+                <div>{importEntries} entries</div>
+                <div>{importPhotos} photos</div>
+                <div>{importMeasurements} measurements</div>
+              </div>
+              <div className="mt-2 text-xs text-text-muted">
+                Start {importStart ? formatNice(importStart) : '—'}
+              </div>
+            </div>
+            <div className="rounded-card border border-border bg-surface px-3 py-3">
+              <div className="text-xs uppercase tracking-wider text-text-muted">Current</div>
+              <div className="mt-2 space-y-0.5 tabular text-text">
+                <div>{Object.keys(days).length} entries</div>
+                <div>{photos.length} photos</div>
+                <div>{measurements.length} measurements</div>
+              </div>
+              <div className="mt-2 text-xs text-text-muted">
+                Start {formatNice(settings.startDate)}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-failed">
+            Replace overwrites all current data.
+          </div>
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              disabled={busy === 'import'}
+              onClick={cancelImport}
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-text disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={busy === 'import'}
+              onClick={commitImport}
+              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+            >
+              {busy === 'import' ? 'Restoring…' : 'Replace'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={pendingWeightUnit !== null} onClose={cancelWeightUnitChange}>
+        <div className="px-5 pt-2 pb-5">
+          <div className="text-lg font-semibold tracking-tight">
+            Convert weights to {pendingWeightUnit}?
+          </div>
+          <div className="mt-1 text-sm text-text-muted">
+            {weightCount} stored {weightCount === 1 ? 'weight' : 'weights'}
+            {typeof settings.goalWeight === 'number' ? ' and your goal' : ''} will be
+            converted from {settings.weightUnit} to {pendingWeightUnit}.
+          </div>
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              onClick={cancelWeightUnitChange}
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-text"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmWeightUnitChange}
+              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover"
+            >
+              Convert
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
+}
+
+function formatRelative(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms) || ms < 0) return formatNice(iso.slice(0, 10));
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months === 1) return '1 month ago';
+  return `${months} months ago`;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

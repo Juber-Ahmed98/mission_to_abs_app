@@ -34,6 +34,7 @@ export type Settings = {
   goalWaistCm?: number;
   onboarded: boolean;
   streakShieldsRemaining: number;
+  lastExportedAt: string | null;
 };
 
 export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Moon, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
+import { Dumbbell, Download, Moon, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
 import { useMission } from '../store/mission';
 import {
   dayNumberFor,
@@ -30,6 +30,9 @@ import { showUndo } from '../components/UndoToast';
 import type { DayEntry } from '../types';
 
 const QUICK_LOG_CUTOFF_HOUR = 11;
+const BACKUP_NUDGE_THRESHOLD_DAYS = 30;
+const BACKUP_NUDGE_MIN_ENTRIES = 7;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export default function Dashboard() {
   const settings = useMission((s) => s.settings);
@@ -231,6 +234,19 @@ export default function Dashboard() {
 
   const daysUntilStart = isPreMission ? 1 - rawDay : 0;
 
+  const backupNudge = useMemo(() => {
+    const entries = Object.keys(days).length;
+    if (settings.lastExportedAt === null) {
+      if (entries < BACKUP_NUDGE_MIN_ENTRIES) return null;
+      return { label: 'Never backed up.' };
+    }
+    const ms = Date.now() - new Date(settings.lastExportedAt).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    const daysSince = Math.floor(ms / MS_PER_DAY);
+    if (daysSince < BACKUP_NUDGE_THRESHOLD_DAYS) return null;
+    return { label: `Backed up ${daysSince} days ago.` };
+  }, [days, settings.lastExportedAt]);
+
   const [welcomeBackDismissed, setWelcomeBackDismissed] = useState(false);
   const welcomeBack =
     !welcomeBackDismissed && localStorage.getItem('mission.welcomeBack') === '1';
@@ -370,6 +386,19 @@ export default function Dashboard() {
             </Link>
           </div>
         </section>
+      )}
+
+      {backupNudge && (
+        <Link
+          to="/settings"
+          className="mx-5 mt-4 flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 text-sm hover:border-accent/40"
+        >
+          <span className="flex items-center gap-2 text-text-muted">
+            <Download size={14} strokeWidth={1.75} />
+            {backupNudge.label}
+          </span>
+          <span className="text-accent">Export</span>
+        </Link>
       )}
 
       <InstallBanner />

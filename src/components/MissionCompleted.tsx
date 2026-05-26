@@ -22,6 +22,7 @@ export default function MissionCompleted() {
   const photos = useMission((s) => s.photos);
   const measurements = useMission((s) => s.measurements);
   const startNewMission = useMission((s) => s.startNewMission);
+  const setSettings = useMission((s) => s.setSettings);
 
   const total = totalDays(settings.durationWeeks);
   const lastDay = addDaysISO(settings.startDate, total - 1);
@@ -102,6 +103,7 @@ export default function MissionCompleted() {
         finalXp: xp,
       });
       downloadMissionArchive(archive);
+      setSettings({ lastExportedAt: new Date().toISOString() });
     } finally {
       setExporting(false);
     }
