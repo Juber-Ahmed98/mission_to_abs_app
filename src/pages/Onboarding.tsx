@@ -147,7 +147,6 @@ export default function OnboardingPage() {
         ref={fileRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={onPhotoFile}
         className="hidden"
       />
