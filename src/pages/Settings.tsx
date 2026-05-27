@@ -15,6 +15,12 @@ import {
   readAnalytics,
   resetAnalytics as clearAnalytics,
 } from '../lib/analytics';
+import {
+  cancelAll as cancelAllReminders,
+  getPermission,
+  isTriggerSupported,
+  requestPermission,
+} from '../lib/notifications';
 import type {
   DayEntry,
   Settings,
@@ -87,6 +93,8 @@ export default function SettingsPage() {
   const [resetInput, setResetInput] = useState('');
   const [importPreview, setImportPreview] = useState<ExportPayload | null>(null);
   const [pendingWeightUnit, setPendingWeightUnit] = useState<'kg' | 'lb' | null>(null);
+  const [reminderHint, setReminderHint] = useState<string | null>(null);
+  const triggerSupported = useMemo(() => isTriggerSupported(), []);
 
   const refreshStorage = async () => {
     const [est, pers] = await Promise.all([getStorageEstimate(), isPersisted()]);
@@ -236,6 +244,39 @@ export default function SettingsPage() {
     if (!next) clearAnalytics();
   };
 
+  const setReminderToggle = async (
+    kind: 'morning' | 'evening',
+    v: 'off' | 'on',
+  ) => {
+    const next = v === 'on';
+    const current = settings.notifications[kind];
+    if (next === current) return;
+
+    if (!next) {
+      const updated = { ...settings.notifications, [kind]: false };
+      setSettings({ notifications: updated });
+      if (!updated.morning && !updated.evening) {
+        await cancelAllReminders();
+      }
+      setReminderHint(null);
+      return;
+    }
+
+    if (triggerSupported) {
+      let perm = getPermission();
+      if (perm === 'default') {
+        perm = await requestPermission();
+      }
+      if (perm !== 'granted') {
+        setReminderHint('Permission denied. Enable notifications in browser settings.');
+        return;
+      }
+    }
+    setReminderHint(null);
+    const updated = { ...settings.notifications, [kind]: true };
+    setSettings({ notifications: updated });
+  };
+
   const requestWeightUnitChange = (next: 'kg' | 'lb') => {
     if (next === settings.weightUnit) return;
     if (weightCount === 0 && settings.goalWeight === undefined) {
@@ -302,6 +343,31 @@ export default function SettingsPage() {
               onChange={(n) => setSettings({ durationWeeks: n })}
             />
           </Row>
+        </Section>
+
+        <Section title="Reminders">
+          <Row label="Morning quote — 7:00 AM">
+            <Segmented<'off' | 'on'>
+              options={['off', 'on']}
+              value={settings.notifications.morning ? 'on' : 'off'}
+              onChange={(v) => setReminderToggle('morning', v)}
+            />
+          </Row>
+          <Row label="Evening reflection — 8:00 PM">
+            <Segmented<'off' | 'on'>
+              options={['off', 'on']}
+              value={settings.notifications.evening ? 'on' : 'off'}
+              onChange={(v) => setReminderToggle('evening', v)}
+            />
+          </Row>
+          {!triggerSupported && (
+            <div className="px-1 text-xs text-text-subtle">
+              On this device, reminders show when you open the app.
+            </div>
+          )}
+          {reminderHint && (
+            <div className="px-1 text-xs text-failed">{reminderHint}</div>
+          )}
         </Section>
 
         <Section title="Appearance">

@@ -16,6 +16,7 @@ import { useMission } from './store/mission';
 import { useApplyTheme } from './lib/theme';
 import { requestPersistence } from './lib/storage';
 import { bump } from './lib/analytics';
+import { scheduleAll as scheduleAllReminders } from './lib/notifications';
 
 const ProgressPage = lazy(() => import('./pages/Progress'));
 const PhotosPage = lazy(() => import('./pages/Photos'));
@@ -30,10 +31,15 @@ function Shell() {
   const themePref = useMission((s) => s.settings.theme);
   const onboarded = useMission((s) => s.settings.onboarded);
   const dayCount = useMission((s) => Object.keys(s.days).length);
+  const notifications = useMission((s) => s.settings.notifications);
   const setSettings = useMission((s) => s.setSettings);
   useApplyTheme(themePref);
   const { pathname } = useLocation();
   const hideNav = pathname.startsWith('/compare') || pathname.startsWith('/onboarding');
+
+  useEffect(() => {
+    scheduleAllReminders(notifications);
+  }, [notifications]);
 
   useEffect(() => {
     if (localStorage.getItem(PERSISTENCE_FLAG)) return;
