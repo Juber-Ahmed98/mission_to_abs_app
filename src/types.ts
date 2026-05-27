@@ -36,6 +36,10 @@ export type Settings = {
   streakShieldsRemaining: number;
   lastExportedAt: string | null;
   analyticsEnabled: boolean;
+  notifications: {
+    morning: boolean;
+    evening: boolean;
+  };
 };
 
 export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';

@@ -38,6 +38,7 @@ const makeInitialSettings = (): Settings => ({
   streakShieldsRemaining: 1,
   lastExportedAt: null,
   analyticsEnabled: false,
+  notifications: { morning: false, evening: false },
 });
 
 const makeInitial = (): State => ({
@@ -106,7 +107,7 @@ export const useMission = create<State & Actions>()(
     }),
     {
       name: 'mission',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         settings: s.settings,
@@ -148,6 +149,17 @@ export const useMission = create<State & Actions>()(
             ...makeInitialSettings(),
             ...prevSettings,
             analyticsEnabled: prevSettings.analyticsEnabled ?? false,
+          };
+        }
+        if (version < 6) {
+          const prevSettings = (next.settings ?? {}) as Partial<Settings>;
+          next.settings = {
+            ...makeInitialSettings(),
+            ...prevSettings,
+            notifications: prevSettings.notifications ?? {
+              morning: false,
+              evening: false,
+            },
           };
         }
         return next as State;
