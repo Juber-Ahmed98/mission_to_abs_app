@@ -13,6 +13,7 @@ import { dayNumberFor, formatNice, todayISO } from '../lib/date';
 import { resizeImage } from '../lib/image';
 import { savePhoto } from '../storage/photos';
 import { showUndo } from '../components/UndoToast';
+import WeeksInput from '../components/WeeksInput';
 
 type Screen = 0 | 1 | 2;
 
@@ -293,20 +294,7 @@ function Screen2(p: Screen2Props) {
         </FieldRow>
 
         <FieldRow icon={<Map size={18} strokeWidth={1.75} />} label="Duration">
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              min={1}
-              max={52}
-              value={p.durationWeeks}
-              onChange={(e) => {
-                const n = parseInt(e.target.value, 10);
-                if (Number.isFinite(n) && n > 0) p.setDurationWeeks(n);
-              }}
-              className="h-10 w-20 rounded-card border border-border bg-surface-2 px-3 text-right text-sm tabular-nums text-text outline-none"
-            />
-            <span className="text-sm text-text-muted">weeks</span>
-          </div>
+          <WeeksInput value={p.durationWeeks} onChange={p.setDurationWeeks} />
         </FieldRow>
 
         <FieldRow icon={<Scale size={18} strokeWidth={1.75} />} label="Weight">

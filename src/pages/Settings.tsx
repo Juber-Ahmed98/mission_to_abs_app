@@ -9,6 +9,7 @@ import {
 } from '../lib/storage';
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
+import WeeksInput from '../components/WeeksInput';
 import { formatNice } from '../lib/date';
 import {
   readAnalytics,
@@ -296,20 +297,10 @@ export default function SettingsPage() {
             />
           </Row>
           <Row label="Duration">
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                max={52}
-                value={settings.durationWeeks}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10);
-                  if (Number.isFinite(n) && n > 0) setSettings({ durationWeeks: n });
-                }}
-                className="h-10 w-20 rounded-card border border-border bg-surface-2 px-3 text-right text-sm tabular text-text outline-none"
-              />
-              <span className="text-sm text-text-muted">weeks</span>
-            </div>
+            <WeeksInput
+              value={settings.durationWeeks}
+              onChange={(n) => setSettings({ durationWeeks: n })}
+            />
           </Row>
         </Section>
 
