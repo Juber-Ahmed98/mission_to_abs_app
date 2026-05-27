@@ -26,6 +26,7 @@ import StageOverlay from '../components/StageOverlay';
 import BottomSheet from '../components/BottomSheet';
 import WeightInput from '../components/WeightInput';
 import InstallBanner from '../components/InstallBanner';
+import ReminderBanner from '../components/ReminderBanner';
 import { showUndo } from '../components/UndoToast';
 import { bump } from '../lib/analytics';
 import type { DayEntry } from '../types';
@@ -299,6 +300,7 @@ export default function Dashboard() {
 
   return (
     <div className="pb-32" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <ReminderBanner />
       <header className="px-5 pt-8 pb-2 flex items-end justify-between gap-3">
         <h1 className="text-3xl font-bold tabular leading-tight">
           {headerLine}
