@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   Camera,
+  ChevronLeft,
   ClipboardList,
   Map,
   Ruler,
@@ -108,6 +109,16 @@ export default function OnboardingPage() {
       }}
     >
       <div className="flex-1 px-5 pt-10 pb-6">
+        {screen > 0 && (
+          <button
+            type="button"
+            onClick={() => setScreen((screen - 1) as Screen)}
+            aria-label="Back"
+            className="-ml-2 mb-3 inline-flex h-9 w-9 items-center justify-center rounded-pill text-text-muted hover:text-text"
+          >
+            <ChevronLeft size={22} strokeWidth={1.75} />
+          </button>
+        )}
         {screen === 0 && <Screen1 />}
         {screen === 1 && (
           <Screen2

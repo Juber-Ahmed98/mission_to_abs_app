@@ -8,9 +8,15 @@ import {
   maybeShowInAppReminder,
 } from '../lib/notifications';
 
-type Reminder = { kind: 'morning' | 'evening'; text: string };
+export type Reminder = { kind: 'morning' | 'evening'; text: string };
 
-export default function ReminderBanner() {
+// Owns the in-app reminder fallback decision (used when system reminders aren't
+// supported/granted). Returns the active reminder, if any, plus a dismiss action.
+// Call once so the Dashboard can priority-gate it against the other banners.
+export function useInAppReminder(): {
+  reminder: Reminder | null;
+  dismiss: () => void;
+} {
   const notifications = useMission((s) => s.settings.notifications);
   const [reminder, setReminder] = useState<Reminder | null>(null);
 
@@ -42,13 +48,20 @@ export default function ReminderBanner() {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [notifications]);
 
-  if (!reminder) return null;
-
   const dismiss = () => {
-    markInAppShown(reminder.kind);
+    if (reminder) markInAppShown(reminder.kind);
     setReminder(null);
   };
 
+  return { reminder, dismiss };
+}
+
+type Props = {
+  reminder: Reminder;
+  onDismiss: () => void;
+};
+
+export default function ReminderBanner({ reminder, onDismiss }: Props) {
   const label = reminder.kind === 'morning' ? 'Morning' : 'Evening';
 
   return (
@@ -57,7 +70,7 @@ export default function ReminderBanner() {
         <div className="text-xs text-text-muted">{label}</div>
         <div className="mt-0.5 text-sm text-text">{reminder.text}</div>
       </div>
-      <button type="button" onClick={dismiss} aria-label="Dismiss" className="text-text-muted">
+      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="text-text-muted">
         <X size={18} />
       </button>
     </div>

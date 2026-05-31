@@ -16,7 +16,16 @@ function bumpSessions(): number {
   return next;
 }
 
-export default function InstallBanner() {
+export type InstallPrompt = {
+  canInstall: boolean;
+  install: () => Promise<void>;
+  dismiss: () => void;
+};
+
+// Owns the install eligibility + beforeinstallprompt lifecycle. Call once (the
+// Dashboard does) so session counting isn't double-incremented; the banner
+// itself is presentational so the Dashboard can priority-gate it.
+export function useInstallPrompt(): InstallPrompt {
   const [evt, setEvt] = useState<BeforeInstallPromptEvent | null>(null);
   const [eligible, setEligible] = useState(false);
 
@@ -32,14 +41,13 @@ export default function InstallBanner() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt);
   }, []);
 
-  if (!evt || !eligible) return null;
-
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, '1');
     setEligible(false);
   };
 
   const install = async () => {
+    if (!evt) return;
     await evt.prompt();
     const result = await evt.userChoice;
     if (result.outcome === 'accepted' || result.outcome === 'dismissed') {
@@ -48,6 +56,15 @@ export default function InstallBanner() {
     }
   };
 
+  return { canInstall: !!evt && eligible, install, dismiss };
+}
+
+type Props = {
+  onInstall: () => void;
+  onDismiss: () => void;
+};
+
+export default function InstallBanner({ onInstall, onDismiss }: Props) {
   return (
     <div className="mx-5 mb-3 mt-4 flex items-center gap-3 rounded-card border border-border bg-surface p-3">
       <div className="flex-1">
@@ -56,12 +73,12 @@ export default function InstallBanner() {
       </div>
       <button
         type="button"
-        onClick={install}
+        onClick={onInstall}
         className="rounded-pill bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent"
       >
         Install
       </button>
-      <button type="button" onClick={dismiss} aria-label="Dismiss" className="text-text-muted">
+      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="text-text-muted">
         <X size={18} />
       </button>
     </div>

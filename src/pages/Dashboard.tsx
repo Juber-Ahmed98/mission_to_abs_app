@@ -25,8 +25,8 @@ import StreakBreakOverlay from '../components/StreakBreakOverlay';
 import StageOverlay from '../components/StageOverlay';
 import BottomSheet from '../components/BottomSheet';
 import WeightInput from '../components/WeightInput';
-import InstallBanner from '../components/InstallBanner';
-import ReminderBanner from '../components/ReminderBanner';
+import InstallBanner, { useInstallPrompt } from '../components/InstallBanner';
+import ReminderBanner, { useInAppReminder } from '../components/ReminderBanner';
 import { showUndo } from '../components/UndoToast';
 import { bump } from '../lib/analytics';
 import type { DayEntry } from '../types';
@@ -43,6 +43,10 @@ export default function Dashboard() {
   const measurements = useMission((s) => s.measurements);
   const setDayEntry = useMission((s) => s.setDayEntry);
   const setSettings = useMission((s) => s.setSettings);
+
+  const { canInstall, install: promptInstall, dismiss: dismissInstall } =
+    useInstallPrompt();
+  const { reminder, dismiss: dismissReminder } = useInAppReminder();
 
   const today = todayISO();
   const total = totalDays(settings.durationWeeks);
@@ -294,13 +298,38 @@ export default function Dashboard() {
   const showShieldPill = showStreakPill && shieldsAvailable;
   const isHalfwayDay = canLogToday && dayNum === halfwayDay(total);
 
+  // At most one secondary banner shows, by precedence, so the daily logging UI
+  // stays above the fold instead of being pushed down by a stack of banners.
+  const activeBanner:
+    | 'welcomeBack'
+    | 'quickLog'
+    | 'halfway'
+    | 'backup'
+    | 'reminder'
+    | 'install'
+    | null = welcomeBack
+    ? 'welcomeBack'
+    : showQuickLogYesterday
+      ? 'quickLog'
+      : isHalfwayDay
+        ? 'halfway'
+        : backupNudge
+          ? 'backup'
+          : reminder
+            ? 'reminder'
+            : canInstall
+              ? 'install'
+              : null;
+
   if (isPostMission) {
     return <MissionCompleted />;
   }
 
   return (
     <div className="pb-32" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <ReminderBanner />
+      {activeBanner === 'reminder' && reminder && (
+        <ReminderBanner reminder={reminder} onDismiss={dismissReminder} />
+      )}
       <header className="px-5 pt-8 pb-2 flex items-end justify-between gap-3">
         <h1 className="text-3xl font-bold tabular leading-tight">
           {headerLine}
@@ -345,7 +374,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {welcomeBack && (
+      {activeBanner === 'welcomeBack' && (
         <section className="mx-5 mt-4 flex items-center gap-3 rounded-card border border-accent/30 bg-accent-soft p-3">
           <div className="flex-1">
             <div className="text-sm text-text">Welcome back.</div>
@@ -404,7 +433,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      {backupNudge && (
+      {activeBanner === 'backup' && backupNudge && (
         <Link
           to="/settings"
           className="mx-5 mt-4 flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 text-sm hover:border-accent/40"
@@ -417,16 +446,18 @@ export default function Dashboard() {
         </Link>
       )}
 
-      <InstallBanner />
+      {activeBanner === 'install' && (
+        <InstallBanner onInstall={promptInstall} onDismiss={dismissInstall} />
+      )}
 
-      {isHalfwayDay && (
+      {activeBanner === 'halfway' && (
         <section className="mx-5 mt-4 rounded-card border border-accent/30 bg-accent-soft px-4 py-3 text-center">
           <div className="text-sm font-medium text-text">Halfway.</div>
           <div className="text-xs text-text-muted">Keep walking.</div>
         </section>
       )}
 
-      {showQuickLogYesterday && (
+      {activeBanner === 'quickLog' && (
         <section className="px-5 pt-6">
           <h2 className="mb-2 text-xs uppercase tracking-wider text-text-muted">
             Yesterday — log

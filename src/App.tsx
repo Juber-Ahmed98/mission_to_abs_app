@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
+import RouteSkeleton from './components/RouteSkeleton';
 import UndoToast from './components/UndoToast';
 import Dashboard from './pages/Dashboard';
 import JourneyPage from './pages/Journey';
@@ -71,7 +72,7 @@ function Shell() {
   return (
     <div className="min-h-dvh bg-bg text-text font-sans">
       <ErrorBoundary>
-        <Suspense fallback={null}>
+        <Suspense fallback={<RouteSkeleton />}>
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route
