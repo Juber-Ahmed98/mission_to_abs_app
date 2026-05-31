@@ -11,6 +11,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="AbsMission" />
     <title>Mission to Abs</title>
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('mission');
+          var pref = raw ? JSON.parse(raw).state.settings.theme : 'system';
+          var dark =
+            pref === 'dark' ||
+            (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
