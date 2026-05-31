@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { clearAllPhotos, getPhoto, savePhoto } from '../storage/photos';
 import {
@@ -81,6 +83,7 @@ export default function SettingsPage() {
   const days = useMission((s) => s.days);
   const photos = useMission((s) => s.photos);
   const measurements = useMission((s) => s.measurements);
+  const history = useMission((s) => s.history);
   const setSettings = useMission((s) => s.setSettings);
   const replaceAll = useMission((s) => s.replaceAll);
   const resetAll = useMission((s) => s.resetAll);
@@ -446,6 +449,16 @@ export default function SettingsPage() {
 
         <Section title="Data">
           <StorageRow estimate={storage} persisted={persisted} />
+          <Link
+            to="/history"
+            className="flex h-12 w-full items-center justify-between rounded-card border border-border bg-surface px-4 text-text hover:border-accent/40"
+          >
+            <span>Past missions</span>
+            <span className="flex items-center gap-1 text-sm tabular text-text-muted">
+              {history.length}
+              <ChevronRight size={16} strokeWidth={1.75} />
+            </span>
+          </Link>
           <button
             type="button"
             disabled={busy !== null}

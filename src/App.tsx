@@ -23,6 +23,7 @@ const ProgressPage = lazy(() => import('./pages/Progress'));
 const PhotosPage = lazy(() => import('./pages/Photos'));
 const Compare = lazy(() => import('./pages/Compare'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
+const HistoryPage = lazy(() => import('./pages/History'));
 
 const SESSION_FLAG = 'mission.analytics.sessionSeen';
 
@@ -36,7 +37,10 @@ function Shell() {
   const setSettings = useMission((s) => s.setSettings);
   useApplyTheme(themePref);
   const { pathname } = useLocation();
-  const hideNav = pathname.startsWith('/compare') || pathname.startsWith('/onboarding');
+  const hideNav =
+    pathname.startsWith('/compare') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/history');
 
   useEffect(() => {
     scheduleAllReminders(notifications);
@@ -90,6 +94,7 @@ function Shell() {
             <Route path="/photos" element={<PhotosPage />} />
             <Route path="/compare/:a/:b" element={<Compare />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/history" element={<HistoryPage />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

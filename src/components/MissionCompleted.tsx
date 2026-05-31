@@ -22,6 +22,7 @@ export default function MissionCompleted() {
   const days = useMission((s) => s.days);
   const photos = useMission((s) => s.photos);
   const measurements = useMission((s) => s.measurements);
+  const history = useMission((s) => s.history);
   const startNewMission = useMission((s) => s.startNewMission);
   const setSettings = useMission((s) => s.setSettings);
 
@@ -114,14 +115,8 @@ export default function MissionCompleted() {
     if (starting) return;
     setStarting(true);
     try {
-      const archive = await buildMissionArchive({
-        settings,
-        days,
-        measurements,
-        photos,
-        finalXp: xp,
-      });
-      downloadMissionArchive(archive);
+      // The finished mission is kept in History (no forced download); the
+      // "Export mission archive" button above remains for an off-device backup.
       bump('missionsCompleted');
       await startNewMission();
       setConfirmOpen(false);
@@ -267,6 +262,14 @@ export default function MissionCompleted() {
           <Sparkles size={16} strokeWidth={1.75} />
           Begin a new mission
         </button>
+        {history.length > 0 && (
+          <Link
+            to="/history"
+            className="block pt-1 text-center text-sm text-text-muted hover:text-text"
+          >
+            View past missions
+          </Link>
+        )}
       </section>
 
       <BottomSheet open={confirmOpen} onClose={() => (starting ? undefined : setConfirmOpen(false))}>
@@ -275,7 +278,7 @@ export default function MissionCompleted() {
             Archive this mission and start fresh?
           </div>
           <div className="mt-1 text-sm text-text-muted">
-            We&rsquo;ll download your archive first. Your goals will carry forward.
+            This mission moves to your History. Your goals carry forward.
           </div>
           <div className="mt-5 flex gap-2">
             <button
