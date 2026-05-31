@@ -33,6 +33,7 @@ const makeInitialSettings = (): Settings => ({
   durationWeeks: 15,
   weightUnit: 'kg',
   waistUnit: 'cm',
+  pillarLabels: { diet: 'Diet', exercise: 'Exercise' },
   theme: 'system',
   onboarded: false,
   streakShieldsRemaining: 1,
@@ -107,7 +108,7 @@ export const useMission = create<State & Actions>()(
     }),
     {
       name: 'mission',
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         settings: s.settings,
@@ -115,6 +116,17 @@ export const useMission = create<State & Actions>()(
         photos: s.photos,
         measurements: s.measurements,
       }),
+      // Deep-merge settings over the defaults so any field the persisted blob is
+      // missing (a newly added one, or a partial import) falls back safely
+      // instead of being undefined. Migrations still handle versioned reshapes.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        return {
+          ...current,
+          ...p,
+          settings: { ...current.settings, ...(p.settings ?? {}) },
+        };
+      },
       migrate: (persisted, version) => {
         const next = (persisted ?? {}) as Partial<State>;
         if (version < 2) {
@@ -159,6 +171,17 @@ export const useMission = create<State & Actions>()(
             notifications: prevSettings.notifications ?? {
               morning: false,
               evening: false,
+            },
+          };
+        }
+        if (version < 7) {
+          const prevSettings = (next.settings ?? {}) as Partial<Settings>;
+          next.settings = {
+            ...makeInitialSettings(),
+            ...prevSettings,
+            pillarLabels: prevSettings.pillarLabels ?? {
+              diet: 'Diet',
+              exercise: 'Exercise',
             },
           };
         }

@@ -345,6 +345,35 @@ export default function SettingsPage() {
           </Row>
         </Section>
 
+        <Section title="Pillars">
+          <Row label="Pillar 1">
+            <PillarLabelInput
+              value={settings.pillarLabels.diet}
+              fallback="Diet"
+              onChange={(v) =>
+                setSettings({
+                  pillarLabels: { ...settings.pillarLabels, diet: v },
+                })
+              }
+            />
+          </Row>
+          <Row label="Pillar 2">
+            <PillarLabelInput
+              value={settings.pillarLabels.exercise}
+              fallback="Exercise"
+              onChange={(v) =>
+                setSettings({
+                  pillarLabels: { ...settings.pillarLabels, exercise: v },
+                })
+              }
+            />
+          </Row>
+          <div className="px-1 text-xs text-text-subtle">
+            Rename your two daily pillars. Only the labels change — your history
+            stays intact.
+          </div>
+        </Section>
+
         <Section title="Reminders">
           <Row label="Morning quote — 7:00 AM">
             <Segmented<'off' | 'on'>
@@ -644,6 +673,56 @@ function StorageRow({
         </div>
       )}
     </div>
+  );
+}
+
+const PILLAR_MAX = 16;
+
+// Debounced text input for a pillar label (mirrors WeeksInput): trims, caps
+// length, and falls back to the default name when emptied.
+function PillarLabelInput({
+  value,
+  fallback,
+  onChange,
+}: {
+  value: string;
+  fallback: string;
+  onChange: (v: string) => void;
+}) {
+  const [local, setLocal] = useState(value);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const trimmed = local.trim().slice(0, PILLAR_MAX);
+      if (trimmed && trimmed !== value) onChangeRef.current(trimmed);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [local, value]);
+
+  return (
+    <input
+      type="text"
+      value={local}
+      maxLength={PILLAR_MAX}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={() => {
+        const trimmed = local.trim().slice(0, PILLAR_MAX);
+        if (!trimmed) {
+          setLocal(fallback);
+          onChangeRef.current(fallback);
+        } else {
+          setLocal(trimmed);
+          if (trimmed !== value) onChangeRef.current(trimmed);
+        }
+      }}
+      className="h-10 w-40 rounded-card border border-border bg-surface-2 px-3 text-right text-sm text-text outline-none"
+    />
   );
 }
 

@@ -29,6 +29,9 @@ export type Settings = {
   durationWeeks: number;
   weightUnit: 'kg' | 'lb';
   waistUnit: 'cm' | 'in';
+  // Display-only names for the two daily pillars. The underlying DayEntry keys
+  // stay `diet`/`exercise`; only the rendered labels are configurable.
+  pillarLabels: { diet: string; exercise: string };
   theme: ThemePreference;
   goalWeight?: number;
   goalWaistCm?: number;

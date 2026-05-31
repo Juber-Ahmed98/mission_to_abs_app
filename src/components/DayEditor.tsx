@@ -55,12 +55,12 @@ export default function DayEditor({ date, showNotes = true }: Props) {
     <div className="space-y-5 px-5 py-4">
       <div className="space-y-3">
         <Toggle
-          label="Diet"
+          label={settings.pillarLabels.diet}
           value={entry?.diet}
           onChange={(v) => setDayEntry(date, { diet: v, rest: undefined })}
         />
         <Toggle
-          label="Exercise"
+          label={settings.pillarLabels.exercise}
           value={entry?.exercise}
           onChange={(v) => setDayEntry(date, { exercise: v, rest: undefined })}
         />

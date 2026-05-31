@@ -48,6 +48,9 @@ export default function Dashboard() {
     useInstallPrompt();
   const { reminder, dismiss: dismissReminder } = useInAppReminder();
 
+  const dietLabel = settings.pillarLabels.diet;
+  const exerciseLabel = settings.pillarLabels.exercise;
+
   const today = todayISO();
   const total = totalDays(settings.durationWeeks);
   const rawDay = dayNumberFor(today, settings.startDate);
@@ -403,7 +406,7 @@ export default function Dashboard() {
           </h2>
           <div className="space-y-2 opacity-50 pointer-events-none">
             <TodayRow
-              label="Diet"
+              label={dietLabel}
               icon={<Utensils size={18} strokeWidth={1.75} />}
               xpReward={XP.diet}
               status={undefined}
@@ -412,7 +415,7 @@ export default function Dashboard() {
               onClear={() => {}}
             />
             <TodayRow
-              label="Exercise"
+              label={exerciseLabel}
               icon={<Dumbbell size={18} strokeWidth={1.75} />}
               xpReward={XP.exercise}
               status={undefined}
@@ -464,20 +467,20 @@ export default function Dashboard() {
           </h2>
           <div className="space-y-2">
             <TodayRow
-              label="Diet"
+              label={dietLabel}
               icon={<Utensils size={18} strokeWidth={1.75} />}
               xpReward={XP.diet}
               doneLabel={`Done · +${XP.diet} XP`}
               status={yesterdayEntry?.diet}
-              {...pillarHandlers('diet', yesterday, 'Diet')}
+              {...pillarHandlers('diet', yesterday, dietLabel)}
             />
             <TodayRow
-              label="Exercise"
+              label={exerciseLabel}
               icon={<Dumbbell size={18} strokeWidth={1.75} />}
               xpReward={XP.exercise}
               doneLabel={`Done · +${XP.exercise} XP`}
               status={yesterdayEntry?.exercise}
-              {...pillarHandlers('exercise', yesterday, 'Exercise')}
+              {...pillarHandlers('exercise', yesterday, exerciseLabel)}
             />
           </div>
         </section>
@@ -504,20 +507,20 @@ export default function Dashboard() {
             <>
               <div className="space-y-2">
                 <TodayRow
-                  label="Diet"
+                  label={dietLabel}
                   icon={<Utensils size={18} strokeWidth={1.75} />}
                   xpReward={XP.diet}
                   doneLabel={`Done · +${XP.diet} XP`}
                   status={entry?.diet}
-                  {...pillarHandlers('diet', today, 'Diet')}
+                  {...pillarHandlers('diet', today, dietLabel)}
                 />
                 <TodayRow
-                  label="Exercise"
+                  label={exerciseLabel}
                   icon={<Dumbbell size={18} strokeWidth={1.75} />}
                   xpReward={XP.exercise}
                   doneLabel={`Done · +${XP.exercise} XP`}
                   status={entry?.exercise}
-                  {...pillarHandlers('exercise', today, 'Exercise')}
+                  {...pillarHandlers('exercise', today, exerciseLabel)}
                 />
               </div>
               <div className="mt-3 text-center">

@@ -222,8 +222,9 @@ export default function ProgressPage() {
               </div>
             </div>
             <div className="mt-2 text-sm text-text-muted tabular">
-              Diet {adherence.dietPct}% · Exercise {adherence.exercisePct}% · Rest {adherence.restCount}{' '}
-              {adherence.restCount === 1 ? 'day' : 'days'}
+              {settings.pillarLabels.diet} {adherence.dietPct}% ·{' '}
+              {settings.pillarLabels.exercise} {adherence.exercisePct}% · Rest{' '}
+              {adherence.restCount} {adherence.restCount === 1 ? 'day' : 'days'}
             </div>
           </section>
 
