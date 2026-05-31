@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useReducedMotion } from '../lib/motion';
 
 type Props = {
   open: boolean;
@@ -20,6 +21,7 @@ export default function StreakBreakOverlay({
   onDismiss,
 }: Props) {
   const [showSubline, setShowSubline] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!open) {
@@ -27,13 +29,14 @@ export default function StreakBreakOverlay({
       return;
     }
     const reveal = setTimeout(() => setShowSubline(true), 200);
-    if (shieldAvailable) return () => clearTimeout(reveal);
+    // Shield prompt waits for a choice; under reduced motion, wait for a tap.
+    if (shieldAvailable || reducedMotion) return () => clearTimeout(reveal);
     const auto = setTimeout(onDismiss, AUTO_DISMISS_MS);
     return () => {
       clearTimeout(reveal);
       clearTimeout(auto);
     };
-  }, [open, shieldAvailable, onDismiss]);
+  }, [open, shieldAvailable, onDismiss, reducedMotion]);
 
   return (
     <AnimatePresence>
@@ -44,6 +47,8 @@ export default function StreakBreakOverlay({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.28, ease: EASE }}
           onClick={shieldAvailable ? undefined : onDismiss}
+          role="status"
+          aria-live="polite"
           className={[
             'fixed inset-0 z-50 flex flex-col items-center justify-center px-6 text-center',
             shieldAvailable ? '' : 'cursor-pointer',

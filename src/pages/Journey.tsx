@@ -47,11 +47,11 @@ export default function JourneyPage() {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-text-muted">
-        <Legend dotClass="bg-lime" label="Perfect" />
-        <Legend dotClass="bg-tangerine" label="Partial / Today" />
-        <Legend dotClass="bg-coral" label="Failed" />
+        <Legend dotClass="bg-lime" glyph="✓" label="Perfect" />
+        <Legend dotClass="bg-tangerine" glyph="~" label="Partial / Today" />
+        <Legend dotClass="bg-coral" glyph="✗" label="Failed" />
         <Legend dotClass="bg-missed" label="Missed" />
-        <Legend dotClass="bg-lemon" label="Rest day" />
+        <Legend dotClass="bg-lemon" glyph="☾" label="Rest day" />
         <Legend dotClass="border border-border-strong" label="Future" />
       </div>
 
@@ -80,10 +80,23 @@ export default function JourneyPage() {
   );
 }
 
-function Legend({ dotClass, label }: { dotClass: string; label: string }) {
+function Legend({
+  dotClass,
+  glyph,
+  label,
+}: {
+  dotClass: string;
+  glyph?: string;
+  label: string;
+}) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`inline-block h-2.5 w-2.5 rounded-full ${dotClass}`} />
+      <span
+        aria-hidden
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold leading-none text-white ${dotClass}`}
+      >
+        {glyph}
+      </span>
       <span>{label}</span>
     </div>
   );

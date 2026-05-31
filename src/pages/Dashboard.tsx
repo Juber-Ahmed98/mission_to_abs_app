@@ -317,9 +317,9 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setShieldSheetOpen(true)}
                 aria-label="Use streak shield"
-                className="inline-flex items-center gap-1 rounded-pill border border-border bg-surface px-2 py-1 text-xs text-text-muted hover:text-accent hover:border-accent/40 transition-colors duration-150 ease-apple"
+                className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-pill border border-border bg-surface px-3 text-sm text-text-muted hover:text-accent hover:border-accent/40 transition-colors duration-150 ease-apple"
               >
-                <Shield size={12} strokeWidth={1.75} />
+                <Shield size={14} strokeWidth={1.75} />
                 <span className="tabular">{settings.streakShieldsRemaining}</span>
               </button>
             )}

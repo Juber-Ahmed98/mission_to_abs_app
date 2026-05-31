@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
+import { useReducedMotion } from '../lib/motion';
 
 type Props = {
   open: boolean;
@@ -11,11 +12,14 @@ type Props = {
 const EASE = [0.32, 0.72, 0, 1] as const;
 
 export default function LevelUpOverlay({ open, level, tier, onDismiss }: Props) {
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
-    if (!open) return;
+    // Under reduced motion, don't auto-close mid-read — wait for a tap.
+    if (!open || reducedMotion) return;
     const t = setTimeout(onDismiss, 1700);
     return () => clearTimeout(t);
-  }, [open, onDismiss]);
+  }, [open, onDismiss, reducedMotion]);
 
   return (
     <AnimatePresence>
@@ -26,6 +30,8 @@ export default function LevelUpOverlay({ open, level, tier, onDismiss }: Props) 
           exit={{ opacity: 0 }}
           transition={{ duration: 0.28, ease: EASE }}
           onClick={onDismiss}
+          role="status"
+          aria-live="polite"
           className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer"
           style={{
             background:

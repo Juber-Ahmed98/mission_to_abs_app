@@ -12,7 +12,8 @@
 
   --text: #18181B;
   --text-muted: #71717A;
-  --text-subtle: #A1A1AA;
+  /* #6B6B73 ≈ 5.3:1 on --bg / 4.8:1 on --surface-2 — clears WCAG AA (4.5:1). */
+  --text-subtle: #6B6B73;
 
   --lemon: #FBBF24;
   --lemon-soft: #FEF3C7;
