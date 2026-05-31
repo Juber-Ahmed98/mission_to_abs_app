@@ -46,3 +46,23 @@ export type Settings = {
 };
 
 export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';
+
+// A completed mission, retained in-app when the user begins a new one. Holds the
+// full record (so it renders read-only later) plus precomputed summary stats so
+// the History list doesn't recompute. Photos stay in IndexedDB under their keys.
+export type ArchivedMission = {
+  id: string;
+  archivedAt: string;
+  settings: Settings;
+  days: Record<string, DayEntry>;
+  measurements: WeekMeasurement[];
+  photos: WeekPhoto[];
+  finalXp: number;
+  stats: {
+    perfectDays: number;
+    longestStreak: number;
+    // Delta is in the archived mission's own weightUnit; waist delta is in cm.
+    weightDelta?: number;
+    waistDeltaCm?: number;
+  };
+};

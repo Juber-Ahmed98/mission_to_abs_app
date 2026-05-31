@@ -1,19 +1,24 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
+  ArchivedMission,
   DayEntry,
   Settings,
   WeekMeasurement,
   WeekPhoto,
 } from '../types';
-import { todayISO } from '../lib/date';
-import { clearAllPhotos } from '../storage/photos';
+import { addDaysISO, todayISO, totalDays } from '../lib/date';
+import { adherenceFor } from '../lib/adherence';
+import { longestStreak } from '../lib/streak';
+import { totalXp } from '../lib/xp';
+import { deletePhoto } from '../storage/photos';
 
 type State = {
   settings: Settings;
   days: Record<string, DayEntry>;
   photos: WeekPhoto[];
   measurements: WeekMeasurement[];
+  history: ArchivedMission[];
 };
 
 type Actions = {
@@ -23,10 +28,61 @@ type Actions = {
   removePhoto: (weekNumber: number) => void;
   setMeasurement: (m: WeekMeasurement) => void;
   removeMeasurement: (weekNumber: number) => void;
-  replaceAll: (next: State) => void;
+  replaceAll: (next: Omit<State, 'history'> & { history?: ArchivedMission[] }) => void;
   resetAll: () => void;
   startNewMission: () => Promise<void>;
+  deleteArchivedMission: (id: string) => Promise<void>;
 };
+
+function newId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `mission-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Snapshot the current mission into an archive entry with precomputed stats.
+function archiveCurrent(s: State): ArchivedMission {
+  const { settings, days, photos, measurements } = s;
+  const lastDay = addDaysISO(settings.startDate, totalDays(settings.durationWeeks) - 1);
+  const adherence = adherenceFor(days, settings.startDate, lastDay);
+
+  const weights = Object.values(days)
+    .filter(
+      (d) =>
+        typeof d.weight === 'number' &&
+        d.date >= settings.startDate &&
+        d.date <= lastDay,
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const weightDelta =
+    weights.length >= 2
+      ? (weights[weights.length - 1].weight as number) - (weights[0].weight as number)
+      : undefined;
+
+  const waistList = measurements
+    .filter((m) => typeof m.waistCm === 'number')
+    .slice()
+    .sort((a, b) => a.weekNumber - b.weekNumber);
+  const waistDeltaCm =
+    waistList.length >= 2
+      ? (waistList[waistList.length - 1].waistCm as number) - (waistList[0].waistCm as number)
+      : undefined;
+
+  return {
+    id: newId(),
+    archivedAt: new Date().toISOString(),
+    settings,
+    days,
+    measurements,
+    photos,
+    finalXp: totalXp(days, photos, measurements),
+    stats: {
+      perfectDays: adherence.perfectDays,
+      longestStreak: longestStreak(days, settings.startDate, lastDay),
+      weightDelta,
+      waistDeltaCm,
+    },
+  };
+}
 
 const makeInitialSettings = (): Settings => ({
   startDate: todayISO(),
@@ -47,6 +103,7 @@ const makeInitial = (): State => ({
   days: {},
   photos: [],
   measurements: [],
+  history: [],
 });
 
 export const useMission = create<State & Actions>()(
@@ -89,11 +146,16 @@ export const useMission = create<State & Actions>()(
           days: next.days,
           photos: next.photos,
           measurements: next.measurements ?? [],
+          // Import is a full replace; history isn't in the payload, so reset it
+          // (its photos were just cleared too) unless one is provided.
+          history: next.history ?? [],
         })),
       resetAll: () => set(() => makeInitial()),
       startNewMission: async () => {
-        await clearAllPhotos();
+        // Archive the finished mission instead of wiping it. Its photos stay in
+        // IndexedDB under their timestamped keys; the new mission uses fresh keys.
         set((s) => ({
+          history: [archiveCurrent(s), ...s.history],
           settings: {
             ...s.settings,
             startDate: todayISO(),
@@ -105,16 +167,24 @@ export const useMission = create<State & Actions>()(
           measurements: [],
         }));
       },
+      deleteArchivedMission: async (id) => {
+        const entry = useMission.getState().history.find((m) => m.id === id);
+        set((s) => ({ history: s.history.filter((m) => m.id !== id) }));
+        if (entry) {
+          await Promise.all(entry.photos.map((p) => deletePhoto(p.photoKey)));
+        }
+      },
     }),
     {
       name: 'mission',
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         settings: s.settings,
         days: s.days,
         photos: s.photos,
         measurements: s.measurements,
+        history: s.history,
       }),
       // Deep-merge settings over the defaults so any field the persisted blob is
       // missing (a newly added one, or a partial import) falls back safely
@@ -184,6 +254,9 @@ export const useMission = create<State & Actions>()(
               exercise: 'Exercise',
             },
           };
+        }
+        if (version < 8) {
+          next.history = next.history ?? [];
         }
         return next as State;
       },
