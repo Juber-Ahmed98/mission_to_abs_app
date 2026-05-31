@@ -18,6 +18,11 @@ const THRESHOLD = 0.8;
 const THUMB_PX = 48;
 const TRACK_PAD = 4;
 
+// A one-time, once-per-day "nudge": the first unlogged slider to mount gently
+// peeks its thumb to the right so a first-time phone user sees it can be slid.
+const NUDGE_KEY = 'mission:slideNudge';
+let nudgedThisSession = false;
+
 function vibrate() {
   if (typeof navigator === 'undefined' || !navigator.vibrate) return;
   try {
@@ -29,7 +34,7 @@ function vibrate() {
 
 export default function SlideToConfirm({
   label,
-  hint = 'Slide to confirm',
+  hint = 'Slide',
   doneLabel,
   failedLabel = 'Tap to clear',
   xpReward,
@@ -45,11 +50,44 @@ export default function SlideToConfirm({
   const startXRef = useRef(0);
   const startProgressRef = useRef(0);
   const usableRef = useRef(0);
+  const nudgeTimers = useRef<number[]>([]);
 
   useEffect(() => {
     setProgress(confirmed ? 1 : 0);
     if (confirmed) setDragging(false);
   }, [confirmed]);
+
+  // One-time discoverability nudge for the first unlogged row of the day.
+  useEffect(() => {
+    if (confirmed || failed) return;
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (nudgedThisSession) return;
+    let last: string | null = null;
+    try {
+      last = localStorage.getItem(NUDGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    const today = new Date().toDateString();
+    if (last === today) return;
+    nudgedThisSession = true;
+    try {
+      localStorage.setItem(NUDGE_KEY, today);
+    } catch {
+      /* ignore */
+    }
+    nudgeTimers.current.push(
+      window.setTimeout(() => setProgress(0.14), 450),
+      window.setTimeout(() => setProgress(0), 1050),
+    );
+    return () => {
+      nudgeTimers.current.forEach(clearTimeout);
+      nudgeTimers.current = [];
+    };
+    // Runs once on mount; intentionally no deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fire = () => {
     setProgress(1);
@@ -60,6 +98,8 @@ export default function SlideToConfirm({
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (confirmed || failed) return;
+    nudgeTimers.current.forEach(clearTimeout);
+    nudgeTimers.current = [];
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const t = trackRef.current;
@@ -140,7 +180,7 @@ export default function SlideToConfirm({
       ref={trackRef}
       role="slider"
       tabIndex={0}
-      aria-label={`${label}, ${done ? 'done' : hint}`}
+      aria-label={`${label}, ${done ? 'done' : 'slide to confirm'}`}
       aria-valuenow={progress}
       aria-valuemin={0}
       aria-valuemax={1}
@@ -170,18 +210,18 @@ export default function SlideToConfirm({
         )}
         <span
           className={[
-            'text-base font-medium',
+            'min-w-0 truncate text-base font-medium',
             done ? 'text-success' : 'text-text',
           ].join(' ')}
         >
           {label}
         </span>
-        <span className="ml-auto flex items-center gap-2 text-sm text-text-subtle whitespace-nowrap">
+        <span className="ml-auto flex shrink-0 items-center gap-2 pl-2 text-sm text-text-subtle whitespace-nowrap">
           {done ? (
             doneLabel
           ) : (
             <>
-              <span className="hidden sm:inline">{hint}</span>
+              <span>{hint}</span>
               {xpReward !== undefined && (
                 <span className="text-xs text-text-subtle tabular-nums">
                   +{xpReward} XP
