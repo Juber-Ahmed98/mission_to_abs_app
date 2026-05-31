@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, GitCompareArrows, Trash2 } from 'lucide-react';
 import { useMission } from '../store/mission';
 import type { ArchivedMission } from '../types';
 import { addDaysISO, formatNice, totalDays } from '../lib/date';
@@ -26,8 +26,21 @@ function formatDelta(n: number, decimals = 1): string {
 
 export default function HistoryPage() {
   const history = useMission((s) => s.history);
+  const currentPhotos = useMission((s) => s.photos);
   const deleteArchivedMission = useMission((s) => s.deleteArchivedMission);
   const navigate = useNavigate();
+
+  // Earliest and latest photo across the whole journey (every mission + the one
+  // in progress), so the user can see day-1-ever vs. today in one tap.
+  const journey = useMemo(() => {
+    const all = [...history.flatMap((m) => m.photos), ...currentPhotos]
+      .slice()
+      .sort((x, y) => x.date.localeCompare(y.date) || x.weekNumber - y.weekNumber);
+    const first = all[0];
+    const last = all[all.length - 1];
+    if (!first || !last || first.photoKey === last.photoKey) return null;
+    return { first, last };
+  }, [history, currentPhotos]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ArchivedMission | null>(null);
@@ -66,6 +79,17 @@ export default function HistoryPage() {
           <div className="text-3xl font-bold tracking-tight">Past missions</div>
         </div>
       </header>
+
+      {journey && (
+        <Link
+          to={`/compare/${journey.first.photoKey}/${journey.last.photoKey}`}
+          className="mb-3 flex items-center gap-2 rounded-card border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-text hover:border-accent/50"
+        >
+          <GitCompareArrows size={16} strokeWidth={1.75} className="text-accent" />
+          <span className="flex-1">Compare your first &amp; latest photo</span>
+          <ChevronLeft size={16} className="rotate-180 text-text-muted" />
+        </Link>
+      )}
 
       {history.length === 0 ? (
         <div className="mt-10 rounded-card border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
@@ -313,6 +337,16 @@ function MissionSummary({ mission }: { mission: ArchivedMission }) {
               </div>
             )}
           </div>
+          {firstPhoto && lastPhoto && (
+            <div className="mt-2 text-center">
+              <Link
+                to={`/compare/${firstPhoto.photoKey}/${lastPhoto.photoKey}`}
+                className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:text-text"
+              >
+                Compare then &amp; now
+              </Link>
+            </div>
+          )}
         </section>
       )}
     </div>
