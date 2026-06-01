@@ -1,0 +1,10 @@
+{
+  "_comment": "Synthetic sample of the normalized contract returned by GET /api/renpho/measurements. Fake data, no credentials — use it to mock the client (src/lib/renphoClient.ts) and exercise the merge without hitting the live Renpho API. A bodyFat of null models a failed impedance read (weight-only day).",
+  "syncedAt": "2026-06-01T08:12:00.000Z",
+  "unit": "kg",
+  "readings": [
+    { "date": "2026-06-01", "ts": 1748764320, "weightKg": 82.4, "bodyFat": 18.7 },
+    { "date": "2026-05-31", "ts": 1748677920, "weightKg": 82.6, "bodyFat": 18.9 },
+    { "date": "2026-05-30", "ts": 1748591520, "weightKg": 82.5, "bodyFat": null }
+  ]
+}

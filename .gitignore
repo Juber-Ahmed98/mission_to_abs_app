@@ -6,6 +6,11 @@ dist-ssr
 .DS_Store
 *.tsbuildinfo
 
+# secrets — Renpho proxy credentials live only in env vars, never the repo
+.env
+.env.*
+!.env.example
+
 # editors
 .vscode/*
 !.vscode/extensions.json

@@ -1,0 +1,21 @@
+{
+  "comment": "Standalone tsconfig for the Vercel Functions under api/. Kept out of the app's tsc -b (tsconfig.json references only app + node) so `npm run typecheck` stays scoped to the PWA. Typecheck this with `npx tsc -p api/tsconfig.json`.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["**/*.ts"]
+}
