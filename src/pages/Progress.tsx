@@ -15,6 +15,7 @@ import { adherenceFor } from '../lib/adherence';
 
 type WeightPoint = { day: number; weight: number; ma?: number; trend?: number };
 type WaistPoint = { day: number; waistCm: number };
+type BodyFatPoint = { day: number; bodyFat: number };
 
 const CM_PER_INCH = 2.54;
 
@@ -81,6 +82,16 @@ export default function ProgressPage() {
       }))
       .sort((a, b) => a.day - b.day);
   }, [measurements, settings.startDate]);
+
+  const bodyFatSeries = useMemo<BodyFatPoint[]>(() => {
+    return Object.values(days)
+      .filter((d) => typeof d.bodyFat === 'number')
+      .map((d) => ({
+        day: dayNumberFor(d.date, settings.startDate),
+        bodyFat: d.bodyFat as number,
+      }))
+      .sort((a, b) => a.day - b.day);
+  }, [days, settings.startDate]);
 
   const lastWeight = series.length > 0 ? series[series.length - 1].weight : null;
   const firstWeight = series.length > 0 ? series[0].weight : null;
@@ -154,6 +165,7 @@ export default function ProgressPage() {
 
   const hasWeight = series.length > 0;
   const hasWaist = waistSeries.length > 0;
+  const hasBodyFat = bodyFatSeries.length > 0;
 
   return (
     <div className="pb-28 px-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -414,6 +426,66 @@ export default function ProgressPage() {
                         strokeWidth={2}
                         dot={{ r: 2, fill: 'var(--lemon)', strokeWidth: 0 }}
                         activeDot={{ r: 4, fill: 'var(--lemon)' }}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {hasBodyFat && (
+            <section className="mt-8">
+              <div className="text-xs uppercase tracking-wider text-text-muted">
+                Body fat
+              </div>
+              <div className="mt-2 rounded-card border border-border bg-surface p-3 pl-1 pt-4">
+                <div className="h-32 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={bodyFatSeries}
+                      margin={{ top: 4, right: 12, left: 0, bottom: 4 }}
+                    >
+                      <XAxis
+                        dataKey="day"
+                        type="number"
+                        domain={[1, 'dataMax']}
+                        stroke="var(--text-muted)"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={11}
+                      />
+                      <YAxis
+                        stroke="var(--text-muted)"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={11}
+                        width={32}
+                        domain={[
+                          (min: number) => Math.floor(min - 0.5),
+                          (max: number) => Math.ceil(max + 0.5),
+                        ]}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 10,
+                          color: 'var(--text)',
+                          fontSize: 12,
+                        }}
+                        labelStyle={{ color: 'var(--text-muted)' }}
+                        formatter={(v: number) => `${v.toFixed(1)} %`}
+                        labelFormatter={(d) => `Day ${d}`}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="bodyFat"
+                        stroke="var(--lime)"
+                        strokeWidth={2}
+                        dot={{ r: 2, fill: 'var(--lime)', strokeWidth: 0 }}
+                        activeDot={{ r: 4, fill: 'var(--lime)' }}
                         isAnimationActive={false}
                       />
                     </LineChart>

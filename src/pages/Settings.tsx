@@ -12,7 +12,9 @@ import {
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
 import WeeksInput from '../components/WeeksInput';
-import { formatNice } from '../lib/date';
+import { addDaysISO, formatNice, totalDays } from '../lib/date';
+import { parseRenphoCsv, type RenphoReading } from '../lib/renphoCsv';
+import { mergeBodyData } from '../lib/mergeBodyData';
 import {
   readAnalytics,
   resetAnalytics as clearAnalytics,
@@ -88,13 +90,20 @@ export default function SettingsPage() {
   const replaceAll = useMission((s) => s.replaceAll);
   const resetAll = useMission((s) => s.resetAll);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | null>(null);
+  const csvRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | 'renpho' | null>(null);
   const [storage, setStorage] = useState<StorageEstimate | null>(null);
   const [persisted, setPersisted] = useState(false);
 
   const [resetSheetOpen, setResetSheetOpen] = useState(false);
   const [resetInput, setResetInput] = useState('');
   const [importPreview, setImportPreview] = useState<ExportPayload | null>(null);
+  const [renphoPreview, setRenphoPreview] = useState<{
+    readings: RenphoReading[];
+    filledInWindow: number;
+    filledOutsideWindow: number;
+    skippedManual: number;
+  } | null>(null);
   const [pendingWeightUnit, setPendingWeightUnit] = useState<'kg' | 'lb' | null>(null);
   const [reminderHint, setReminderHint] = useState<string | null>(null);
   const triggerSupported = useMemo(() => isTriggerSupported(), []);
@@ -126,7 +135,10 @@ export default function SettingsPage() {
         }),
       );
       const payload: ExportPayload = {
-        version: 5,
+        // v6 — DayEntry now carries bodyFat + weight/bodyFat provenance. Whole
+        // DayEntry objects are serialized, so the new fields round-trip for
+        // free; isValidPayload is version-agnostic, so older backups still load.
+        version: 6,
         settings,
         days,
         measurements,
@@ -193,6 +205,70 @@ export default function SettingsPage() {
     } catch (err) {
       console.error(err);
       alert('Could not restore backup.');
+    } finally {
+      setBusy(null);
+      refreshStorage();
+    }
+  };
+
+  // Mission window (inclusive) — used to bucket the import preview into days
+  // inside this mission vs. older readings that get stored but not shown.
+  const missionEnd = useMemo(
+    () => addDaysISO(settings.startDate, totalDays(settings.durationWeeks) - 1),
+    [settings.startDate, settings.durationWeeks],
+  );
+
+  const onRenphoImportClick = () => {
+    csvRef.current?.click();
+  };
+
+  const onRenphoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const readings = parseRenphoCsv(text);
+      if (readings.length === 0) {
+        alert('No weight or body-fat readings found in that file.');
+        return;
+      }
+      const result = mergeBodyData(days, readings, {
+        weightUnit: settings.weightUnit,
+        startDate: settings.startDate,
+        endDate: missionEnd,
+      });
+      setRenphoPreview({
+        readings,
+        filledInWindow: result.filledInWindow,
+        filledOutsideWindow: result.filledOutsideWindow,
+        skippedManual: result.skippedManual,
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Could not read that Renpho export.');
+    }
+  };
+
+  const cancelRenphoImport = () => {
+    if (busy === 'renpho') return;
+    setRenphoPreview(null);
+  };
+
+  const commitRenphoImport = () => {
+    if (!renphoPreview) return;
+    setBusy('renpho');
+    try {
+      // Recompute against the freshest day map so nothing typed between preview
+      // and confirm is lost; merge stays idempotent and manual-safe.
+      const latest = useMission.getState().days;
+      const result = mergeBodyData(latest, renphoPreview.readings, {
+        weightUnit: settings.weightUnit,
+        startDate: settings.startDate,
+        endDate: missionEnd,
+      });
+      useMission.setState(() => ({ days: result.days }));
+      setRenphoPreview(null);
     } finally {
       setBusy(null);
       refreshStorage();
@@ -315,6 +391,10 @@ export default function SettingsPage() {
     }));
     setPendingWeightUnit(null);
   };
+
+  const renphoFilled = renphoPreview
+    ? renphoPreview.filledInWindow + renphoPreview.filledOutsideWindow
+    : 0;
 
   const importEntries = importPreview ? Object.keys(importPreview.days).length : 0;
   const importPhotos = importPreview?.photos.length ?? 0;
@@ -487,6 +567,25 @@ export default function SettingsPage() {
             onChange={onImportFile}
             className="hidden"
           />
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={onRenphoImportClick}
+            className="block h-12 w-full rounded-card border border-border bg-surface px-4 text-left text-text disabled:opacity-50"
+          >
+            {busy === 'renpho' ? 'Importing…' : 'Import from Renpho export'}
+          </button>
+          <div className="px-1 text-xs text-text-subtle">
+            Reads weight + body fat from the CSV the Renpho app exports. Values
+            you typed by hand are never overwritten.
+          </div>
+          <input
+            ref={csvRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={onRenphoFile}
+            className="hidden"
+          />
         </Section>
 
         <Section title="Danger">
@@ -589,6 +688,58 @@ export default function SettingsPage() {
               className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
             >
               {busy === 'import' ? 'Restoring…' : 'Replace'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={renphoPreview !== null} onClose={cancelRenphoImport}>
+        <div className="px-5 pt-2 pb-5">
+          <div className="text-lg font-semibold tracking-tight">Import Renpho data?</div>
+          <div className="mt-1 text-sm text-text-muted">
+            {renphoPreview?.readings.length ?? 0} daily{' '}
+            {(renphoPreview?.readings.length ?? 0) === 1 ? 'reading' : 'readings'} read
+            from the file.
+          </div>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-text">Days filled</span>
+              <span className="tabular text-text">{renphoFilled}</span>
+            </div>
+            <div className="flex items-center justify-between pl-3 text-xs text-text-muted">
+              <span>In this mission</span>
+              <span className="tabular">{renphoPreview?.filledInWindow ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between pl-3 text-xs text-text-muted">
+              <span>Outside it (stored, not shown)</span>
+              <span className="tabular">{renphoPreview?.filledOutsideWindow ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text">Skipped — entered by hand</span>
+              <span className="tabular text-text">{renphoPreview?.skippedManual ?? 0}</span>
+            </div>
+          </div>
+          {renphoFilled === 0 && (
+            <div className="mt-3 text-xs text-text-subtle">
+              Nothing new to import — everything in this file is already up to date.
+            </div>
+          )}
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              disabled={busy === 'renpho'}
+              onClick={cancelRenphoImport}
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-text disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={busy === 'renpho' || renphoFilled === 0}
+              onClick={commitRenphoImport}
+              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+            >
+              {busy === 'renpho' ? 'Importing…' : 'Import'}
             </button>
           </div>
         </div>

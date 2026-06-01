@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Download, Moon, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
+import { Dumbbell, Download, Moon, Percent, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
 import { useMission } from '../store/mission';
 import {
   dayNumberFor,
@@ -25,6 +25,7 @@ import StreakBreakOverlay from '../components/StreakBreakOverlay';
 import StageOverlay from '../components/StageOverlay';
 import BottomSheet from '../components/BottomSheet';
 import WeightInput from '../components/WeightInput';
+import BodyFatInput from '../components/BodyFatInput';
 import InstallBanner, { useInstallPrompt } from '../components/InstallBanner';
 import ReminderBanner, { useInAppReminder } from '../components/ReminderBanner';
 import { showUndo } from '../components/UndoToast';
@@ -215,6 +216,16 @@ export default function Dashboard() {
     const label = v === undefined ? 'Cleared weight' : `Logged ${v} ${settings.weightUnit}`;
     showUndo(label, () => {
       setDayEntry(today, { weight: prev });
+    });
+  };
+
+  const onBodyFatChange = (v: number | undefined) => {
+    const prev = days[today]?.bodyFat;
+    if (prev === v) return;
+    setDayEntry(today, { bodyFat: v });
+    const label = v === undefined ? 'Cleared body fat' : `Logged ${v}% body fat`;
+    showUndo(label, () => {
+      setDayEntry(today, { bodyFat: prev });
     });
   };
 
@@ -539,16 +550,25 @@ export default function Dashboard() {
       )}
 
       {canLogToday && (
-        <section className="px-5 pt-5">
-          <h2 className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
-            <Scale size={12} strokeWidth={1.75} />
-            Weight
-          </h2>
-          <WeightInput
-            value={entry?.weight}
-            unit={settings.weightUnit}
-            onChange={onWeightChange}
-          />
+        <section className="space-y-5 px-5 pt-5">
+          <div>
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
+              <Scale size={12} strokeWidth={1.75} />
+              Weight
+            </h2>
+            <WeightInput
+              value={entry?.weight}
+              unit={settings.weightUnit}
+              onChange={onWeightChange}
+            />
+          </div>
+          <div>
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
+              <Percent size={12} strokeWidth={1.75} />
+              Body fat
+            </h2>
+            <BodyFatInput value={entry?.bodyFat} onChange={onBodyFatChange} />
+          </div>
         </section>
       )}
 

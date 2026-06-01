@@ -116,8 +116,19 @@ export const useMission = create<State & Actions>()(
         set((s) => {
           const existing = s.days[date] ?? { date };
           const merged: DayEntry = { ...existing, ...patch, date };
-          (Object.keys(patch) as (keyof DayEntry)[]).forEach((k) => {
-            if (patch[k] === undefined) delete (merged as Record<string, unknown>)[k as string];
+          // Provenance: a value written through here is 'manual' (typed in the
+          // UI) unless the caller passes an explicit source — the Renpho import
+          // / sync path stamps 'renpho'. Clearing a value clears its source.
+          if ('weight' in patch) {
+            merged.weightSource =
+              typeof patch.weight === 'number' ? patch.weightSource ?? 'manual' : undefined;
+          }
+          if ('bodyFat' in patch) {
+            merged.bodyFatSource =
+              typeof patch.bodyFat === 'number' ? patch.bodyFatSource ?? 'manual' : undefined;
+          }
+          (Object.keys(merged) as (keyof DayEntry)[]).forEach((k) => {
+            if (merged[k] === undefined) delete (merged as Record<string, unknown>)[k as string];
           });
           return { days: { ...s.days, [date]: merged } };
         }),
@@ -177,7 +188,7 @@ export const useMission = create<State & Actions>()(
     }),
     {
       name: 'mission',
-      version: 8,
+      version: 9,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         settings: s.settings,
@@ -257,6 +268,13 @@ export const useMission = create<State & Actions>()(
         }
         if (version < 8) {
           next.history = next.history ?? [];
+        }
+        if (version < 9) {
+          // v9 adds optional DayEntry fields: bodyFat, weightSource,
+          // bodyFatSource. Absent fields read as undefined, so there is nothing
+          // to backfill — an existing weight keeps an undefined source, which
+          // the merge policy treats as manual (never overwritten by a sync).
+          next.days = next.days ?? {};
         }
         return next as State;
       },
