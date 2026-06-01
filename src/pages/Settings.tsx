@@ -15,7 +15,7 @@ import WeeksInput from '../components/WeeksInput';
 import { addDaysISO, formatNice, subDaysISO, todayISO, totalDays } from '../lib/date';
 import { parseRenphoCsv, type RenphoReading } from '../lib/renphoCsv';
 import { mergeBodyData } from '../lib/mergeBodyData';
-import { fetchMeasurements, SyncError } from '../lib/renphoClient';
+import { fetchAllSince, fetchMeasurements, SyncError } from '../lib/renphoClient';
 import {
   readAnalytics,
   resetAnalytics as clearAnalytics,
@@ -93,7 +93,7 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<
-    'export' | 'import' | 'reset' | 'renpho' | 'sync' | null
+    'export' | 'import' | 'reset' | 'renpho' | 'sync' | 'backfill' | null
   >(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
@@ -108,6 +108,15 @@ export default function SettingsPage() {
     filledInWindow: number;
     filledOutsideWindow: number;
     skippedManual: number;
+  } | null>(null);
+  const [backfillPreview, setBackfillPreview] = useState<{
+    readings: RenphoReading[];
+    syncedAt: string;
+    willFill: number;
+    willUpdateSynced: number;
+    skippedManual: number;
+    filledInWindow: number;
+    filledOutsideWindow: number;
   } | null>(null);
   const [pendingWeightUnit, setPendingWeightUnit] = useState<'kg' | 'lb' | null>(null);
   const [reminderHint, setReminderHint] = useState<string | null>(null);
@@ -332,6 +341,75 @@ export default function SettingsPage() {
     }
   };
 
+  // Tier 2 — pull the full history since the mission start and preview the diff
+  // before writing. Same manual-wins merge path; the only difference from "Sync
+  // now" is the look-back (the whole mission, not a recent window) and the
+  // confirm step.
+  const onSyncHistory = async () => {
+    const { syncToken } = settings.renphoSync;
+    if (!syncToken) {
+      setSyncError('Add your sync token first.');
+      return;
+    }
+    setBusy('backfill');
+    setSyncError(null);
+    setSyncMsg(null);
+    try {
+      const { readings, syncedAt } = await fetchAllSince(settings.startDate, syncToken);
+      const result = mergeBodyData(days, readings, {
+        weightUnit: settings.weightUnit,
+        startDate: settings.startDate,
+        endDate: missionEnd,
+      });
+      setBackfillPreview({
+        readings,
+        syncedAt,
+        willFill: result.willFill,
+        willUpdateSynced: result.willUpdateSynced,
+        skippedManual: result.skippedManual,
+        filledInWindow: result.filledInWindow,
+        filledOutsideWindow: result.filledOutsideWindow,
+      });
+    } catch (err) {
+      setSyncError(err instanceof SyncError ? err.message : 'Sync failed. Try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const cancelBackfill = () => {
+    if (busy === 'backfill') return;
+    setBackfillPreview(null);
+  };
+
+  const commitBackfill = () => {
+    if (!backfillPreview) return;
+    setBusy('backfill');
+    try {
+      // Recompute against the freshest day map so nothing typed between preview
+      // and confirm is lost; the merge stays idempotent and manual-safe.
+      const latest = useMission.getState().days;
+      const result = mergeBodyData(latest, backfillPreview.readings, {
+        weightUnit: settings.weightUnit,
+        startDate: settings.startDate,
+        endDate: missionEnd,
+      });
+      const filled = result.willFill + result.willUpdateSynced;
+      useMission.setState(() => ({ days: result.days }));
+      // Advance the sync cursor so a later "Sync now" only grabs newer days.
+      setSettings({ renphoSync: { ...settings.renphoSync, lastSyncedAt: backfillPreview.syncedAt } });
+      setBackfillPreview(null);
+      setSyncMsg(
+        filled > 0
+          ? `History synced — ${filled} ${filled === 1 ? 'day' : 'days'} updated.`
+          : 'History already complete.',
+      );
+    } finally {
+      setBusy(null);
+      refreshStorage();
+    }
+  };
+
   const openResetSheet = () => {
     setResetInput('');
     setResetSheetOpen(true);
@@ -451,6 +529,10 @@ export default function SettingsPage() {
 
   const renphoFilled = renphoPreview
     ? renphoPreview.filledInWindow + renphoPreview.filledOutsideWindow
+    : 0;
+
+  const backfillTotal = backfillPreview
+    ? backfillPreview.willFill + backfillPreview.willUpdateSynced
     : 0;
 
   const importEntries = importPreview ? Object.keys(importPreview.days).length : 0;
@@ -683,6 +765,14 @@ export default function SettingsPage() {
               >
                 {busy === 'sync' ? 'Syncing…' : 'Sync now'}
               </button>
+              <button
+                type="button"
+                disabled={busy !== null || !settings.renphoSync.syncToken}
+                onClick={onSyncHistory}
+                className="block h-12 w-full rounded-card border border-border bg-surface px-4 text-left text-text disabled:opacity-50"
+              >
+                {busy === 'backfill' ? 'Checking…' : 'Sync full history'}
+              </button>
               {settings.renphoSync.lastSyncedAt && (
                 <div className="px-1 text-xs text-text-subtle">
                   Last synced {formatRelative(settings.renphoSync.lastSyncedAt)}.
@@ -691,8 +781,9 @@ export default function SettingsPage() {
               {syncMsg && <div className="px-1 text-xs text-text-muted">{syncMsg}</div>}
               {syncError && <div className="px-1 text-xs text-failed">{syncError}</div>}
               <div className="px-1 text-xs text-text-subtle">
-                Pulls your latest weight + body fat from the Renpho scale. Values
-                you typed by hand are never overwritten.
+                Sync now pulls your latest weigh-in; Sync full history backfills
+                every day since the mission start. Values you typed by hand are
+                never overwritten.
               </div>
             </>
           ) : (
@@ -855,6 +946,60 @@ export default function SettingsPage() {
               className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
             >
               {busy === 'renpho' ? 'Importing…' : 'Import'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={backfillPreview !== null} onClose={cancelBackfill}>
+        <div className="px-5 pt-2 pb-5">
+          <div className="text-lg font-semibold tracking-tight">Sync full history?</div>
+          <div className="mt-1 text-sm text-text-muted">
+            {backfillPreview?.readings.length ?? 0} daily{' '}
+            {(backfillPreview?.readings.length ?? 0) === 1 ? 'reading' : 'readings'} since{' '}
+            {formatNice(settings.startDate)}.
+          </div>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-text">New days filled</span>
+              <span className="tabular text-text">{backfillPreview?.willFill ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text">Refreshed — already synced</span>
+              <span className="tabular text-text">{backfillPreview?.willUpdateSynced ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text">Skipped — entered by hand</span>
+              <span className="tabular text-text">{backfillPreview?.skippedManual ?? 0}</span>
+            </div>
+          </div>
+          {(backfillPreview?.filledOutsideWindow ?? 0) > 0 && (
+            <div className="mt-3 text-xs text-text-subtle">
+              {backfillPreview?.filledOutsideWindow} of these fall outside the current
+              mission — stored, but not shown on Journey or Progress.
+            </div>
+          )}
+          {backfillTotal === 0 && (
+            <div className="mt-3 text-xs text-text-subtle">
+              Nothing to backfill — your history is already complete.
+            </div>
+          )}
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              disabled={busy === 'backfill'}
+              onClick={cancelBackfill}
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-text disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={busy === 'backfill' || backfillTotal === 0}
+              onClick={commitBackfill}
+              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+            >
+              {busy === 'backfill' ? 'Syncing…' : 'Sync'}
             </button>
           </div>
         </div>

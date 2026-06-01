@@ -6,12 +6,14 @@ intentional: the local-first, zero-infra work lands first and de-risks everythin
 `npm run build` must pass at the end of every phase. The app must stay fully usable with the
 backend **absent** at every phase.
 
-> **Phase ↔ tier map:** Phase 1 = Tier 0 · Phases 2–4 = Tier 1 · Phase 5 = Tier 2 ·
+> **Phase ↔ tier map:** Phases 1–2 = Tier 0 · Phases 3–4 = Tier 1 · Phase 5 = Tier 2 ·
 > Phase 6 = Tier 3. Stop after any phase and the app is in a good state.
+>
+> **Status:** Phases 1–5 shipped ✅ (Tiers 0–2 complete). Phase 6 (Tier 3) deferred.
 
 ---
 
-## Phase 1 — Data model: body fat + provenance (Tier 0, no backend)
+## Phase 1 — Data model: body fat + provenance (Tier 0, no backend) — ✅ Shipped
 
 **Goal** — body fat becomes a first-class metric, and every weight/body-fat value knows
 whether it was typed or synced. This is the schema foundation for all later phases.
@@ -43,7 +45,7 @@ whether it was typed or synced. This is the schema foundation for all later phas
 
 ---
 
-## Phase 2 — Manual Renpho export import (Tier 0, no backend)
+## Phase 2 — Manual Renpho export import (Tier 0, no backend) — ✅ Shipped
 
 **Goal** — get real scale data into the app today, with zero server, and build the exact
 merge logic the backend will reuse.
@@ -89,7 +91,7 @@ Protein(%),BMR(kcal),Metabolic Age,Optimal Weight(kg),Target…,Body Type,Remark
 
 ---
 
-## Phase 3 — Backend proxy scaffold (Tier 1)
+## Phase 3 — Backend proxy scaffold (Tier 1) — ✅ Shipped
 
 **Goal** — a deployed, secured endpoint that turns Renpho's private API into one clean JSON
 contract. No app changes yet — this phase is testable on its own with `curl`.
@@ -134,7 +136,7 @@ Runs on the Node runtime so `node:crypto` is available for the RSA step. (No Pyt
 
 ---
 
-## Phase 4 — Client "Sync now" (Tier 1)
+## Phase 4 — Client "Sync now" (Tier 1) — ✅ Shipped
 
 **Goal** — the headline feature: one button pulls the latest weight + body fat into the app.
 
@@ -166,7 +168,7 @@ Runs on the Node runtime so `node:crypto` is available for the RSA step. (No Pyt
 
 ---
 
-## Phase 5 — Historical backfill + reconciliation (Tier 2) — *long scope*
+## Phase 5 — Historical backfill + reconciliation (Tier 2) — *long scope* — ✅ Shipped
 
 **Goal** — fill in every day since the mission start, so a week away still leaves a complete
 history. This is the genuinely harder, defer-able work.
@@ -186,11 +188,33 @@ history. This is the genuinely harder, defer-able work.
 - A scale with two profiles imports only the selected user.
 - Preview counts match what actually gets written.
 
+**What landed** (notes vs. the plan above):
+- **Pagination** ([api/_lib/renpho.ts](api/_lib/renpho.ts)) — `fetchReadings` now walks the
+  `last_at` cursor to completion (`listAllMeasurements`), advancing by the newest `ts` each
+  page, deduping by `ts`, and bounded by `MAX_PAGES`. The common case (a personal account's
+  whole history in one response) stops after one round; the loop is a safety rail and never
+  spins.
+- **Deterministic latest-of-day** lives at the client boundary
+  ([src/lib/renphoClient.ts](src/lib/renphoClient.ts) `toDailyReadings`), keeping the latest
+  `ts` per date before anything reaches the merge — `RenphoReading` carries no timestamp, so
+  resolving it here (mirroring the CSV importer) is the honest place. This also fixed a latent
+  multi-reading-per-day bug on the Phase 4 "Sync now" path.
+- **Diff** — `mergeBodyData` gained `willFill` / `willUpdateSynced` (per-day nature split)
+  alongside the existing in/outside-window counts and `skippedManual` (= willSkipManual). The
+  "Sync full history" sheet shows new-days-filled / refreshed / skipped, plus an
+  outside-window note.
+- **Multi-profile** — resolved server-side by the `RENPHO_USER_ID` env-var pin (the
+  deliberate single-user choice from [update.md §4.1](update.md)); no profile-picker UI was
+  added, by design. "Selected user" = the pinned profile.
+- `fetchAllSince` is a thin named wrapper over the shared GET; the proxy returns the complete
+  set for whatever `since` it's given, so on success the backfill also advances `lastSyncedAt`
+  so a later "Sync now" only grabs newer days.
+
 **Commit** — `Renpho sync: full historical backfill with merge preview`
 
 ---
 
-## Phase 6 — Automatic sync (Tier 3) — *longest scope, biggest local-first departure*
+## Phase 6 — Automatic sync (Tier 3) — *longest scope, biggest local-first departure* — ⏳ Deferred
 
 **Goal** — hands-off sync, including days the app was never opened. Build only after Tier 2
 proves out; this is the first phase that puts health data on a server.

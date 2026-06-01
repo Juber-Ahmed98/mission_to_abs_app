@@ -34,16 +34,32 @@ export type SyncResult = {
 // caller from having to interpret HTTP status codes.
 export class SyncError extends Error {}
 
-/**
- * Pull readings from the proxy. `since` is an ISO date (or null for "everything
- * the server offers"); only readings on or after it are returned. Throws
- * SyncError with a friendly message on any failure — the caller shows it inline
- * and leaves all local data untouched.
- */
-export async function fetchMeasurements(
-  since: string | null,
-  token: string,
-): Promise<SyncResult> {
+// Collapse the contract's per-measurement rows to one reading per calendar day,
+// keeping the latest `ts` for that day (the deterministic "latest of day" pick).
+// The proxy can return several measurements for a single day; merging both would
+// let an older one clobber the newer, so we resolve it here at the boundary —
+// the same shape the CSV importer produces — before anything reaches the merge.
+function toDailyReadings(rows: ContractReading[]): RenphoReading[] {
+  const byDate = new Map<string, { ts: number; reading: RenphoReading }>();
+  for (const r of rows) {
+    if (!r || typeof r.date !== 'string') continue;
+    const reading: RenphoReading = {
+      date: r.date,
+      weightKg: typeof r.weightKg === 'number' ? r.weightKg : null,
+      bodyFat: typeof r.bodyFat === 'number' ? r.bodyFat : null,
+    };
+    const ts = typeof r.ts === 'number' ? r.ts : 0;
+    const prev = byDate.get(r.date);
+    if (!prev || ts > prev.ts) byDate.set(r.date, { ts, reading });
+  }
+  return Array.from(byDate.values()).map((v) => v.reading);
+}
+
+// The shared GET: hit the one endpoint with the sync-token header, map every
+// failure to a friendly SyncError, and return daily readings + the server's
+// sync timestamp. `since` is an ISO date (or null for "everything the server
+// offers"). On any throw the caller leaves all local data untouched.
+async function pull(since: string | null, token: string): Promise<SyncResult> {
   if (!token) throw new SyncError('Add your sync token first.');
 
   const url = since ? `${ENDPOINT}?since=${encodeURIComponent(since)}` : ENDPOINT;
@@ -69,13 +85,27 @@ export async function fetchMeasurements(
     throw new SyncError('Sync returned an unreadable response.');
   }
 
-  const readings: RenphoReading[] = (data.readings ?? []).map((r) => ({
-    date: r.date,
-    weightKg: typeof r.weightKg === 'number' ? r.weightKg : null,
-    bodyFat: typeof r.bodyFat === 'number' ? r.bodyFat : null,
-  }));
+  return {
+    readings: toDailyReadings(data.readings ?? []),
+    syncedAt: data.syncedAt ?? new Date().toISOString(),
+  };
+}
 
-  return { readings, syncedAt: data.syncedAt ?? new Date().toISOString() };
+/**
+ * Pull recent readings on or after `since` (an ISO date, or null for everything
+ * the server offers). Used by the on-demand "Sync now" with a short look-back.
+ */
+export function fetchMeasurements(since: string | null, token: string): Promise<SyncResult> {
+  return pull(since, token);
+}
+
+/**
+ * Pull the *full* history on or after `startDate` for the historical backfill.
+ * The proxy paginates the Renpho cursor to completion server-side, so this is a
+ * single request that returns every day since the mission start.
+ */
+export function fetchAllSince(startDate: string, token: string): Promise<SyncResult> {
+  return pull(startDate, token);
 }
 
 // Pull a clean message out of the proxy's `{ error }` body when present.

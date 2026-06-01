@@ -187,9 +187,16 @@ function normalizeReading(raw: Record<string, unknown>): Reading | null {
   };
 }
 
-// Step 3 — list measurements newer than `lastAt` (epoch seconds). Renpho returns
-// them under `last_ary`; we accept `measurements` too for resilience.
-async function listMeasurements(
+// Hard cap on cursor pages. The `last_at` cursor advances by the newest
+// timestamp each page, so this bounds the loop even if the upstream ever
+// misbehaves. A personal account's full history fits in one response, so this
+// is a safety rail, not the normal path.
+const MAX_PAGES = 30;
+
+// Step 3 (one page) — fetch measurements at/after `lastAt` (epoch seconds).
+// Renpho returns them under `last_ary`; we accept `measurements` too for
+// resilience. Returns the page newest-first.
+async function listMeasurementsPage(
   token: string,
   userId: string,
   lastAt: number,
@@ -217,10 +224,43 @@ async function listMeasurements(
   return readings.sort((a, b) => b.ts - a.ts);
 }
 
+// Walk the `last_at` cursor to completion: each page advances the cursor to the
+// newest timestamp seen, so the next page returns only strictly-newer records;
+// dedupe by `ts` so a record sitting exactly on the cursor is never doubled.
+// In the common case the first page already holds the whole history and the
+// loop stops after one round (no forward progress to make).
+async function listAllMeasurements(
+  token: string,
+  userId: string,
+  floor: number,
+): Promise<Reading[]> {
+  const byTs = new Map<number, Reading>();
+  let cursor = floor;
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const batch = await listMeasurementsPage(token, userId, cursor);
+    if (batch.length === 0) break;
+    let maxTs = cursor;
+    let added = 0;
+    for (const r of batch) {
+      if (r.ts < floor) continue; // never below the requested floor
+      if (!byTs.has(r.ts)) {
+        byTs.set(r.ts, r);
+        added += 1;
+      }
+      if (r.ts > maxTs) maxTs = r.ts;
+    }
+    // Stop once a page reveals nothing newer than the cursor, or adds nothing.
+    if (maxTs <= cursor || added === 0) break;
+    cursor = maxTs;
+  }
+  return Array.from(byTs.values()).sort((a, b) => b.ts - a.ts);
+}
+
 /**
- * The one entry point: log in, resolve the profile, and return normalized
- * readings on or after `sinceEpoch` (epoch seconds), newest first. Stateless —
- * a fresh session per call. Throws RenphoAuthError / RenphoUpstreamError.
+ * The one entry point: log in, resolve the profile, and return *all* normalized
+ * readings on or after `sinceEpoch` (epoch seconds), newest first — paginating
+ * the Renpho cursor to completion. Stateless — a fresh session per call. Throws
+ * RenphoAuthError / RenphoUpstreamError.
  */
 export async function fetchReadings(
   creds: RenphoCredentials,
@@ -231,5 +271,5 @@ export async function fetchReadings(
   if (!userId) {
     throw new RenphoUpstreamError('Could not resolve a Renpho user id.');
   }
-  return listMeasurements(token, userId, Math.max(0, Math.floor(sinceEpoch)));
+  return listAllMeasurements(token, userId, Math.max(0, Math.floor(sinceEpoch)));
 }

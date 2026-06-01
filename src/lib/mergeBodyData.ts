@@ -23,6 +23,12 @@ export type MergeResult = {
   // Days where every incoming value was blocked because a hand-owned value
   // already guards it (and nothing else on the day was written).
   skippedManual: number;
+  // Same written days as above, split by *nature* (for the backfill preview):
+  // a previously-empty slot getting a first value vs. a prior synced value
+  // changing. A day that does both is counted as a fill. By construction
+  // willFill + willUpdateSynced === filledInWindow + filledOutsideWindow.
+  willFill: number;
+  willUpdateSynced: number;
 };
 
 function round1(n: number): number {
@@ -52,12 +58,17 @@ export function mergeBodyData(
   let filledInWindow = 0;
   let filledOutsideWindow = 0;
   let skippedManual = 0;
+  let willFill = 0;
+  let willUpdateSynced = 0;
 
   for (const r of readings) {
     const existing = next[r.date];
     const entry: DayEntry = existing ? { ...existing } : { date: r.date };
     let wrote = false;
     let blockedByManual = false;
+    // Did this day gain a value in a previously-empty slot (a "fill"), as
+    // opposed to only changing a value that was already synced?
+    let filledEmpty = false;
 
     if (r.weightKg !== null) {
       const incoming =
@@ -65,6 +76,7 @@ export function mergeBodyData(
       if (!canOverwrite(entry.weight, entry.weightSource)) {
         blockedByManual = true;
       } else if (entry.weight !== incoming || entry.weightSource !== 'renpho') {
+        if (entry.weight === undefined) filledEmpty = true;
         entry.weight = incoming;
         entry.weightSource = 'renpho';
         wrote = true;
@@ -76,6 +88,7 @@ export function mergeBodyData(
       if (!canOverwrite(entry.bodyFat, entry.bodyFatSource)) {
         blockedByManual = true;
       } else if (entry.bodyFat !== incoming || entry.bodyFatSource !== 'renpho') {
+        if (entry.bodyFat === undefined) filledEmpty = true;
         entry.bodyFat = incoming;
         entry.bodyFatSource = 'renpho';
         wrote = true;
@@ -86,10 +99,21 @@ export function mergeBodyData(
       next[r.date] = entry;
       if (r.date >= opts.startDate && r.date <= opts.endDate) filledInWindow += 1;
       else filledOutsideWindow += 1;
+      // A day that fills any empty slot counts as a fill; otherwise it only
+      // refreshed an existing synced value.
+      if (filledEmpty) willFill += 1;
+      else willUpdateSynced += 1;
     } else if (blockedByManual) {
       skippedManual += 1;
     }
   }
 
-  return { days: next, filledInWindow, filledOutsideWindow, skippedManual };
+  return {
+    days: next,
+    filledInWindow,
+    filledOutsideWindow,
+    skippedManual,
+    willFill,
+    willUpdateSynced,
+  };
 }

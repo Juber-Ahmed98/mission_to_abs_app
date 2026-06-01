@@ -94,7 +94,7 @@ You asked for explicit tiers so you can ship the core value fast and defer the h
 "syncing" work. Here they are, smallest first. The phase-by-phase build order is in
 [updatePhases.md](updatePhases.md).
 
-### Tier 0 — Data model + manual import · **LOW friction · do this first · no backend**
+### Tier 0 — Data model + manual import · **LOW friction · do this first · no backend** · ✅ Shipped
 
 The foundation. Nothing else can store a body-fat number or merge a synced value until
 this exists, and it's useful on its own.
@@ -111,7 +111,7 @@ this exists, and it's useful on its own.
 **Delivers:** body fat is now a first-class metric, and you can already get scale data in
 (manually) with no server. **Effort:** ~1–2 sessions.
 
-### Tier 1 — Backend proxy + "Sync now" button · **MEDIUM friction · the core goal**
+### Tier 1 — Backend proxy + "Sync now" button · **MEDIUM friction · the core goal** · ✅ Shipped
 
 The feature you want soonest: press a button, today's weight + body fat appear.
 
@@ -125,7 +125,7 @@ The feature you want soonest: press a button, today's weight + body fat appear.
 **Delivers:** the headline use case — scale → app on demand. **Effort:** ~2–3 sessions
 (most of it standing up + securing the proxy the first time).
 
-### Tier 2 — Historical backfill + reconciliation · **LONGER scope · defer**
+### Tier 2 — Historical backfill + reconciliation · **LONGER scope · defer** · ✅ Shipped
 
 This is the *"even on days I forgot to open the app, fill them in so everything matches"*
 feature. It's genuinely more work because it's about *merging two histories correctly*.
@@ -141,7 +141,7 @@ feature. It's genuinely more work because it's about *merging two histories corr
 **Delivers:** open the app after a week away and your weight/body-fat history is complete.
 **Effort:** ~2–4 sessions. **Labeled long-scope — not a blocker for Tier 1.**
 
-### Tier 3 — Automatic / hands-off sync · **LONGEST scope · biggest departure · defer**
+### Tier 3 — Automatic / hands-off sync · **LONGEST scope · biggest departure · defer** · ⏳ Not started
 
 The *"I weighed in but never opened the app, yet it's still there"* dream.
 
