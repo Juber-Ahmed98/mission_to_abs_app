@@ -10,6 +10,9 @@ backend **absent** at every phase.
 > Phase 6 = Tier 3. Stop after any phase and the app is in a good state.
 >
 > **Status:** Phases 1–5 shipped ✅ (Tiers 0–2 complete). Phase 6 (Tier 3) deferred.
+> ⚠️ The deployed sync (Phases 3–5) authenticates **classic Renpho** accounts only;
+> **Renpho Health** accounts live on `cloud.renpho.com` and need Phase 7. CSV import
+> (Phase 2) works for Renpho Health today.
 
 ---
 
@@ -134,6 +137,12 @@ Runs on the Node runtime so `node:crypto` is available for the RSA step. (No Pyt
 
 **Commit** — `Renpho proxy: stateless serverless endpoint for normalized measurements`
 
+**Deploy fix (2026-06-01):** the function crashed on Vercel with
+`FUNCTION_INVOCATION_FAILED` (`ERR_MODULE_NOT_FOUND` on `../_lib/renpho`) until the
+relative import was given an explicit `.js` extension — `package.json` is
+`"type": "module"`, so Vercel ships the functions as native ESM and Node's loader
+won't guess extensions. Rule documented in [api/README.md](api/README.md).
+
 ---
 
 ## Phase 4 — Client "Sync now" (Tier 1) — ✅ Shipped
@@ -237,6 +246,36 @@ proves out; this is the first phase that puts health data on a server.
 **Commit(s)**
 - `Renpho sync: auto-sync on app open`
 - `Renpho sync: server-side scheduled pull (opt-in, stateful)`
+
+---
+
+## Phase 7 — Renpho Health backend variant (cloud.renpho.com) — ⏳ Planned
+
+**Why** — the shipped proxy (Phases 3–5) speaks the *classic* Renpho API
+(`renpho.qnclouds.com`, RSA, `app_id=Renpho`). The owner's account is on **Renpho
+Health**, a separate backend — **`cloud.renpho.com`, AES-128-ECB** — that the classic
+flow can't authenticate (it returns "email not registered" → 502). CSV import
+(Phase 2) is the working fallback meanwhile, so this is additive, not a blocker.
+
+**Changes**
+- New server client beside [api/_lib/renpho.ts](api/_lib/renpho.ts) (e.g.
+  `renphoHealth.ts`): the Renpho Health login + measurements against `cloud.renpho.com`
+  with AES-128-ECB, normalized to the **same** `Reading` contract so the app-facing
+  endpoint, `renphoClient.ts`, and `mergeBodyData` are all unchanged.
+- Backend selection: an env flag (e.g. `RENPHO_BACKEND=health|classic`, default
+  `health`), or try Health then fall back to classic. Keep one app-facing endpoint.
+- Same env vars (`RENPHO_EMAIL` / `RENPHO_PASSWORD` / `RENPHO_SYNC_TOKEN`); document
+  where the AES key comes from.
+
+**References** — StartupBros/renpho-mcp-server (targets `cloud.renpho.com` / Renpho
+Health), danvaneijck/renpho-api, RenphoGarminSync-CLI.
+
+**Verification**
+- `curl` with the owner's Renpho Health account returns normalized readings (no
+  "email not registered"). CSV import still works unchanged. Classic accounts still
+  work if the backend is selectable.
+
+**Commit** — `Renpho sync: support the Renpho Health backend (cloud.renpho.com)`
 
 ---
 

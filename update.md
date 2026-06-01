@@ -244,6 +244,25 @@ and keep the daily loop minimal. Adding more later is a cheap, additive change (
 
 ---
 
+## Known limitation — classic Renpho vs. Renpho Health (discovered 2026-06-01)
+
+The proxy shipped in Tiers 1–2 talks to the **classic Renpho** cloud
+(`renpho.qnclouds.com`, RSA-encrypted password, `app_id=Renpho`). The owner's
+account is on **Renpho Health** (the current app), whose backend is a *different*
+host — **`cloud.renpho.com`, AES-128-ECB** — that the classic flow cannot
+authenticate. Symptom: valid credentials return **"email not registered"**
+(surfaced as HTTP 502), because the email genuinely isn't on the classic server.
+
+- **Works today:** CSV import (Tier 0 / Phase 2) — the importer was built from a
+  real Renpho Health export, so it already speaks the right format. Reliable, no
+  backend.
+- **Planned:** a Renpho Health proxy variant against `cloud.renpho.com` — see
+  Phase 7 in [updatePhases.md](updatePhases.md). References:
+  StartupBros/renpho-mcp-server, danvaneijck/renpho-api.
+
+(Also note: the deployed function needed the ESM `.js`-extension import fix before
+it could load at all — see [updatePhases.md](updatePhases.md) Phase 3.)
+
 ## Why this order
 
 Tier 0 first because it's local-first, ships value immediately, and forces us to get the
