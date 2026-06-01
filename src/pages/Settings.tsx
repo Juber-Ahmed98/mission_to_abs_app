@@ -126,7 +126,10 @@ export default function SettingsPage() {
         }),
       );
       const payload: ExportPayload = {
-        version: 5,
+        // v6 — DayEntry now carries bodyFat + weight/bodyFat provenance. Whole
+        // DayEntry objects are serialized, so the new fields round-trip for
+        // free; isValidPayload is version-agnostic, so older backups still load.
+        version: 6,
         settings,
         days,
         measurements,

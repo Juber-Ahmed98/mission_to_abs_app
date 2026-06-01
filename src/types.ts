@@ -1,13 +1,21 @@
 export type DietState = 'success' | 'fail';
 export type ExerciseState = 'success' | 'fail';
 
+// Where a numeric value came from: typed by hand, or pulled from the Renpho
+// scale (manual import or sync). Used by the merge policy so a hand-typed value
+// is never clobbered by a synced one. Absent = legacy/unknown, treated as manual.
+export type ValueSource = 'manual' | 'renpho';
+
 export type DayEntry = {
   date: string;
   weight?: number;
+  bodyFat?: number;
   diet?: DietState;
   exercise?: ExerciseState;
   rest?: boolean;
   notes?: string;
+  weightSource?: ValueSource;
+  bodyFatSource?: ValueSource;
 };
 
 export type WeekPhoto = {

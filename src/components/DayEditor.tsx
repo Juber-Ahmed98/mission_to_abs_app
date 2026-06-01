@@ -5,6 +5,7 @@ import { dayNumberFor, isEndOfWeek, weekNumberFor } from '../lib/date';
 import { XP } from '../lib/xp';
 import Toggle from './Toggle';
 import WeightInput from './WeightInput';
+import BodyFatInput from './BodyFatInput';
 import WaistInput from './WaistInput';
 
 type Props = {
@@ -88,6 +89,13 @@ export default function DayEditor({ date, showNotes = true }: Props) {
           value={entry?.weight}
           unit={unit}
           onChange={(v) => setDayEntry(date, { weight: v })}
+        />
+      </div>
+      <div className="space-y-2">
+        <div className="text-xs uppercase tracking-wider text-text-muted">Body fat</div>
+        <BodyFatInput
+          value={entry?.bodyFat}
+          onChange={(v) => setDayEntry(date, { bodyFat: v })}
         />
       </div>
       {showWaist && (
