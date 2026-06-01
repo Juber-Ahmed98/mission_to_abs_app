@@ -24,7 +24,11 @@
 
 import crypto from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { fetchReadings, RenphoAuthError, RenphoUpstreamError } from '../_lib/renpho';
+// NOTE: the `.js` extension is required. package.json is `"type": "module"`, so
+// Vercel ships these functions as native ESM, and Node's ESM loader does not
+// guess extensions on relative imports — extensionless here crashes the
+// deployed function with ERR_MODULE_NOT_FOUND. TS maps `.js` → the `.ts` source.
+import { fetchReadings, RenphoAuthError, RenphoUpstreamError } from '../_lib/renpho.js';
 
 function firstHeader(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;

@@ -50,6 +50,18 @@ the app converts to the user's unit at the merge boundary.
   returned with `Cache-Control: no-store`.
 - A Renpho login/upstream failure returns `502` with a scrubbed error body.
 
+## ESM gotcha (relative imports need `.js`)
+
+The root `package.json` is `"type": "module"`, so Vercel ships these functions as
+**native ESM** (each `.ts` compiled to its own `.js`, not bundled). Node's ESM
+loader does **not** guess extensions, so every relative import must be written
+with a `.js` extension — e.g. `import … from '../_lib/renpho.js'`, even though the
+source is `renpho.ts` (TypeScript maps `.js` → the `.ts` source at compile time).
+An extensionless relative import passes `tsc`/esbuild locally but crashes the
+deployed function with `ERR_MODULE_NOT_FOUND` → `FUNCTION_INVOCATION_FAILED` on
+every call. Built-ins (`node:crypto`) and type-only imports (`@vercel/node`) are
+exempt.
+
 ## Longevity / ToS
 
 This is an **unofficial** integration: Renpho publishes no public API, and these
