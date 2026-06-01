@@ -32,6 +32,16 @@ export type WeekMeasurement = {
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 
+// Opt-in Renpho body-data sync. Off and empty by default — the app behaves
+// exactly as it does with no backend until the owner enables it and pastes the
+// shared-secret token (the access gate for the proxy's public URL). The Renpho
+// password never lives here; it stays a server env var.
+export type RenphoSyncSettings = {
+  enabled: boolean;
+  syncToken: string;
+  lastSyncedAt: string | null;
+};
+
 export type Settings = {
   startDate: string;
   durationWeeks: number;
@@ -51,6 +61,7 @@ export type Settings = {
     morning: boolean;
     evening: boolean;
   };
+  renphoSync: RenphoSyncSettings;
 };
 
 export type DayStatus = 'perfect' | 'partial' | 'failed' | 'missed' | 'rest';

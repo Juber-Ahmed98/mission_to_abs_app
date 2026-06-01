@@ -12,9 +12,10 @@ import {
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
 import WeeksInput from '../components/WeeksInput';
-import { addDaysISO, formatNice, totalDays } from '../lib/date';
+import { addDaysISO, formatNice, subDaysISO, todayISO, totalDays } from '../lib/date';
 import { parseRenphoCsv, type RenphoReading } from '../lib/renphoCsv';
 import { mergeBodyData } from '../lib/mergeBodyData';
+import { fetchMeasurements, SyncError } from '../lib/renphoClient';
 import {
   readAnalytics,
   resetAnalytics as clearAnalytics,
@@ -91,7 +92,11 @@ export default function SettingsPage() {
   const resetAll = useMission((s) => s.resetAll);
   const fileRef = useRef<HTMLInputElement>(null);
   const csvRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<'export' | 'import' | 'reset' | 'renpho' | null>(null);
+  const [busy, setBusy] = useState<
+    'export' | 'import' | 'reset' | 'renpho' | 'sync' | null
+  >(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [storage, setStorage] = useState<StorageEstimate | null>(null);
   const [persisted, setPersisted] = useState(false);
 
@@ -269,6 +274,58 @@ export default function SettingsPage() {
       });
       useMission.setState(() => ({ days: result.days }));
       setRenphoPreview(null);
+    } finally {
+      setBusy(null);
+      refreshStorage();
+    }
+  };
+
+  const setRenphoEnabled = (v: 'off' | 'on') => {
+    const enabled = v === 'on';
+    if (enabled === settings.renphoSync.enabled) return;
+    setSyncError(null);
+    setSyncMsg(null);
+    setSettings({ renphoSync: { ...settings.renphoSync, enabled } });
+  };
+
+  const setRenphoToken = (token: string) => {
+    setSyncError(null);
+    setSettings({ renphoSync: { ...settings.renphoSync, syncToken: token.trim() } });
+  };
+
+  const onSyncNow = async () => {
+    const { syncToken, lastSyncedAt } = settings.renphoSync;
+    if (!syncToken) {
+      setSyncError('Add your sync token first.');
+      return;
+    }
+    setBusy('sync');
+    setSyncError(null);
+    setSyncMsg(null);
+    try {
+      // Incremental: re-fetch from the last sync's day (idempotent merge makes
+      // re-grabbing that day harmless), or a 30-day look-back on first sync.
+      const since = lastSyncedAt ? lastSyncedAt.slice(0, 10) : subDaysISO(todayISO(), 30);
+      const { readings, syncedAt } = await fetchMeasurements(since, syncToken);
+      // Merge against the freshest day map through the same manual-wins path the
+      // CSV importer uses, so nothing typed by hand is ever clobbered.
+      const latest = useMission.getState().days;
+      const result = mergeBodyData(latest, readings, {
+        weightUnit: settings.weightUnit,
+        startDate: settings.startDate,
+        endDate: missionEnd,
+      });
+      const filled = result.filledInWindow + result.filledOutsideWindow;
+      useMission.setState(() => ({ days: result.days }));
+      setSettings({ renphoSync: { ...settings.renphoSync, lastSyncedAt: syncedAt } });
+      setSyncMsg(
+        filled > 0
+          ? `Synced — ${filled} ${filled === 1 ? 'day' : 'days'} updated.`
+          : 'Already up to date.',
+      );
+    } catch (err) {
+      // Graceful failure: surface a quiet message, keep all local data intact.
+      setSyncError(err instanceof SyncError ? err.message : 'Sync failed. Try again.');
     } finally {
       setBusy(null);
       refreshStorage();
@@ -586,6 +643,64 @@ export default function SettingsPage() {
             onChange={onRenphoFile}
             className="hidden"
           />
+        </Section>
+
+        <Section title="Body-data sync">
+          <Row label="Sync from Renpho">
+            <Segmented<'off' | 'on'>
+              options={['off', 'on']}
+              value={settings.renphoSync.enabled ? 'on' : 'off'}
+              onChange={setRenphoEnabled}
+            />
+          </Row>
+          {settings.renphoSync.enabled ? (
+            <>
+              <div className="rounded-card border border-border bg-surface px-4 py-3">
+                <label htmlFor="renpho-token" className="block text-sm text-text">
+                  Sync token
+                </label>
+                <input
+                  id="renpho-token"
+                  type="password"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={settings.renphoSync.syncToken}
+                  onChange={(e) => setRenphoToken(e.target.value)}
+                  placeholder="Paste your sync token"
+                  className="mt-2 block h-11 w-full rounded-card border border-border bg-surface-2 px-3 text-sm text-text outline-none"
+                />
+                <div className="mt-2 text-xs text-text-subtle">
+                  The one-time secret that authorizes this device. Your Renpho
+                  password is never stored here.
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={busy !== null || !settings.renphoSync.syncToken}
+                onClick={onSyncNow}
+                className="block h-12 w-full rounded-card border border-border bg-surface px-4 text-left text-text disabled:opacity-50"
+              >
+                {busy === 'sync' ? 'Syncing…' : 'Sync now'}
+              </button>
+              {settings.renphoSync.lastSyncedAt && (
+                <div className="px-1 text-xs text-text-subtle">
+                  Last synced {formatRelative(settings.renphoSync.lastSyncedAt)}.
+                </div>
+              )}
+              {syncMsg && <div className="px-1 text-xs text-text-muted">{syncMsg}</div>}
+              {syncError && <div className="px-1 text-xs text-failed">{syncError}</div>}
+              <div className="px-1 text-xs text-text-subtle">
+                Pulls your latest weight + body fat from the Renpho scale. Values
+                you typed by hand are never overwritten.
+              </div>
+            </>
+          ) : (
+            <div className="px-1 text-xs text-text-subtle">
+              Off by default. Turn on to pull weight + body fat from your Renpho
+              scale on demand. The app works fully without it.
+            </div>
+          )}
         </Section>
 
         <Section title="Danger">

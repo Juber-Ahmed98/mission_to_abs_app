@@ -96,6 +96,7 @@ const makeInitialSettings = (): Settings => ({
   lastExportedAt: null,
   analyticsEnabled: false,
   notifications: { morning: false, evening: false },
+  renphoSync: { enabled: false, syncToken: '', lastSyncedAt: null },
 });
 
 const makeInitial = (): State => ({
@@ -188,7 +189,7 @@ export const useMission = create<State & Actions>()(
     }),
     {
       name: 'mission',
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         settings: s.settings,
@@ -275,6 +276,21 @@ export const useMission = create<State & Actions>()(
           // to backfill — an existing weight keeps an undefined source, which
           // the merge policy treats as manual (never overwritten by a sync).
           next.days = next.days ?? {};
+        }
+        if (version < 10) {
+          // v10 adds Settings.renphoSync (opt-in body-data sync). Default it off
+          // and empty so existing users are byte-for-byte unchanged until they
+          // enable it.
+          const prevSettings = (next.settings ?? {}) as Partial<Settings>;
+          next.settings = {
+            ...makeInitialSettings(),
+            ...prevSettings,
+            renphoSync: prevSettings.renphoSync ?? {
+              enabled: false,
+              syncToken: '',
+              lastSyncedAt: null,
+            },
+          };
         }
         return next as State;
       },
