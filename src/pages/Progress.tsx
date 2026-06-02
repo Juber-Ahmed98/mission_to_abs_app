@@ -62,10 +62,15 @@ export default function ProgressPage() {
     const sorted = Object.values(days)
       .filter((d) => typeof d.weight === 'number')
       .sort((a, b) => a.date.localeCompare(b.date));
-    const base = sorted.map((d) => ({
-      day: dayNumberFor(d.date, settings.startDate),
-      weight: d.weight as number,
-    }));
+    // Synced history can run earlier than the mission start (day 1); we keep
+    // those days stored but clip the chart — and every stat derived from it
+    // (vs.-start delta, moving average, projection) — to the mission window.
+    const base = sorted
+      .map((d) => ({
+        day: dayNumberFor(d.date, settings.startDate),
+        weight: d.weight as number,
+      }))
+      .filter((p) => p.day >= 1);
     return base.map((p, i) => {
       const windowPts = base.slice(Math.max(0, i - 6), i + 1);
       const ma = windowPts.reduce((s, x) => s + x.weight, 0) / windowPts.length;
@@ -80,6 +85,7 @@ export default function ProgressPage() {
         day: dayNumberFor(m.date, settings.startDate),
         waistCm: m.waistCm as number,
       }))
+      .filter((p) => p.day >= 1)
       .sort((a, b) => a.day - b.day);
   }, [measurements, settings.startDate]);
 
@@ -90,6 +96,7 @@ export default function ProgressPage() {
         day: dayNumberFor(d.date, settings.startDate),
         bodyFat: d.bodyFat as number,
       }))
+      .filter((p) => p.day >= 1)
       .sort((a, b) => a.day - b.day);
   }, [days, settings.startDate]);
 
