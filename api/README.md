@@ -32,17 +32,44 @@ the app converts to the user's unit at the merge boundary.
 ## Files
 
 - `renpho/measurements.ts` — the HTTP handler: method + token gate, env-cred
-  check, calls the client, maps errors to clean status codes.
-- `_lib/renpho.ts` — the reverse-engineered Renpho cloud client (login with an
-  RSA-encrypted password, resolve the profile, list measurements, normalize).
+  check, calls the backend selector, maps errors to clean status codes.
+- `_lib/renphoBackend.ts` — picks the client per `RENPHO_BACKEND` and re-exports
+  the shared `Reading` contract + error classes (so the handler is backend-agnostic).
+- `_lib/renpho.ts` — the **classic** Renpho cloud client (`renpho.qnclouds.com`):
+  login with an RSA-encrypted password, resolve the profile, list measurements.
+  Owns the shared `Reading` / `RenphoCredentials` types and the error classes.
+- `_lib/renphoHealth.ts` — the **Renpho Health** client (`cloud.renpho.com`):
+  AES-128-ECB login + measurements, normalized to the *same* `Reading` contract.
 - `_fixtures/measurements.sample.json` — a synthetic contract sample for mocking.
+
+## Two Renpho backends (classic vs Renpho Health)
+
+Renpho runs two unrelated clouds and an account lives on exactly one:
+
+| `RENPHO_BACKEND` | Host | Auth | App |
+| --- | --- | --- | --- |
+| `health` *(default)* | `cloud.renpho.com` | AES-128-ECB | "Renpho Health" (current) |
+| `classic` | `renpho.qnclouds.com` | RSA password | legacy Renpho app |
+
+Both clients return the identical normalized `Reading[]`, so the endpoint,
+`renphoClient.ts`, and `mergeBodyData` never see the difference. Symptom of the
+wrong choice: valid credentials return **"email not registered"** → `502`. Flip
+`RENPHO_BACKEND` and retry.
+
+**On the embedded AES key:** the Renpho Health client hardcodes the app's fixed
+16-byte AES-128 secret (`renphoHealth.ts`). Like the classic client's hardcoded
+RSA *public* key, it ships inside every copy of the mobile app and is **not** a
+per-user secret — it only wraps the transport. The account password is the only
+secret and stays in the server env (it travels *inside* the AES blob, never in
+the clear).
 
 ## Security / ops
 
 - **Credentials live only in env vars**, never in the repo or the client. See
   [`.env.example`](../.env.example): `RENPHO_EMAIL`, `RENPHO_PASSWORD`,
-  `RENPHO_SYNC_TOKEN`, optional `RENPHO_USER_ID`. Set them in the Vercel project
-  (and `.env.local` for `vercel dev`). `.env*` is git-ignored.
+  `RENPHO_SYNC_TOKEN`, optional `RENPHO_USER_ID`, optional `RENPHO_BACKEND`
+  (`health` default / `classic`). Set them in the Vercel project (and
+  `.env.local` for `vercel dev`). `.env*` is git-ignored.
 - Same origin as the PWA, so no CORS allow-list — but the URL is public, so every
   request must carry the correct `x-sync-token` (checked in constant time) or
   gets a `401`.

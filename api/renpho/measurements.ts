@@ -21,6 +21,7 @@
 //   RENPHO_PASSWORD    — the Renpho account password (encrypted in transit only)
 //   RENPHO_SYNC_TOKEN  — shared secret the client must send as `x-sync-token`
 //   RENPHO_USER_ID     — optional: pin a specific scale profile
+//   RENPHO_BACKEND     — optional: `health` (default) or `classic` (see renphoBackend.ts)
 
 import crypto from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -28,7 +29,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 // Vercel ships these functions as native ESM, and Node's ESM loader does not
 // guess extensions on relative imports — extensionless here crashes the
 // deployed function with ERR_MODULE_NOT_FOUND. TS maps `.js` → the `.ts` source.
-import { fetchReadings, RenphoAuthError, RenphoUpstreamError } from '../_lib/renpho.js';
+// `renphoBackend` routes to the classic or Renpho Health client per RENPHO_BACKEND.
+import { fetchReadings, RenphoAuthError, RenphoUpstreamError } from '../_lib/renphoBackend.js';
 
 function firstHeader(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;

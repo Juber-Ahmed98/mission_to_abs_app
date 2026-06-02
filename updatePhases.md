@@ -9,10 +9,10 @@ backend **absent** at every phase.
 > **Phase ↔ tier map:** Phases 1–2 = Tier 0 · Phases 3–4 = Tier 1 · Phase 5 = Tier 2 ·
 > Phase 6 = Tier 3. Stop after any phase and the app is in a good state.
 >
-> **Status:** Phases 1–5 shipped ✅ (Tiers 0–2 complete). Phase 6 (Tier 3) deferred.
-> ⚠️ The deployed sync (Phases 3–5) authenticates **classic Renpho** accounts only;
-> **Renpho Health** accounts live on `cloud.renpho.com` and need Phase 7. CSV import
-> (Phase 2) works for Renpho Health today.
+> **Status:** Phases 1–5 + 7 shipped ✅ (Tiers 0–2 complete; Renpho Health backend live).
+> Phase 6 (Tier 3, auto-sync) deferred. The deployed sync now supports **both** Renpho
+> clouds — `cloud.renpho.com` (Renpho Health, the default) and `renpho.qnclouds.com`
+> (classic) — selected by `RENPHO_BACKEND`. CSV import (Phase 2) remains the floor.
 
 ---
 
@@ -249,7 +249,7 @@ proves out; this is the first phase that puts health data on a server.
 
 ---
 
-## Phase 7 — Renpho Health backend variant (cloud.renpho.com) — ⏳ Planned
+## Phase 7 — Renpho Health backend variant (cloud.renpho.com) — ✅ Shipped
 
 **Why** — the shipped proxy (Phases 3–5) speaks the *classic* Renpho API
 (`renpho.qnclouds.com`, RSA, `app_id=Renpho`). The owner's account is on **Renpho
@@ -274,6 +274,31 @@ Health), danvaneijck/renpho-api, RenphoGarminSync-CLI.
 - `curl` with the owner's Renpho Health account returns normalized readings (no
   "email not registered"). CSV import still works unchanged. Classic accounts still
   work if the backend is selectable.
+
+**What landed** (notes vs. the plan above):
+- **New Health client** ([api/_lib/renphoHealth.ts](api/_lib/renphoHealth.ts)) — login
+  (`renpho-aggregation/user/login`) → device discovery (`renpho-aggregation/device/count`)
+  → measurements (`RenphoHealth/scale/queryAllMeasureDataList`), all AES-128-ECB. The
+  *whole* request body is encrypted (password in plaintext inside the blob), not just the
+  password as in classic. Normalizes to the **same** `Reading` contract, so the endpoint,
+  `renphoClient.ts`, and `mergeBodyData` are untouched. It imports the shared
+  `Reading`/`RenphoCredentials` types + error classes from `renpho.ts` (which stays the
+  contract owner — zero changes to the shipped classic file).
+- **Big-int ids** — account/measurement ids (`id`, `bUserId`, `subUserId`) exceed 2^53, so
+  they're regex-extracted from the raw decrypted JSON as strings before `JSON.parse` can
+  round them; user selection matches on those strings.
+- **Backend selection** — a small dispatcher
+  ([api/_lib/renphoBackend.ts](api/_lib/renphoBackend.ts)) routes on `RENPHO_BACKEND`
+  (`health` default / `classic`) and re-exports the shared contract; the handler swapped its
+  import to it and is otherwise unchanged. Chose an explicit flag over try-health-then-classic
+  (predictable, single login, the owner is definitively on Health).
+- **AES key** — the app's fixed 16-byte AES-128 secret is embedded like the classic RSA
+  public key (transport-only, not a per-user secret); documented in
+  [api/README.md](api/README.md) and `.env.example`.
+- **Date** — derived from the row's wall-clock string when present, else from the UTC epoch
+  `timeStamp` (mirrors classic's `local_created_at` preference).
+- No new fixture: the contract output is identical, so `measurements.sample.json` still
+  covers client/merge mocking. Protocol cross-checked against `StartupBros/renpho-mcp-server`.
 
 **Commit** — `Renpho sync: support the Renpho Health backend (cloud.renpho.com)`
 
