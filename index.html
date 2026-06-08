@@ -27,5 +27,47 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Stale-shell self-heal. If the main bundle fails to execute — a cached
+         service-worker shell pointing at a chunk this deploy no longer ships —
+         #root never fills and the screen is blank. Detect that, drop the service
+         worker + Cache Storage (never localStorage/IndexedDB, so user data is
+         safe), and reload once for a fresh build. Runs from static HTML, so it
+         works even when no module loads. The session guard prevents a loop. -->
+    <script>
+      (function () {
+        var KEY = 'mission.bootRecover';
+        function check() {
+          var root = document.getElementById('root');
+          if (root && root.childElementCount > 0) {
+            try { sessionStorage.removeItem(KEY); } catch (e) {}
+            return; // booted fine
+          }
+          try {
+            if (sessionStorage.getItem(KEY)) return; // already tried this session
+            sessionStorage.setItem(KEY, '1');
+          } catch (e) {}
+          var reload = function () { location.reload(); };
+          var jobs = [];
+          try {
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              jobs.push(
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                  return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                })
+              );
+            }
+            if (window.caches && caches.keys) {
+              jobs.push(
+                caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                })
+              );
+            }
+          } catch (e) {}
+          Promise.all(jobs).then(reload, reload);
+        }
+        window.addEventListener('load', function () { setTimeout(check, 5000); });
+      })();
+    </script>
   </body>
 </html>
