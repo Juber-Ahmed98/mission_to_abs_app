@@ -8,6 +8,7 @@
 // The Renpho password never touches the client; only the user-pasted sync token
 // (the access gate for the public URL) is sent, as the `x-sync-token` header.
 
+import { format } from 'date-fns';
 import type { RenphoReading } from './renphoCsv';
 
 const ENDPOINT = '/api/renpho/measurements';
@@ -34,6 +35,19 @@ export type SyncResult = {
 // caller from having to interpret HTTP status codes.
 export class SyncError extends Error {}
 
+// Render an epoch-seconds instant as the *device-local* calendar day. The proxy's
+// `date` is derived server-side from Renpho's own wall-clock field, whose timezone
+// we don't control — it sits ahead of the user's, which tips an evening weigh-in
+// onto the following calendar day (the reading then lands one day late on the
+// home screen and one day ahead on the chart). `ts` is a true UTC epoch, so
+// formatting it here yields the day the user actually stood on the scale — the
+// same local "today" that `todayISO` and the Dashboard key on. Falls back to the
+// server's date only when no usable timestamp is present.
+function localDateFromTs(ts: number, fallback: string): string {
+  if (!Number.isFinite(ts) || ts <= 0) return fallback;
+  return format(new Date(ts * 1000), 'yyyy-MM-dd');
+}
+
 // Collapse the contract's per-measurement rows to one reading per calendar day,
 // keeping the latest `ts` for that day (the deterministic "latest of day" pick).
 // The proxy can return several measurements for a single day; merging both would
@@ -43,14 +57,15 @@ function toDailyReadings(rows: ContractReading[]): RenphoReading[] {
   const byDate = new Map<string, { ts: number; reading: RenphoReading }>();
   for (const r of rows) {
     if (!r || typeof r.date !== 'string') continue;
+    const ts = typeof r.ts === 'number' ? r.ts : 0;
+    const date = localDateFromTs(ts, r.date);
     const reading: RenphoReading = {
-      date: r.date,
+      date,
       weightKg: typeof r.weightKg === 'number' ? r.weightKg : null,
       bodyFat: typeof r.bodyFat === 'number' ? r.bodyFat : null,
     };
-    const ts = typeof r.ts === 'number' ? r.ts : 0;
-    const prev = byDate.get(r.date);
-    if (!prev || ts > prev.ts) byDate.set(r.date, { ts, reading });
+    const prev = byDate.get(date);
+    if (!prev || ts > prev.ts) byDate.set(date, { ts, reading });
   }
   return Array.from(byDate.values()).map((v) => v.reading);
 }
