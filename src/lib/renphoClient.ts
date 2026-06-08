@@ -9,6 +9,7 @@
 // (the access gate for the public URL) is sent, as the `x-sync-token` header.
 
 import { format } from 'date-fns';
+import { todayISO } from './date';
 import type { RenphoReading } from './renphoCsv';
 
 const ENDPOINT = '/api/renpho/measurements';
@@ -54,11 +55,17 @@ function localDateFromTs(ts: number, fallback: string): string {
 // let an older one clobber the newer, so we resolve it here at the boundary —
 // the same shape the CSV importer produces — before anything reaches the merge.
 function toDailyReadings(rows: ContractReading[]): RenphoReading[] {
+  const today = todayISO();
   const byDate = new Map<string, { ts: number; reading: RenphoReading }>();
   for (const r of rows) {
     if (!r || typeof r.date !== 'string') continue;
     const ts = typeof r.ts === 'number' ? r.ts : 0;
     const date = localDateFromTs(ts, r.date);
+    // Hard backstop: a weigh-in can never be in the future. If a reading still
+    // resolves to a day after today — a bad upstream timestamp/timezone — drop
+    // it rather than let it land on tomorrow (the exact glitch that put a synced
+    // weight on "Day +1"). A correct timestamp always resolves to today or past.
+    if (date > today) continue;
     const reading: RenphoReading = {
       date,
       weightKg: typeof r.weightKg === 'number' ? r.weightKg : null,
