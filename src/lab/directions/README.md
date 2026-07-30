@@ -1,5 +1,10 @@
 # Directions — Phase 2 (Gate 1 session sheet)
 
+> **Gate 1 verdict (2026-07-30): Waypoint wins outright.** Ember and Ledger
+> killed, no merge notes; their folders stay here until the Phase 14
+> disposition. Phase 3 adds Waypoint's Journey render for Gate 2. Dated
+> decision note in [update.md](../../../update.md) §9.
+
 Three deliberately contrasting directions, each a full fork of the nine primitives
 plus a composed Dashboard, driven only by the lab fixtures. Judged at 375px,
 mid-lapse first. Built 2026-07-30 for Gate 1; throwaway until a winner is pinned.

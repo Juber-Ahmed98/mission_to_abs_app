@@ -252,7 +252,36 @@ component set, one more finished moment).
 - **First five minutes, bad day.** Nothing should need the owner's context or muscle
   memory to feel good.
 
-## 9. Why this order
+## 9. Gate decisions
+
+### 2026-07-30 — Gate 1: Waypoint wins outright
+
+Owner verdict after the Phase 2 direction session: **go with Waypoint**. A clean
+pick, not a merge — no hybrid notes were recorded, so Phase 3 carries no Gate-1
+amendments to the finalist Dashboard.
+
+- **Waypoint — keep (sole finalist).** Light-first (dusk secondary), the mission
+  as a place, stage-keyed hues with the accent following the current stage,
+  expressive-celebratory register, the walk on the Dashboard.
+- **Ember — killed.** The juiced-zen seed dies with it; "tactile, warm, physical"
+  had its shot as a rendered direction and lost to the map.
+- **Ledger — killed.** The citrus-free door effectively closes with it (Waypoint's
+  stage hues keep citrus in the family). Its serif stop-and-raise is moot.
+- Folders for both losers stay in `src/lab/directions/` until the Phase 14
+  disposition, per the plan.
+
+Knock-ons to carry into Gate 3's re-decision table (noted now, decided at the
+contract): Waypoint keeps a light identity, so **light-mode-primary likely
+survives**; its expressive-celebratory register puts the **"no confetti" / 200ms
+rule under pressure**; stage-keyed hues put the **single-accent Linear
+discipline under pressure**. Waypoint rides the shipped Inter Variable — no font
+stop-and-raise. Formal verdicts on all eight re-decidable rules still land in
+the Phase 4 decision log.
+
+Next: Phase 3 — the Waypoint Journey render (the page the direction lives or
+dies on), then **Gate 2** pins the winner on the walk.
+
+## 10. Why this order
 
 Exploration goes first because it is reversible — three directions in a dev-only lab
 cost nothing in production risk, and the charter's core insight is that reactions to

@@ -6,11 +6,13 @@
 > Stop after any phase and the app is in a good state.
 >
 > **Status:** Phase 0 (planning + archive) shipped with this document. Phase 1
-> ✅ shipped 2026-07-30. Phase 2 ✅ built 2026-07-30 — three directions (Ember,
-> Ledger, Waypoint) live in the lab; **GATE 1 pending** (owner session at 375px,
-> mid-lapse first). Everything from Phase 3 onward sits behind an owner gate —
-> `⏸ awaiting gate` means blocked on a sign-off, not abandoned. **No production
-> file changes until Gate 3 (the design contract) signs.**
+> ✅ shipped 2026-07-30. Phase 2 ✅ shipped 2026-07-30 — three directions built;
+> **Gate 1 ✅ passed 2026-07-30: Waypoint wins outright** (Ember and Ledger
+> killed, no merge notes — dated verdict in [update.md](update.md) §9). Phase 3
+> (the Waypoint Journey render) is unblocked and in progress → **Gate 2**.
+> Everything from Phase 4 onward sits behind an owner gate — `⏸ awaiting gate`
+> means blocked on a sign-off, not abandoned. **No production file changes until
+> Gate 3 (the design contract) signs.**
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -69,7 +71,7 @@ as the data reference while building directions.
 
 ---
 
-## Phase 2 — Two to three contrasting directions, rendered — ✅ Built 2026-07-30 → **GATE 1 pending**
+## Phase 2 — Two to three contrasting directions, rendered — ✅ Shipped 2026-07-30 · **Gate 1 ✅ passed: Waypoint**
 
 **Goal** — 2–3 deliberately contrasting directions, each delivered as the nine real
 primitives plus a fully composed Dashboard, judged first in the day-62 mid-lapse state.
@@ -98,9 +100,9 @@ primitives plus a fully composed Dashboard, judged first in the day-62 mid-lapse
   re-entry treatment, not a grayed dashboard).
 - `npm run build` — still no lab chunk; entry gz unchanged.
 
-**GATE 1** — owner reacts per direction on the phone at 375px, starting from
-mid-lapse. Kill/keep/merge verdicts recorded in [update.md](update.md) as dated
-decision notes.
+**GATE 1** — ✅ passed 2026-07-30: **Waypoint wins outright**; Ember and Ledger
+killed, no merge/hybrid notes. Dated verdict in [update.md](update.md) §9;
+loser folders stay in the lab until the Phase 14 disposition.
 
 **Commit(s)** — one per direction: `Lab: direction 1 — <working name>` etc.
 
@@ -127,7 +129,7 @@ unchanged) so a second editor session can run the lab alongside the owner's.
 
 ---
 
-## Phase 3 — Journey renders for the finalists — ⏸ Awaiting Gate 1 → **GATE 2**
+## Phase 3 — Journey render for the finalist (Waypoint) — 🔨 In progress → **GATE 2**
 
 **Goal** — the Journey page fully rendered in each surviving direction; the core v2
 complaint ("a grid of dots on a card rather than a walk") is only testable here, so a
