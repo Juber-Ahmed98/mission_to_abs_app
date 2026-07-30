@@ -5,8 +5,8 @@
 > Phases 11–12 = Tier S (sweep + voice) · Phases 13–14 = Tier C (checkpoints).
 > Stop after any phase and the app is in a good state.
 >
-> **Status:** Phase 0 (planning + archive) shipped with this document. Phases 1–2
-> ⏳ not started. Everything from Phase 3 onward sits behind an owner gate —
+> **Status:** Phase 0 (planning + archive) shipped with this document. Phase 1
+> ✅ shipped 2026-07-30. Phase 2 ⏳ not started. Everything from Phase 3 onward sits behind an owner gate —
 > `⏸ awaiting gate` means blocked on a sign-off, not abandoned. **No production
 > file changes until Gate 3 (the design contract) signs.**
 
@@ -25,7 +25,7 @@ asks the owner to describe a direction in adjectives.
 
 ---
 
-## Phase 1 — Direction lab: dev-only route + fixtures — ⏳ Not started
+## Phase 1 — Direction lab: dev-only route + fixtures — ✅ Shipped 2026-07-30
 
 **Goal** — a throwaway rendering harness where directions get built against the real
 primitives, driven by fixture states, with zero production footprint.
@@ -55,6 +55,15 @@ primitives, driven by fixture states, with zero production footprint.
   Local Storage: the `mission` key is byte-identical to before the tour.
 
 **Commit** — `Lab: dev-only direction lab with mid-lapse fixture states`
+
+**Shipped notes (2026-07-30)** — all verifications passed (no lab chunk; entry
+126.79 kB gz vs the 126.78 baseline; CSS byte-identical at 5.77 kB gz; `mission`
+key byte-identical after a full tour). Two additions beyond the plan:
+`src/vite-env.d.ts` (the project had no Vite client types — `import.meta.env`
+didn't typecheck), and a prod-scoped Tailwind `content` glob excluding `src/lab`
+(without it, lab-only utility classes leak into production CSS — +0.13 kB now,
+and growing with every Phase 2 fork). The fixture inspector in the shell doubles
+as the data reference while building directions.
 
 ---
 

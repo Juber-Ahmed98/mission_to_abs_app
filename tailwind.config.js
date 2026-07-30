@@ -1,6 +1,12 @@
+// src/lab is the dev-only direction lab: its JS is dead-code-eliminated from
+// production builds, so its classes must not leak into production CSS either.
+const isProd = process.env.NODE_ENV === 'production';
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: isProd
+    ? ['./index.html', './src/*.{ts,tsx}', './src/!(lab)/**/*.{ts,tsx}']
+    : ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {

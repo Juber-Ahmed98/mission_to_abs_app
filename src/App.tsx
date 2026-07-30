@@ -25,6 +25,11 @@ const Compare = lazy(() => import('./pages/Compare'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const HistoryPage = lazy(() => import('./pages/History'));
 
+// Dev-only direction lab. The lazy() expression itself sits behind the DEV
+// guard — an unconditional top-level lazy() would emit the chunk even with
+// the route guarded — so production builds contain no trace of the lab.
+const LabPage = import.meta.env.DEV ? lazy(() => import('./lab/Lab')) : null;
+
 const SESSION_FLAG = 'mission.analytics.sessionSeen';
 
 const PERSISTENCE_FLAG = 'mission.persistenceRequested';
@@ -40,7 +45,8 @@ function Shell() {
   const hideNav =
     pathname.startsWith('/compare') ||
     pathname.startsWith('/onboarding') ||
-    pathname.startsWith('/history');
+    pathname.startsWith('/history') ||
+    pathname.startsWith('/lab');
 
   useEffect(() => {
     scheduleAllReminders(notifications);
@@ -95,6 +101,9 @@ function Shell() {
             <Route path="/compare/:a/:b" element={<Compare />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            {import.meta.env.DEV && LabPage && (
+              <Route path="/lab/*" element={<LabPage />} />
+            )}
           </Routes>
         </Suspense>
       </ErrorBoundary>
