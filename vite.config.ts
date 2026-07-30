@@ -31,6 +31,8 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 5173,
+    // PORT lets a second dev server (e.g. another editor session) pick a free
+    // port; defaults to Vite's 5173 otherwise.
+    port: Number(process.env.PORT) || 5173,
   },
 });

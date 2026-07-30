@@ -6,7 +6,9 @@
 > Stop after any phase and the app is in a good state.
 >
 > **Status:** Phase 0 (planning + archive) shipped with this document. Phase 1
-> ✅ shipped 2026-07-30. Phase 2 ⏳ not started. Everything from Phase 3 onward sits behind an owner gate —
+> ✅ shipped 2026-07-30. Phase 2 ✅ built 2026-07-30 — three directions (Ember,
+> Ledger, Waypoint) live in the lab; **GATE 1 pending** (owner session at 375px,
+> mid-lapse first). Everything from Phase 3 onward sits behind an owner gate —
 > `⏸ awaiting gate` means blocked on a sign-off, not abandoned. **No production
 > file changes until Gate 3 (the design contract) signs.**
 
@@ -67,7 +69,7 @@ as the data reference while building directions.
 
 ---
 
-## Phase 2 — Two to three contrasting directions, rendered — ⏳ Not started → **GATE 1**
+## Phase 2 — Two to three contrasting directions, rendered — ✅ Built 2026-07-30 → **GATE 1 pending**
 
 **Goal** — 2–3 deliberately contrasting directions, each delivered as the nine real
 primitives plus a fully composed Dashboard, judged first in the day-62 mid-lapse state.
@@ -101,6 +103,27 @@ mid-lapse. Kill/keep/merge verdicts recorded in [update.md](update.md) as dated
 decision notes.
 
 **Commit(s)** — one per direction: `Lab: direction 1 — <working name>` etc.
+
+**Built notes (2026-07-30)** — three directions shipped, one commit each:
+**Ember** (dark-first · juiced-zen seed rebuilt from tactile/warm/physical ·
+the hearth · quiet-tactile register · focused density), **Ledger** (light-first
+· type-led system-serif logbook · **leaves citrus entirely** · statuses as ink
+marks · quiet-typographic), **Waypoint** (light-first · the mission as a place
+· stage-keyed hues, accent = current stage · expressive-celebratory · the walk
+on the Dashboard as a 105-segment trail strip). Contrast matrix + re-entry
+answers + Gate 1 session sheet in
+[src/lab/directions/README.md](src/lab/directions/README.md). Each direction
+ships the nine forked primitives, a locally-interactive Dashboard (slides,
+toasts, undo, sheets all work against fixture state), and a primitives gallery
+behind "Show primitives". All verifications passed: six fixtures × three
+directions walked at 375px in both themes (mid-lapse renders a designed
+re-entry surface, distinct from day-1, in all three); every displayed number
+derived (mid-lapse: last log Day 41, 20 unlogged, 43 ahead; Waypoint strip:
+exactly 20 dotted segments); zero console errors; no store/localStorage
+writes; `npm run build` — no lab chunk, entry 126.79 kB gz and CSS 5.77 kB gz
+byte-identical to the Phase 1 baseline. Housekeeping in the same window:
+`vite.config.ts` dev server now honors `PORT` (dev-only; prod bundle hashes
+unchanged) so a second editor session can run the lab alongside the owner's.
 
 ---
 
