@@ -9,10 +9,11 @@
 > ✅ shipped 2026-07-30. Phase 2 ✅ shipped 2026-07-30 — three directions built;
 > **Gate 1 ✅ passed 2026-07-30: Waypoint wins outright** (Ember and Ledger
 > killed, no merge notes — dated verdict in [update.md](update.md) §9). Phase 3
-> (the Waypoint Journey render) is unblocked and in progress → **Gate 2**.
-> Everything from Phase 4 onward sits behind an owner gate — `⏸ awaiting gate`
-> means blocked on a sign-off, not abandoned. **No production file changes until
-> Gate 3 (the design contract) signs.**
+> ✅ built 2026-07-30 — the Waypoint Journey render is live in the lab;
+> **GATE 2 pending** (owner session at 375px, mid-lapse first). Everything from
+> Phase 4 onward sits behind an owner gate — `⏸ awaiting gate` means blocked on
+> a sign-off, not abandoned. **No production file changes until Gate 3 (the
+> design contract) signs.**
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -129,7 +130,7 @@ unchanged) so a second editor session can run the lab alongside the owner's.
 
 ---
 
-## Phase 3 — Journey render for the finalist (Waypoint) — 🔨 In progress → **GATE 2**
+## Phase 3 — Journey render for the finalist (Waypoint) — ✅ Built 2026-07-30 → **GATE 2 pending**
 
 **Goal** — the Journey page fully rendered in each surviving direction; the core v2
 complaint ("a grid of dots on a card rather than a walk") is only testable here, so a
@@ -151,6 +152,28 @@ direction that works on the Dashboard and fails on the Journey is dead.
 stay in the lab until Phase 14 disposition.
 
 **Commit** — `Lab: journey renders for finalist directions`
+
+**Built notes (2026-07-30)** — one finalist after Gate 1, so one render:
+`src/lab/directions/waypoint/Journey.tsx`, wired through a new optional
+`Journey` slot on `LabDirection` and a Dashboard/Journey view toggle in the
+lab shell (Waypoint's BottomNav gained an `active` prop so the Journey tab
+lights). The walk is a serpentine 7-per-row SVG route through five
+stage-soft terrain bands, each opening with a camp flag and its day range —
+stage boundaries are the geography, with extra row spacing at every
+crossing. Trail texture per the direction's status language: solid
+stage-hued stretches where days were logged, the lapse as a literal dotted
+stretch (border-strong, never scarlet), rough ground in neutral, tents for
+camp days, a faint plotted line ahead, the summit flag at day 105, a pin at
+today, and a dashed camp ring on the last-logged day of a lapse. Tapping a
+day opens the map-panel sheet; unrecorded days offer "mark the missed
+stretch" (walked / camp / rough ground) — lab-local overrides with honest
+XP toasts and undo, reset on fixture change, zero store or localStorage
+writes. All verifications passed: mid-lapse at 375px shows exactly 21
+dotted stretches (days 42–61 + unrecorded today) with "Camp was Day 41"
+framing and no shame constructions; day-1 renders the trailhead with 104
+plotted segments; day-104 eve shows 103 walked and one to go; both themes
+walked clean with zero console errors; `npm run build` — no lab chunk,
+entry 126.79 kB gz and CSS 5.77 kB gz byte-identical to the baseline.
 
 ---
 

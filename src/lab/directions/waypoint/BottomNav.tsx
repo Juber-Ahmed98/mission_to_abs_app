@@ -11,7 +11,7 @@ const items = [
   { label: 'Settings', icon: SettingsIcon },
 ];
 
-export default function BottomNav() {
+export default function BottomNav({ active = 0 }: { active?: number }) {
   return (
     <nav
       className="sticky bottom-0 z-30 mt-auto border-t"
@@ -20,20 +20,20 @@ export default function BottomNav() {
     >
       <ul className="flex justify-around px-1 py-1">
         {items.map(({ label, icon: Icon }, i) => {
-          const active = i === 0;
+          const isActive = i === active;
           return (
             <li key={label} className="flex-1">
               <button
                 type="button"
-                aria-current={active ? 'page' : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 className="mx-auto flex min-h-[54px] w-full flex-col items-center justify-center gap-0.5 rounded-card transition-colors duration-150 ease-apple"
                 style={
-                  active
+                  isActive
                     ? { background: 'var(--stage-soft)', color: 'var(--stage)' }
                     : { color: 'var(--text-subtle)' }
                 }
               >
-                <Icon size={21} strokeWidth={active ? 2.25 : 1.75} />
+                <Icon size={21} strokeWidth={isActive ? 2.25 : 1.75} />
                 <span className="text-2xs font-semibold tracking-wide">{label}</span>
               </button>
             </li>

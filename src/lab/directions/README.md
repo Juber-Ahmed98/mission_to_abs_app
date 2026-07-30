@@ -2,8 +2,10 @@
 
 > **Gate 1 verdict (2026-07-30): Waypoint wins outright.** Ember and Ledger
 > killed, no merge notes; their folders stay here until the Phase 14
-> disposition. Phase 3 adds Waypoint's Journey render for Gate 2. Dated
-> decision note in [update.md](../../../update.md) §9.
+> disposition. Dated decision note in [update.md](../../../update.md) §9.
+> **Phase 3 built (2026-07-30):** Waypoint's `Journey.tsx` — the walk at full
+> length for the Gate 2 session (select Waypoint in the lab, then the
+> "Journey" toggle; judged mid-lapse first, like everything else).
 
 Three deliberately contrasting directions, each a full fork of the nine primitives
 plus a composed Dashboard, driven only by the lab fixtures. Judged at 375px,

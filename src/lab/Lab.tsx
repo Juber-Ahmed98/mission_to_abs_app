@@ -24,6 +24,8 @@ export type LabDirection = {
   Dashboard: ComponentType<{ fixture: LabFixture }>;
   /** The nine forked primitives in isolation — the Gate 1 walk-through. */
   Gallery?: ComponentType<{ fixture: LabFixture }>;
+  /** Phase 3 (finalists only): the Journey page at full length — the Gate 2 render. */
+  Journey?: ComponentType<{ fixture: LabFixture }>;
 };
 
 // Phase 2: forked, freely restyled copies of the nine primitives plus a
@@ -153,9 +155,11 @@ export default function Lab() {
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE_ID);
   const [directionId, setDirectionId] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [view, setView] = useState<'dashboard' | 'journey'>('dashboard');
 
   const fixture = FIXTURES.find((f) => f.id === fixtureId) ?? FIXTURES[0];
   const direction = DIRECTIONS.find((d) => d.id === directionId) ?? null;
+  const journeyView = view === 'journey' && !!direction?.Journey;
 
   return (
     <div className="mx-auto min-h-dvh max-w-md px-5 pb-16 pt-6">
@@ -225,9 +229,10 @@ export default function Lab() {
               <button
                 key={d.id}
                 type="button"
-                onClick={() =>
-                  setDirectionId((cur) => (cur === d.id ? null : d.id))
-                }
+                onClick={() => {
+                  setDirectionId((cur) => (cur === d.id ? null : d.id));
+                  setView('dashboard');
+                }}
                 aria-pressed={d.id === directionId}
                 className={[
                   'flex items-center justify-between rounded-card border px-5 py-3 text-left',
@@ -247,12 +252,37 @@ export default function Lab() {
       {direction && (
         <section className="mt-6">
           <h2 className="text-xs font-medium uppercase tracking-wide text-text-subtle">
-            {direction.name} · {fixture.name}
+            {direction.name} · {journeyView ? 'Journey' : 'Dashboard'} ·{' '}
+            {fixture.name}
           </h2>
+          {direction.Journey && (
+            <div className="mt-2 flex gap-2" role="group" aria-label="Direction page">
+              {(['dashboard', 'journey'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={[
+                    'h-9 rounded-pill border px-4 text-sm font-medium transition-colors duration-150 ease-apple',
+                    view === v
+                      ? 'border-accent bg-accent-soft text-accent'
+                      : 'border-border bg-surface text-text-muted',
+                  ].join(' ')}
+                >
+                  {v === 'dashboard' ? 'Dashboard' : 'Journey'}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mt-2 overflow-hidden rounded-lg border border-border">
-            <direction.Dashboard fixture={fixture} />
+            {journeyView && direction.Journey ? (
+              <direction.Journey fixture={fixture} />
+            ) : (
+              <direction.Dashboard fixture={fixture} />
+            )}
           </div>
-          {direction.Gallery && (
+          {!journeyView && direction.Gallery && (
             <>
               <button
                 type="button"
