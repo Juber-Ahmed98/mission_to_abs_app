@@ -1,0 +1,178 @@
+/* Hallmark · direction: Ember · dark-first · tone: tactile-warm-physical
+ * metaphor: the hearth / a warm instrument · carrier: surface (glow, depth)
+ * register: quiet-tactile · anchor hue: ember amber (~40°) · juiced-zen seed */
+
+/* Scoped to .dir-ember — redefines the app's var()-driven tokens inside the
+ * lab frame only, plus Ember-specific glow/depth/motion tokens. Dark is the
+ * primary identity; the light variant is the secondary. */
+
+.dir-ember {
+  /* light (secondary) — warm paper around a banked fire */
+  --bg: #FBF5EA;
+  --surface: #FFFDF8;
+  --surface-2: #F3EADA;
+  --border: #E7DBC4;
+  --border-strong: #CFBD9C;
+
+  --text: #241D12;
+  --text-muted: #6C5F49;
+  --text-subtle: #7A6C54;
+
+  --accent: #B45309;
+  --accent-hover: #92400E;
+  --accent-soft: #F7E7CB;
+
+  --success: #4D7C0F;
+  --success-bg: #EAF2D4;
+  --rest: #A16207;
+  --rest-bg: #F6ECC8;
+  --partial: #B45309;
+  --partial-bg: #F7E7CB;
+  --failed: #B42318;
+  --failed-bg: #F9DFDA;
+  --missed: #E7DBC4;
+
+  --radius: 14px;
+  --radius-card: 20px;
+
+  /* Ember-only tokens */
+  --em-glow: rgba(180, 83, 9, 0.16);
+  --em-glow-strong: rgba(180, 83, 9, 0.3);
+  --em-ring-track: #EFE4CE;
+  --em-shadow: 0 1px 2px rgba(36, 29, 18, 0.06), 0 8px 24px rgba(36, 29, 18, 0.08);
+  --em-shadow-lift: 0 2px 4px rgba(36, 29, 18, 0.08), 0 16px 40px rgba(36, 29, 18, 0.12);
+  --em-thumb: #FFFFFF;
+}
+
+html.dark .dir-ember {
+  /* dark (primary) — the room the fire warms */
+  --bg: #16110A;
+  --surface: #221A0F;
+  --surface-2: #2E2413;
+  --border: #3A2D17;
+  --border-strong: #55421F;
+
+  --text: #F7F0E1;
+  --text-muted: #C2B08D;
+  --text-subtle: #9C8A67;
+
+  --accent: #F5A623;
+  --accent-hover: #FFC14D;
+  --accent-soft: #3B2B0E;
+
+  --success: #A5CE55;
+  --success-bg: #29320F;
+  --rest: #E8C15A;
+  --rest-bg: #382D0D;
+  --partial: #F5A623;
+  --partial-bg: #3B2B0E;
+  --failed: #F07862;
+  --failed-bg: #3C1B12;
+  --missed: #3A2D17;
+
+  --em-glow: rgba(245, 166, 35, 0.22);
+  --em-glow-strong: rgba(245, 166, 35, 0.42);
+  --em-ring-track: #2A2110;
+  --em-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --em-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 18px 48px rgba(0, 0, 0, 0.55);
+  --em-thumb: #322813;
+}
+
+/* ---- frame ---------------------------------------------------------- */
+
+.dir-ember {
+  background:
+    radial-gradient(120% 55% at 50% -10%, var(--em-glow) 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ---- the hearth (re-entry) ------------------------------------------ */
+
+.em-hearth {
+  position: relative;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(90% 120% at 50% 115%, var(--em-glow) 0%, transparent 65%),
+    var(--surface);
+  box-shadow: var(--em-shadow);
+  overflow: hidden;
+}
+
+.em-hearth::after {
+  /* the coal — a small live glow along the base line */
+  content: '';
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.9;
+  animation: em-breathe 3.2s var(--ease-apple) infinite;
+}
+
+@keyframes em-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ---- ring ------------------------------------------------------------ */
+
+.em-ring-glow {
+  filter: drop-shadow(0 0 18px var(--em-glow-strong));
+}
+
+/* ---- slide ----------------------------------------------------------- */
+
+.em-slide {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--em-shadow);
+}
+
+.em-slide-fill {
+  background: linear-gradient(90deg, var(--accent-soft), var(--em-glow-strong));
+}
+
+.em-slide-thumb {
+  background: var(--em-thumb);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 14px var(--em-glow);
+}
+
+.em-slide-done {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 25%, transparent), var(--em-shadow);
+}
+
+/* ---- moments --------------------------------------------------------- */
+
+.em-overlay-wash {
+  background:
+    radial-gradient(80% 60% at 50% 45%, var(--em-glow-strong) 0%, transparent 70%),
+    color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.em-medium {
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background:
+    radial-gradient(120% 160% at 50% 130%, var(--em-glow) 0%, transparent 60%),
+    var(--surface);
+  box-shadow: var(--em-shadow);
+}
+
+@keyframes em-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.em-rise {
+  animation: em-rise 0.45s var(--ease-apple) both;
+}

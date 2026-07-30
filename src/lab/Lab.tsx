@@ -12,6 +12,7 @@ import { DEFAULT_FIXTURE_ID, FIXTURES } from './fixtures';
 import type { LabFixture } from './fixtures';
 import { dayStatus } from '../lib/dayStatus';
 import { addDaysISO, formatNice } from '../lib/date';
+import { ember } from './directions/ember';
 
 export type LabDirection = {
   id: string;
@@ -19,11 +20,14 @@ export type LabDirection = {
   themeIdentity: 'light-first' | 'dark-first' | 'single-theme';
   /** Fully composed Dashboard for this direction, driven by fixture props alone. */
   Dashboard: ComponentType<{ fixture: LabFixture }>;
+  /** The nine forked primitives in isolation — the Gate 1 walk-through. */
+  Gallery?: ComponentType<{ fixture: LabFixture }>;
 };
 
-// Phase 2 populates this from src/lab/directions/<n>/ — forked, freely
-// restyled copies of the nine primitives plus a composed Dashboard each.
-const DIRECTIONS: LabDirection[] = [];
+// Phase 2: forked, freely restyled copies of the nine primitives plus a
+// composed Dashboard each, from src/lab/directions/<n>/. Contrast matrix in
+// src/lab/directions/README.md.
+const DIRECTIONS: LabDirection[] = [ember];
 
 /** Lab-local theme toggle. Flips the `dark` class on <html> directly (the
  * dark tokens live on `html.dark`) and restores whatever the app had when
@@ -146,6 +150,7 @@ export default function Lab() {
   const { dark, toggle } = useLabTheme();
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE_ID);
   const [directionId, setDirectionId] = useState<string | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
 
   const fixture = FIXTURES.find((f) => f.id === fixtureId) ?? FIXTURES[0];
   const direction = DIRECTIONS.find((d) => d.id === directionId) ?? null;
@@ -245,6 +250,23 @@ export default function Lab() {
           <div className="mt-2 overflow-hidden rounded-lg border border-border">
             <direction.Dashboard fixture={fixture} />
           </div>
+          {direction.Gallery && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowGallery((s) => !s)}
+                aria-expanded={showGallery}
+                className="mt-3 h-9 rounded-pill border border-border bg-surface px-4 text-sm font-medium text-text-muted"
+              >
+                {showGallery ? 'Hide primitives' : 'Show primitives'}
+              </button>
+              {showGallery && (
+                <div className="mt-2 overflow-hidden rounded-lg border border-border">
+                  <direction.Gallery fixture={fixture} />
+                </div>
+              )}
+            </>
+          )}
         </section>
       )}
     </div>
