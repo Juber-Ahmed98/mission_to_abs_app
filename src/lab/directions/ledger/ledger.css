@@ -1,0 +1,183 @@
+/* Hallmark · direction: Ledger · light-first · tone: editorial-witness
+ * metaphor: the mission as a logbook · carrier: type (serif, hairlines, marks)
+ * register: quiet-typographic · anchor: ink + oxblood · leaves citrus entirely */
+
+/* Scoped to .dir-ledger. Flat paper, rule-drawn structure, sharp corners.
+ * Status is carried by ink marks (✓ ✕ — ·), never by hue — failure is a mark
+ * in the book, not an alarm. Display face is a system serif stack: zero
+ * font-budget cost; a licensed text serif is a Gate 3 stop-and-raise. */
+
+.dir-ledger {
+  /* light (primary) — ink on warm paper */
+  --bg: #F7F3E9;
+  --surface: #F7F3E9;
+  --surface-2: #EFE9DA;
+  --border: #D8D0BB;
+  --border-strong: #A99E82;
+
+  --text: #211C15;
+  --text-muted: #675F4D;
+  --text-subtle: #756C56;
+
+  --accent: #8C2F1E;
+  --accent-hover: #6E2416;
+  --accent-soft: #EFE0D6;
+
+  /* Status stays ink — glyph carries meaning, not hue. */
+  --success: #211C15;
+  --success-bg: #EFE9DA;
+  --rest: #675F4D;
+  --rest-bg: #EFE9DA;
+  --partial: #211C15;
+  --partial-bg: #EFE9DA;
+  --failed: #211C15;
+  --failed-bg: #EFE9DA;
+  --missed: #D8D0BB;
+
+  --radius: 2px;
+  --radius-card: 3px;
+
+  --ld-serif: Georgia, 'Iowan Old Style', Cambria, 'Times New Roman', serif;
+  --ld-ink-wash: rgba(33, 28, 21, 0.05);
+}
+
+html.dark .dir-ledger {
+  /* lamplight (secondary) — the same book by lamplight */
+  --bg: #1A1611;
+  --surface: #1A1611;
+  --surface-2: #241F17;
+  --border: #3B3427;
+  --border-strong: #5C523D;
+
+  --text: #EDE5D3;
+  --text-muted: #B0A489;
+  --text-subtle: #9C9077;
+
+  --accent: #D4795B;
+  --accent-hover: #E08D70;
+  --accent-soft: #33231B;
+
+  --success: #EDE5D3;
+  --success-bg: #241F17;
+  --rest: #B0A489;
+  --rest-bg: #241F17;
+  --partial: #EDE5D3;
+  --partial-bg: #241F17;
+  --failed: #EDE5D3;
+  --failed-bg: #241F17;
+  --missed: #3B3427;
+
+  --ld-ink-wash: rgba(237, 229, 211, 0.06);
+}
+
+/* ---- frame ---------------------------------------------------------- */
+
+.dir-ledger {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.ld-serif {
+  font-family: var(--ld-serif);
+  font-weight: 400;
+}
+
+.ld-caps {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Hairline rules — the Ledger's only structure. No shadows anywhere. */
+.ld-rule-t { border-top: 1px solid var(--border); }
+.ld-rule-b { border-bottom: 1px solid var(--border); }
+
+.ld-rule-double {
+  border-top: 1px solid var(--border-strong);
+  position: relative;
+}
+.ld-rule-double::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border-strong);
+}
+
+/* ---- the ledger table ------------------------------------------------ */
+
+.ld-line {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr 1.75rem 1.75rem 3.25rem;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ld-line:last-child {
+  border-bottom: 0;
+}
+
+.ld-mark {
+  font-family: var(--ld-serif);
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+/* today's open line gets the oxblood marginal marker */
+.ld-open {
+  position: relative;
+}
+.ld-open::before {
+  content: '';
+  position: absolute;
+  left: -1.25rem;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  width: 2px;
+  background: var(--accent);
+}
+
+/* ---- the ink-stroke slide ------------------------------------------- */
+
+.ld-stroke {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.ld-stroke-fill {
+  background: var(--ld-ink-wash);
+}
+
+.ld-stroke-underline {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--text);
+}
+
+.ld-stroke-thumb {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.ld-stroke-done {
+  border-color: var(--border-strong);
+}
+
+/* ---- moments --------------------------------------------------------- */
+
+@keyframes ld-settle {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ld-settle {
+  animation: ld-settle 0.35s var(--ease-apple) both;
+}
