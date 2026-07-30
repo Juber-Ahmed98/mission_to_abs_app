@@ -13,3 +13,8 @@ breakdown) for one shipped body of work, newest last:
   accessibility pass, custom pillar labels, and in-app mission history (incl.
   cross-mission photo compare). Shipped through commit `Mission history: cross-mission
   photo compare`.
+- **`renpho-sync/`** — Renpho body-data sync (weight + body fat): CSV import, serverless
+  proxy speaking both Renpho clouds, manual-wins merge. Shipped through commit `Renpho
+  sync: drop future-dated readings as a backstop against +1-day drift`. Phase 6 (Tier 3,
+  automatic background sync) remains deliberately deferred, not dropped — revisit only
+  after the sync flow has proven out in daily use.

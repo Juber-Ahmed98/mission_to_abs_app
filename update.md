@@ -1,274 +1,266 @@
-# Update — Renpho body-data sync (weight + body fat)
+# Update — UI/UX redesign: make it worth opening
 
-Pull weight and body-fat % from the Renpho smart scale into Mission to Abs, so the
-numbers you take each morning land in the app without re-typing them. The phased
-breakdown is in [updatePhases.md](updatePhases.md).
+> Spec and argument for the next body of work. Phased breakdown in
+> [updatePhases.md](updatePhases.md). Charter: [redesign-brief.md](redesign-brief.md),
+> written 2026-07-30. The previous roadmap (Renpho body-data sync) is shipped and
+> archived in [archive/renpho-sync/](archive/renpho-sync/); its Phase 6 (automatic
+> background sync) stays deliberately deferred.
 
-**This is the first feature that introduces a backend.** Every prior decision kept the
-app *local-first, no backend* (see the archived [polish-pillars-history](archive/polish-pillars-history/update.md)
-docs and the product-direction notes). That invariant is **not** being thrown out — it
-is being *preserved as the default*. The Renpho sync is a fully **optional, opt-in**
-companion: with it switched off (or never configured), the app behaves exactly as it
-does today — offline, no accounts, no network. The backend is a thin, stateless proxy
-that only runs when you press "Sync." The app stays a *witness, not a coach*: we import
-two numbers; we add zero fitness advice.
+The fact that drives everything here: the owner stopped opening the app for a month
+because it wasn't rewarding enough. The v2 system is restrained, legible, correct — and
+inert. This update is a full UI/UX rethink, not a colour repaint. Every design decision
+is judged against one acceptance lens: **day 62, nothing logged for weeks, low
+motivation, coming back after a lapse.** The app must feel good to open on that day
+first; the good days take care of themselves.
 
 ---
 
-## 1. The thing you need to know first: there is no official Renpho API
+## 1. The problem: well-made and inert
 
-Renpho does not publish a public API. The "renpho_api" you're referring to is a
-community, **reverse-engineered** client (the PyPI [`renpho-api`](https://pypi.org/project/renpho-api/)
-package, the Home Assistant `hass_renpho` integrations, and similar) that mimics what
-the Renpho phone app does behind the scenes. Concretely, those projects talk to Renpho's
-cloud (`renpho.qnclouds.com`):
+The v2 "bright, calm, intentional" system put the citrus in the status dots, not in the
+room. The 105-day Journey reads as a grid of dots on a card rather than a walk. The
+moments that should carry emotional weight either barely register or don't exist:
 
-| Step | Call | Notes |
+| # | Moment | Current state | Gap | Verdict |
+|---|---|---|---|---|
+| 1 | First open of the day | No concept at all. Dashboard renders the same at 7am as at 11pm. Morning quotes exist ([src/lib/quotes.ts](src/lib/quotes.ts), 40 of them) but surface only through the reminder banner lottery. | Nothing greets you before you've done anything. | Design the greeting |
+| 2 | Logging a pillar + XP | Slide works, one 15ms haptic, XP toast floats 1.6s. The "Perfect day" toast note requires an XP delta ≥ 100, but a single slide can only produce 30 or 70 — **completing a perfect day has no distinct celebration, ever**. Backfills via DayEditor are silent (no XP toast, no undo). | Unreachable celebration — a bug, not a style choice. | Fix + enrich |
+| 3 | Level-up | 1.7s radial wash + two words, auto-dismisses. A flawless mission tops out at Level 12 (11,550 XP); tiers Grounded and Unshakeable are unreachable in one mission. | The biggest number in the app gets the smallest moment. | Rework |
+| 4 | Stage crossing | Overlay fires only if the app is opened on the exact crossing day, once ever. The Dashboard never shows the current stage anywhere. | Miss day 22, never see Build begin. | Fix trigger + surface stage |
+| 5 | Streak break + shield | Overlay inspects yesterday only; after a multi-day gap `priorStreak` is already 0, so **it never fires for an actual lapse** — only for a single missed day. | The moment breaks exactly when it matters most. | Fix detection |
+| 6 | **Return after a lapse** | **Zero design.** The strongest acknowledgement in the app is the line "Yesterday is closed. Today is open." | The owner's actual usage pattern has no design at all. | **The flagship** |
+| 7 | Weekly photo + waist | Nothing prompts it — the banner precedence list has no photo or waist entry, so a week slips silently. Compare (split-slider) is good and cross-mission-capable. | The ritual has no ritual. | Prompt + frame |
+| 8 | Day 105 / mission complete | Day 105 is a normal day; MissionCompleted renders on day 106+. DESIGN.md claims XP carries into mission two; `startNewMission` zeroes it. | The finish line isn't a moment, and the spec lies. | Make the moment + resolve drift |
+
+Three feedback registers exist today: the XP toast (1.6s float), the undo pill (5s,
+actionable), and the full-screen overlay (blocking). There is **no medium-weight,
+in-flow celebration register** — which is exactly what a perfect day, a returning-user
+welcome, and a photo-day nudge want. And the three overlays (`LevelUpOverlay`,
+`StageOverlay`, `StreakBreakOverlay`) are literal copies of one template — same ease,
+same radial wash, same auto-dismiss — differing only in copy and hue.
+
+## 2. Decided vs open
+
+**Non-negotiable regardless of direction** (these survive any aesthetic verdict):
+
+- **Witness, not coach** — zero fitness content, zero workouts, zero diet rules.
+- **Honest logging** — marking failure stays exactly as easy as marking success.
+- **Every action reversible** — every confirm has an undo, every destructive action a two-step.
+- The accessibility bars (measured, not eyeballed — see §7).
+- The token/component architecture (personality lives in tokens + shared components + hand-crafted moments).
+
+**Open for re-decision at the design contract** (these were direction, not physics):
+
+| v2 rule | Status |
+|---|---|
+| No exclamation marks, no emoji, banned-word list | Re-decide at contract |
+| 10–12px radii, no shadows | Re-decide at contract |
+| 200ms standard duration, "no confetti" | Re-decide at contract |
+| Light-mode-primary | Re-decide at contract |
+| Single-accent Linear discipline; citrus scoped to data semantics | Re-decide at contract |
+
+**The "juiced zen" instinct** (recorded 2026-06-11: keep the citrus calm, add springs,
+haptics, count-ups and glows, dark mode as showcase): decided once, never built, so it
+is **unproven, not rejected**. It enters the exploration as a mood hint — tactile, warm,
+physical — seeding at most one direction, with no free pass and no incumbency. The door
+to leaving citrus-on-near-white entirely is explicitly open. The one hard wall: no
+walking back into the v1 look that v2 already superseded.
+
+## 3. How the direction gets chosen
+
+The owner is unsure of the direction and won't be able to describe it in adjectives —
+so nobody asks. Instead: **2–3 concrete, deliberately contrasting directions, rendered,
+reacted to.** The mechanism:
+
+**The lab.** A dev-only route (`/#/lab`) that dead-code-eliminates from the production
+build — both the `lazy()` import expression and the `<Route>` sit behind
+`import.meta.env.DEV`, because an unconditional top-level `lazy()` emits the chunk even
+when the route is guarded. The lab drives the real primitives from pure-props fixtures
+(no store writes, no localStorage): day-62 mid-lapse (the default, always shown first),
+day 1, day 104 eve, streak break, level-up, perfect day.
+
+**Why forked copies, not token overrides.** Only colors, radii, and one easing curve
+are `var()`-driven; Tailwind type and shape utilities are literal values. A direction
+that changes typography or shape cannot be expressed as a token override — so each
+direction lives in `src/lab/directions/<n>/` as forked, freely restyled copies of the
+nine primitives plus a fully composed Dashboard. Throwaway by definition; production
+untouched until the contract signs.
+
+**Contrast enforcement.** The directions must be genuinely different, not three
+temperatures of one idea. Candidate axes: theme identity (light-first / dark-first),
+spatial metaphor (instrument panel vs the mission as a place), feedback register
+(quiet-tactile vs expressive-celebratory), personality carrier (type-led vs
+surface-led), color model (single accent / stage-keyed hues / warm neutral field),
+density (everything-visible vs one-thing-at-a-time). Rules: every pair of directions
+differs on **at least three axes**; at least one direction leaves citrus entirely; at
+least one is dark-first; at least one keeps a light identity; no direction is v1 in
+disguise. The actual direction content is exploration-phase work — it is deliberately
+**not** pre-decided here.
+
+**The three gates.** Gate 1: owner reacts to the direction Dashboards at 375px on the
+phone, mid-lapse state first; the session interrogates reactions (what specifically
+pulled or repelled), never asks for adjectives; kill/keep/merge recorded. Gate 2:
+finalists render the Journey page — the page a direction lives or dies on — and the
+winner is pinned. Gate 3: the winner becomes a written design contract in
+[DESIGN.md](DESIGN.md). **No production file changes until Gate 3 signs.**
+
+**Skill assignments.** hallmark drives the exploration and the anti-generic bar;
+ui-ux-pro-max feeds palette/typography/style-system candidates; impeccable owns the
+production polish, motion, and micro-interactions; human-copy owns every user-facing
+string, throughout.
+
+## 4. The moment inventory — design intent
+
+Per-moment intent production must deliver (specs pinned at the contract, not here):
+
+1. **First open** — a greeting that knows what day it is before you've done anything.
+   "Logged today" must derive from `dayStatus()` — never key presence, because the
+   Dashboard auto-creates today's entry on mount.
+2. **Pillar log** — the slide stays; the feedback around it gets the contract's
+   treatment. Backfills stop being silent (XP toast + undo, same as live logs).
+   **Perfect day becomes a real, reachable moment** — triggered off day-completion
+   state, not the XP-delta threshold that made it unreachable.
+3. **Level-up** — a moment proportional to the number. Career XP (see §7) gives levels
+   a life beyond one mission.
+4. **Stage crossing** — fires on first open **at or after** the crossing, not only on
+   the exact day. Current stage always visible on the Dashboard.
+5. **Streak break + shield** — a 1-day gap gets the break treatment with the explicit
+   shield offer; the multi-day case routes to re-entry instead (see the boundary rule,
+   pinned at contract — e.g. ≥2 unlogged days = lapse).
+6. **Re-entry** — the flagship. A designed surface built entirely from UI-derivable
+   facts (last logged day, lapse length, days remaining, stage drift, missed photo
+   weeks, where the level and weight stood). It never shames, never leads with the
+   broken streak, and invites backfill — with marking missed days exactly as easy as
+   marking successes. Armed once per return via localStorage, same pattern as the
+   existing once-flags.
+7. **Weekly ritual** — a photo/waist prompt enters the register precedence on the
+   contract-specified day; the compare is framed as the payoff it is.
+8. **Day 105** — the final day is a moment, not a normal day; MissionCompleted presents
+   the career XP story so starting mission two feels like continuation, not reset.
+
+Cross-cutting: one celebration primitive replaces the three overlay copies; a new
+medium register fills the gap between toast and takeover; a co-occurrence precedence
+table (pinned at contract) decides stacking when perfect-day + level-up + stage-crossing
+land on the same slide.
+
+## 5. Architecture of the restyle
+
+- **Net-new token surface.** No shadow, spacing, or duration tokens exist today — only
+  colors, four radii, and one easing curve. A direction wanting depth or a motion scale
+  adds `--shadow-*` / `--duration-*` (and any glow/depth tokens) to **both**
+  [src/index.css](src/index.css) and the [tailwind.config.js](tailwind.config.js)
+  `extend` block, or it violates the no-literals rule the charter keeps.
+- **Motion dedup.** The ease `[0.32, 0.72, 0, 1]` is declared in five component files,
+  CSS, and the Tailwind config. One source (a UI-side motion-tokens module alongside
+  [src/lib/motion.ts](src/lib/motion.ts)) replaces all seven.
+- **The register system.** Light (toast float) / medium (new, in-flow) / heavy
+  (full-screen) with one precedence table. Re-entry and the ritual prompt slot into the
+  existing single-banner gate rather than stacking banners.
+- **Dashboard decomposition.** [src/pages/Dashboard.tsx](src/pages/Dashboard.tsx) is
+  636 lines and hosts six of the eight moments, the banner precedence chain, the XP
+  diff-watcher, and every once-flag. It splits into section files + a `useCelebrations`
+  hook before the moment phases land, so they touch section files, not a monolith.
+- **Theme knock-ons** (named now, not discovered later):
+
+  | Surface | What changes |
+  |---|---|
+  | [index.html](index.html) `:8-9` | `theme-color` metas (light + dark values) |
+  | [index.html](index.html) `:11` | `apple-mobile-web-app-status-bar-style` (a dark-first identity wants `black-translucent`) |
+  | [index.html](index.html) `:14-25` | boot-script theme default, if the primary theme flips (existing installs: `'system'` users flip, explicit choosers don't) |
+  | [vite.config.ts](vite.config.ts) `:16-17` | manifest `theme_color` + `background_color` (Android splash — miss it and every cold launch flashes white) |
+  | [public/app-icon.svg](public/app-icon.svg) | redraw on-palette (the current crimson/magenta rocket was never brought into the v2 system); maskable-safe geometry; split `any`/`maskable` entries; add 192/512 PNG fallbacks |
+
+- **Measured bundle baseline (HEAD `66004ff`, fresh `npm run build` 2026-07-30;
+  instrument: Vite's gzip report)** — the regression gate is a delta against these
+  numbers, not a vibe:
+
+  | Asset | Gzipped |
+  |---|---|
+  | Entry JS (`index-*.js`) | 126.78 kB |
+  | CSS | 5.77 kB |
+  | **First paint (entry + CSS)** | **132.55 kB** |
+  | Progress chunk (recharts) | 106.51 kB |
+  | Settings chunk | 7.72 kB |
+  | Photos chunk | 3.99 kB |
+  | History chunk | 2.57 kB |
+  | Compare chunk | 1.46 kB |
+  | icon chunk (`trash-2-*.js`) | 0.49 kB |
+  | **All JS** | **249.52 kB** |
+
+  Precache: 13 entries, 849 KiB raw. Budget stays < 350 kB gz — roughly 100 kB of
+  headroom, and the Workbox glob precaches every chunk on install, so new assets are
+  paid for at install time. The seven Inter `.woff2` files (~218 kB, already
+  compressed) are currently **not** in the precache glob (fonts are runtime-fetched);
+  the audit phase either adds them or records why not.
+
+## 6. Scope tiers
+
+| Tier | Phases | What it is |
 |---|---|---|
-| **Login** | `POST /api/v3/users/sign_in.json?app_id=Renpho` | Body: your email + your password **RSA-encrypted** with a hardcoded public key, base64'd. Returns a `terminal_user_session_key` (the session token) and your profile. |
-| **List scale users** | `GET /api/v3/scale_users/list_scale_user` | A Renpho scale can hold several profiles; each has a `user_id`. You pick yours. |
-| **Measurements** | `GET /api/v2/measurements/list.json` | Pass the session key + `user_id` + a `last_at` cursor. Returns an array of readings. |
+| **E** — Exploration | 1–4 | Lab route, directions, Journey renders, design contract. Prod-invisible; fully reversible. Ends at Gate 3. |
+| **F** — Foundation | 5–6 | Tokens + theme knock-ons + icon; primitives + the celebration system. |
+| **M** — Moments | 7–10 | Dashboard decomposition + daily loop; re-entry (flagship); the arc; the weekly ritual. |
+| **S** — Sweep | 11–12 | Secondary surfaces; the whole-app voice pass. |
+| **C** — Checkpoints | 13–14 | Doc refresh; the measured audit. |
 
-Each reading carries ~15 metrics. The two you care about are in every reading:
-**`weight`** (kilograms) and **`bodyfat`** (percent) — alongside BMI, body water, muscle
-mass, bone mass, BMR, visceral fat, protein, etc., if you ever want more.
+Stop after any phase and the app is in a good state: Tier E ships nothing visible;
+every production phase leaves a coherent whole (a fully-tokened app, a fully-restyled
+component set, one more finished moment).
 
-**What this means for you (the honest version):**
+## 7. Cross-cutting decisions
 
-- **It's unofficial.** Renpho can change these endpoints or the encryption at any time and
-  the integration breaks with no warning. Treat it as best-effort, and always keep manual
-  entry working as the fallback. (This is why Tier 0 below ships *first*.)
-- **It needs your Renpho login.** The flow authenticates with your real Renpho email +
-  password. Where that credential lives is the single most important design decision —
-  covered in §4.
-- **A browser cannot call it directly.** Three hard blockers:
-  1. **CORS** — `qnclouds.com` won't return the headers a browser requires for a
-     cross-origin request, so a `fetch()` from the PWA is rejected before it starts.
-  2. **Secrets** — doing login in the browser means your Renpho password sits in
-     client-side JavaScript / localStorage, readable by anything. Unacceptable.
-  3. **Brittleness** — the RSA step and the private endpoints are fiddly and shift; you
-     want that logic in one server file you can patch, not shipped to every client.
+1. **UI-only fence.** No changes to [src/store/mission.ts](src/store/mission.ts),
+   [src/types.ts](src/types.ts), the data/logic libs (`xp`, `streak`, `adherence`,
+   `dayStatus`, `mergeBodyData`, `renphoClient`, `renphoCsv`),
+   [src/storage/photos.ts](src/storage/photos.ts), or `api/`. In scope and explicitly
+   *not* protected: `encouragement.ts`, `quotes.ts`, `stage.ts`, `motion.ts`,
+   `theme.ts`, `viewport.ts` — the UI-side libs.
+2. **Zero new npm dependencies by default.** `framer-motion`, `lucide-react`,
+   `recharts` are in. Any dependency is a stop-and-raise with a case. The shadow
+   version of this rule: **fonts**. A new typeface isn't an npm dep in spirit even when
+   installed as one — it's a first-paint and precache budget line, and gets the same
+   stop-and-raise.
+3. **Career XP.** DESIGN.md claims XP carries into mission two; the store zeroes it on
+   `startNewMission`. Resolution (UI-only): career XP =
+   `history.reduce((s, m) => s + m.finalXp, 0) + totalXp(current)`, presented as a
+   career level/total. The store stays untouched; the contract pins the presentation.
+4. **Once-flag continuity.** Consolidating the three overlays must preserve the
+   `mission.stageShown.*` and `mission.streakBreak.*` localStorage keys, or shipped
+   users get re-fired celebrations after the update.
+5. **The owner's device is the test device.** Every on-device fixture playbook
+   (startDate time-travel, once-flag clearing) starts with Settings → Export. Fixture
+   states in the lab never write the store.
+6. **Haptics are Android-only.** `navigator.vibrate` is silent on iOS Safari. Fine for
+   the primary surface (installed Android PWA), but a direction leaning on haptics as
+   identity must know the limit.
+7. **Recharts stays.** The Progress chunk is 108 KB gz, but a custom chart rewrite is a
+   scope trap; it gets themed via tokens, not replaced.
+8. **A11y bars are verification, not aspiration.** Contrast measured with instruments;
+   `prefers-reduced-motion` honoured (the CSS kill-switch does not affect
+   framer-motion — the JS hook must be wired everywhere motion lands); ≥44px targets;
+   ≥16px inputs; rem scale verified at 130% and 175% system text scale; offline cold
+   start on the installed Android PWA.
 
-  → Hence a small **backend proxy**. You already intuited this — it's the right call.
+## 8. Design for where this is going
 
----
+- **Re-entry is the usage pattern, not an edge case.** The return screen gets the same
+  design attention as Day 1 — it is judged first at every gate.
+- **Post-105 and mission two.** The design language must still work when the 105 days
+  are behind you: the archive, the career XP story, starting again as continuation.
+- **Portability.** The language carries to a second mission, to a friend running their
+  own 105 days, and to renamed pillars. Onboarding doubles as the portability test.
+- **First five minutes, bad day.** Nothing should need the owner's context or muscle
+  memory to feel good.
 
-## 2. The shape of the solution
+## 9. Why this order
 
-```
- Renpho scale ──Bluetooth──► Renpho phone app ──► Renpho cloud (qnclouds.com)
-                                                          │
-                                                          │  (reverse-engineered calls)
-                                                          ▼
-                                          ┌──────────────────────────────┐
-                                          │  Thin backend proxy (ours)    │
-                                          │  • holds the Renpho creds     │
-                                          │  • logs in, fetches readings  │
-                                          │  • normalizes to clean JSON   │
-                                          │  • CORS-allows only our app   │
-                                          └──────────────┬───────────────┘
-                                                         │  GET /api/renpho/measurements
-                                                         ▼
-                                       Mission to Abs PWA  ──►  writes weight + bodyFat
-                                       ("Sync" in Settings)      into DayEntry by date
-```
-
-The PWA never sees Renpho directly. It calls **our** endpoint, which returns a stable,
-documented JSON contract (§3). That decoupling is the most important architectural move:
-if Renpho changes, we fix the proxy and the app is untouched; and we could later swap the
-*source* (e.g. Google Fit, a manual file) behind the same contract without the app caring.
-
-### Source options, ranked by friction (so you can choose with eyes open)
-
-| Route | What it is | Friction | Verdict |
-|---|---|---|---|
-| **A. Reverse-engineered Renpho cloud** (recommended) | Proxy logs into qnclouds.com as above | Medium build, ongoing maintenance risk | **Primary.** Only route that delivers weight + body fat + full history + backfill from the scale alone. |
-| **B. Health-platform bridge** (Google Fit / Apple Health / Health Connect) | Renpho *officially* mirrors data into these; read from there instead | High, and shrinking | **Hedge, not now.** Google is sunsetting the Fit REST API; Apple Health and Android Health Connect have **no** web-readable cloud API (they need a native app). Note it as a future fallback if Route A dies. |
-| **C. Manual file import** (no backend) | Export from the Renpho app, import the file | Lowest | **Ship first as Tier 0.** Fully local-first, zero infra, and it builds the exact data model + merge logic every other route reuses. |
-
----
-
-## 3. Scope tiers
-
-You asked for explicit tiers so you can ship the core value fast and defer the heavy
-"syncing" work. Here they are, smallest first. The phase-by-phase build order is in
-[updatePhases.md](updatePhases.md).
-
-### Tier 0 — Data model + manual import · **LOW friction · do this first · no backend** · ✅ Shipped
-
-The foundation. Nothing else can store a body-fat number or merge a synced value until
-this exists, and it's useful on its own.
-
-- Add **`bodyFat?: number`** and a provenance flag **`weightSource?: 'manual' | 'renpho'`**
-  (and `bodyFatSource?`) to [`DayEntry`](src/types.ts); bump the store **v8 → v9** with a
-  migration (the pattern is already in [src/store/mission.ts](src/store/mission.ts:200)).
-- Surface body fat in the UI next to weight (a `BodyFatInput` mirroring
-  [src/components/WeightInput.tsx](src/components/WeightInput.tsx); show it in
-  [DayEditor](src/components/DayEditor.tsx) and the [Progress](src/pages/Progress.tsx) chart).
-- A **"Import from Renpho export"** action in [Settings](src/pages/Settings.tsx) that reads
-  the CSV the Renpho app can export and maps rows → days, tagging them `renpho`.
-
-**Delivers:** body fat is now a first-class metric, and you can already get scale data in
-(manually) with no server. **Effort:** ~1–2 sessions.
-
-### Tier 1 — Backend proxy + "Sync now" button · **MEDIUM friction · the core goal** · ✅ Shipped
-
-The feature you want soonest: press a button, today's weight + body fat appear.
-
-- Stand up the thin proxy (§2) as a serverless function. One endpoint:
-  `GET /api/renpho/measurements?since=<iso>` → returns the normalized contract.
-- A **"Body-data sync"** section in [Settings](src/pages/Settings.tsx): a **Sync now**
-  button + last-synced status. It calls the proxy, takes the most recent reading(s), and
-  writes `weight` + `bodyFat` into the matching day(s), tagged `renpho`, **without
-  overwriting a value you typed by hand** (merge policy in §4).
-
-**Delivers:** the headline use case — scale → app on demand. **Effort:** ~2–3 sessions
-(most of it standing up + securing the proxy the first time).
-
-### Tier 2 — Historical backfill + reconciliation · **LONGER scope · defer** · ✅ Shipped
-
-This is the *"even on days I forgot to open the app, fill them in so everything matches"*
-feature. It's genuinely more work because it's about *merging two histories correctly*.
-
-- Fetch **all** readings since the mission start date (cursor-paginated), not just the latest.
-- Reconcile into `days`: dedupe, decide which reading represents a day when there are
-  several (latest of the day, or first-of-morning), convert units, and respect the
-  manual-wins merge policy per day.
-- Handle **multiple scale profiles** (pick your `user_id`) and a confirm/preview step
-  before writing (mirror the existing import-preview sheet in
-  [Settings](src/pages/Settings.tsx:546)).
-
-**Delivers:** open the app after a week away and your weight/body-fat history is complete.
-**Effort:** ~2–4 sessions. **Labeled long-scope — not a blocker for Tier 1.**
-
-### Tier 3 — Automatic / hands-off sync · **LONGEST scope · biggest departure · defer** · ⏳ Not started
-
-The *"I weighed in but never opened the app, yet it's still there"* dream.
-
-- **Sync-on-open:** the app auto-syncs (throttled) when launched — easy once Tier 1+2 exist.
-- **Truly hands-off** (data captured while the app is closed) requires a **server-side
-  scheduled pull** into a small datastore, which the app then reconciles on next open. That
-  is the largest step away from local-first: it means the backend *stores your health data*,
-  not just proxies it — with the privacy, hosting, and persistence concerns that follow.
-
-**Delivers:** zero-touch sync. **Effort:** high. **Labeled longest-scope — revisit only
-after Tier 2 proves out.** Note: browser "Periodic Background Sync" exists but is
-unreliable/unsupported on most targets, so the credible path is the server cron, not the SW.
-
----
-
-## 4. Cross-cutting decisions you'd otherwise miss
-
-Since you said this is new territory — these are the things that bite people, in priority
-order:
-
-1. **Credential security (the #1 thing).** Never put your Renpho password in the browser.
-   The proxy holds it. For a **single-user, personal build** (which this is), the simplest
-   safe option is a server **environment variable / secret** — your creds live only in the
-   host's secret store, never in the repo, never in client code. (Multi-user would need
-   per-user encrypted-at-rest storage + a login of our own — a different, much bigger app.
-   Recommendation: **stay single-user**.) Add `.env*` to `.gitignore`; commit a `.env.example`.
-   One subtlety since the proxy lives on a public URL: it would happily return *your* data to
-   anyone who finds it, so gate it with a **shared-secret token** you paste into the app once
-   (stored on your device, never in the shipped bundle). Details in Phase 4.
-
-2. **Provenance + merge policy.** Tag every value `manual` or `renpho`. Rule of thumb:
-   **a value you typed by hand always wins** over a synced one for the same day; a sync only
-   fills empties or updates prior-synced values. This makes re-syncing idempotent and
-   non-destructive — you can press Sync 100×, nothing you typed is ever clobbered.
-
-3. **Units.** Renpho returns **kg**; the app supports kg *and* lb
-   ([weightUnit](src/types.ts:27)). Convert at the proxy/import boundary and store in the
-   app's current unit (reuse the `LB_PER_KG` factor already in
-   [Settings](src/pages/Settings.tsx:42)). Body fat is unitless %.
-
-4. **Dates & multiple readings.** Renpho timestamps are epoch (UTC). Map each to a **local
-   ISO date** (the app keys days by `YYYY-MM-DD`). If a day has several readings, pick one
-   deterministically (recommend: **latest of that day**) and ignore the rest.
-
-5. **Hosting — decided: Vercel.** The app already deploys on Vercel, so the proxy is just a
-   **Vercel Function** under `/api` in the same project (e.g. `api/renpho/measurements.ts`) —
-   no separate host, no extra CORS hop (the function and the PWA share an origin). Renpho
-   creds go in **Vercel project Environment Variables**, never in the repo. The proxy is
-   stateless in Tiers 1–2 (it stores nothing) — cheap and low-risk on the free tier.
-
-6. **Graceful degradation.** Sync failures (Renpho down, endpoint changed, offline) must
-   **never** break the app. Show a quiet error, keep the last good data, and leave manual
-   entry fully working. The app must be 100% usable with the backend entirely absent.
-
-7. **Longevity & ToS.** This is an unofficial integration; it can break and it's arguably
-   against Renpho's terms for redistribution. For a personal/portfolio build that's an
-   acceptable, well-understood risk — *as long as* manual entry (Tier 0) is always the floor.
-   Document the risk in the README so a portfolio reviewer sees you understood it.
-
-8. **Privacy.** Body metrics are sensitive. In Tiers 1–2 nothing is stored server-side, so
-   exposure is minimal. Tier 3 changes that — don't add server storage until you've decided
-   it's worth it.
-
-9. **Testing.** Mock the Renpho responses (capture one real payload, replay it) so you can
-   build and test the proxy + merge logic without hitting the live API or committing creds.
-
----
-
-## 5. Recommendation & confirmed decisions
-
-**Recommended path:** ship **Tier 0 now** (real value, zero infra, de-risks everything),
-then **Tier 1** (the core button), and treat **Tier 2 / Tier 3** as clearly-separate later
-work. Stay **single-user** and keep the proxy **stateless** until Tier 3 forces the issue.
-
-The three questions that gated Tier 1 are now answered:
-
-- **Hosting → Vercel** (already in use). The proxy is a same-project Vercel Function under
-  `/api`; creds live in Vercel env vars. See §4.5.
-- **Language → TypeScript.** Worth clearing up the Python confusion directly: the public
-  `renpho_api` packages *are* Python, but that's just the language those authors chose. The
-  actual integration is nothing more than **HTTPS requests + one RSA-encrypt step**, and
-  Node/TypeScript do both natively (built-in `crypto` for the RSA, `fetch` for the calls).
-  We **re-implement** the ~40 lines of login/measurement logic in TypeScript rather than
-  import the Python library — so the whole stack stays one language on Vercel. (Vercel *can*
-  run Python functions if we ever wanted to literally use the library, but that adds a second
-  runtime and dependency surface for no real gain here.)
-- **Export format → confirmed** from the real export `RENPHO Health-…csv`. Schema captured in
-  [updatePhases.md](updatePhases.md) Phase 2. Key facts: columns are
-  `Date,Time,Weight(kg),BMI,Body Fat(%),…`; **date is `YYYY.MM.DD`** (dot-separated);
-  weight is **kg**; body fat is a plain percent; rows are **newest-first**; and the file can
-  contain **two readings for the same day** (the importer must pick one). The sample is from
-  **last year (Oct–Dec 2025)** — *before* the current mission window — which is itself a case
-  the importer must handle (see Phase 2).
-
-**Scope note — only two metrics, on purpose.** The export (and the API) expose ~13 more
-fields — BMI, skeletal muscle, visceral fat, body water, BMR, metabolic age, etc. We
-deliberately import **only weight + body fat** to honor the *witness, not a coach* philosophy
-and keep the daily loop minimal. Adding more later is a cheap, additive change (extra optional
-`DayEntry` fields) if it's ever wanted — no rework of the sync pipeline.
-
----
-
-## Known limitation — classic Renpho vs. Renpho Health (discovered 2026-06-01)
-
-The proxy shipped in Tiers 1–2 talks to the **classic Renpho** cloud
-(`renpho.qnclouds.com`, RSA-encrypted password, `app_id=Renpho`). The owner's
-account is on **Renpho Health** (the current app), whose backend is a *different*
-host — **`cloud.renpho.com`, AES-128-ECB** — that the classic flow cannot
-authenticate. Symptom: valid credentials return **"email not registered"**
-(surfaced as HTTP 502), because the email genuinely isn't on the classic server.
-
-- **Works today:** CSV import (Tier 0 / Phase 2) — the importer was built from a
-  real Renpho Health export, so it already speaks the right format. Reliable, no
-  backend.
-- **Planned:** a Renpho Health proxy variant against `cloud.renpho.com` — see
-  Phase 7 in [updatePhases.md](updatePhases.md). References:
-  StartupBros/renpho-mcp-server, danvaneijck/renpho-api.
-
-(Also note: the deployed function needed the ESM `.js`-extension import fix before
-it could load at all — see [updatePhases.md](updatePhases.md) Phase 3.)
-
-## Why this order
-
-Tier 0 first because it's local-first, ships value immediately, and forces us to get the
-data model and merge rules right — which *every* later tier depends on. Tier 1 next because
-it's the actual goal (scale → app) and the smallest backend that delivers it. Tiers 2 and 3
-are deferred precisely because they're where the cost lives — historical reconciliation and,
-worst of all, server-side storage of health data. Each phase in
-[updatePhases.md](updatePhases.md) is independently shippable and ends in one focused commit;
-`npm run typecheck` and `npm run build` pass at every phase boundary.
+Exploration goes first because it is reversible — three directions in a dev-only lab
+cost nothing in production risk, and the charter's core insight is that reactions to
+rendered work beat adjectives every time. The contract converts those reactions into
+law *before* any production cost is sunk, so every later phase verifies against a
+document, not a memory. Tokens land before components, components before moments,
+because each layer is the next one's vocabulary. Re-entry lands before the celebration
+arc because the owner's actual pattern is the return, not the streak — if only one
+production phase ships, it should be that one. Voice runs last across everything so the
+app sounds like one person, not twelve commits. And the audit is last because it
+measures the whole: the bars are only meaningful against the finished thing.

@@ -1,320 +1,484 @@
-# Update Phases — Renpho body-data sync
+# Update Phases — UI/UX redesign: make it worth opening
 
-Each phase is independently shippable and ends with a single commit. Sequencing is
-intentional: the local-first, zero-infra work lands first and de-risks everything after it
-(see [update.md](update.md) for context and the tier map). `npm run typecheck` and
-`npm run build` must pass at the end of every phase. The app must stay fully usable with the
-backend **absent** at every phase.
-
-> **Phase ↔ tier map:** Phases 1–2 = Tier 0 · Phases 3–4 = Tier 1 · Phase 5 = Tier 2 ·
-> Phase 6 = Tier 3. Stop after any phase and the app is in a good state.
+> **Phase ↔ tier map:** Phases 1–4 = Tier E (exploration, prod untouched) ·
+> Phases 5–6 = Tier F (foundation) · Phases 7–10 = Tier M (moments) ·
+> Phases 11–12 = Tier S (sweep + voice) · Phases 13–14 = Tier C (checkpoints).
+> Stop after any phase and the app is in a good state.
 >
-> **Status:** Phases 1–5 + 7 shipped ✅ (Tiers 0–2 complete; Renpho Health backend live).
-> Phase 6 (Tier 3, auto-sync) deferred. The deployed sync now supports **both** Renpho
-> clouds — `cloud.renpho.com` (Renpho Health, the default) and `renpho.qnclouds.com`
-> (classic) — selected by `RENPHO_BACKEND`. CSV import (Phase 2) remains the floor.
+> **Status:** Phase 0 (planning + archive) shipped with this document. Phases 1–2
+> ⏳ not started. Everything from Phase 3 onward sits behind an owner gate —
+> `⏸ awaiting gate` means blocked on a sign-off, not abandoned. **No production
+> file changes until Gate 3 (the design contract) signs.**
+
+Each phase is independently shippable and ends with a single commit (owner pushes).
+Sequencing is intentional: exploration is reversible so it goes first; the contract
+converts reactions into law before any production cost; tokens → components → moments
+because each layer is the next one's vocabulary; re-entry lands before the celebration
+arc because the owner's actual pattern is the return, not the streak. Spec and argument
+in [update.md](update.md); charter in [redesign-brief.md](redesign-brief.md).
+
+Three hard gates: **Gate 1** (direction reactions, after Phase 2), **Gate 2** (winner
+pinned on the Journey render, after Phase 3), **Gate 3** (design contract signed, after
+Phase 4). A gate is an owner session at 375px on the phone, mid-lapse fixture first.
+The session interrogates reactions — what specifically pulled or repelled — and never
+asks the owner to describe a direction in adjectives.
 
 ---
 
-## Phase 1 — Data model: body fat + provenance (Tier 0, no backend) — ✅ Shipped
+## Phase 1 — Direction lab: dev-only route + fixtures — ⏳ Not started
 
-**Goal** — body fat becomes a first-class metric, and every weight/body-fat value knows
-whether it was typed or synced. This is the schema foundation for all later phases.
+**Goal** — a throwaway rendering harness where directions get built against the real
+primitives, driven by fixture states, with zero production footprint.
 
 **Changes**
-- [src/types.ts](src/types.ts) — `DayEntry` gains `bodyFat?: number`,
-  `weightSource?: 'manual' | 'renpho'`, `bodyFatSource?: 'manual' | 'renpho'`.
-- [src/store/mission.ts](src/store/mission.ts) — bump `version: 8 → 9`; add an
-  `if (version < 9)` migration (no backfill needed — absent fields read as `undefined`).
-  When `setDayEntry` is called from manual UI, stamp `weightSource: 'manual'` /
-  `bodyFatSource: 'manual'`.
-- [src/components/WeightInput.tsx](src/components/WeightInput.tsx) — clone into a
-  `BodyFatInput` (suffix `%`, step `0.1`, sane 1–60 bounds).
-- [src/components/DayEditor.tsx](src/components/DayEditor.tsx) — render the body-fat input
-  under weight.
-- [src/pages/Progress.tsx](src/pages/Progress.tsx) — optional second line/series for body
-  fat on the existing chart.
-- Export/import: bump the `ExportPayload` version in
-  [src/pages/Settings.tsx](src/pages/Settings.tsx:34) so backups carry the new fields
-  (they already serialize whole `DayEntry` objects, so this is mostly a version note +
-  `isValidPayload` tolerance).
+- [src/App.tsx](src/App.tsx) — dev-guarded lab route. **Both** the `lazy()` import
+  expression and the `<Route>` sit behind `import.meta.env.DEV` (an unconditional
+  top-level `lazy()` still emits the chunk even when the route is guarded):
+  `const LabPage = import.meta.env.DEV ? lazy(() => import('./lab/Lab')) : null;`
+  then `{import.meta.env.DEV && LabPage && <Route path="/lab/*" element={<LabPage />} />}`.
+  Add `/lab` to the `hideNav` list.
+- New `src/lab/Lab.tsx` — shell: direction index, fixture-state switcher, lab-local
+  theme toggle that does **not** write `settings.theme`.
+- New `src/lab/fixtures.ts` — pure-props fixture states, no store writes, no
+  localStorage: `day62MidLapse` (the default, always listed first), `day1`,
+  `day104Eve`, `streakBreak`, `levelUp`, `perfectDay`. The nine primitives are
+  pure-props presentational, so fixtures drive them directly; `DayEditor` / `Compare` /
+  `MissionCompleted` are store-connected and get thin lab shims only if a direction
+  needs them rendered.
 
 **Verification**
-- `npm run typecheck` passes; existing v8 data migrates to v9 untouched.
-- Enter a body-fat value on a day → persists, shows on Progress, survives reload.
-- Export JSON → `bodyFat` / `*Source` present; re-import round-trips.
+- `npm run build` — no `Lab` chunk in the build summary; entry gz within 1 kB of the
+  baseline in [update.md](update.md) §5 (instrument: Vite's gzip report).
+- `npm run dev` → `/#/lab` renders the shell with the bottom nav hidden;
+  `npm run preview` → `/#/lab` renders no route and the app is otherwise unaffected.
+- Full lab tour (every fixture, both lab themes), reload → DevTools → Application →
+  Local Storage: the `mission` key is byte-identical to before the tour.
 
-**Commit** — `Body data: add body-fat field + value provenance to DayEntry`
+**Commit** — `Lab: dev-only direction lab with mid-lapse fixture states`
 
 ---
 
-## Phase 2 — Manual Renpho export import (Tier 0, no backend) — ✅ Shipped
+## Phase 2 — Two to three contrasting directions, rendered — ⏳ Not started → **GATE 1**
 
-**Goal** — get real scale data into the app today, with zero server, and build the exact
-merge logic the backend will reuse.
-
-**Renpho CSV schema** (confirmed from a real export, `RENPHO Health-…csv`):
-```
-Date,Time,Weight(kg),BMI,Body Fat(%),Skeletal Muscle(%),Fat-Free Mass(kg),
-Subcutaneous Fat(%),Visceral Fat,Body Water(%),Muscle Mass(kg),Bone Mass(kg),
-Protein(%),BMR(kcal),Metabolic Age,Optimal Weight(kg),Target…,Body Type,Remarks
-2025.12.26,08:23:40,74.30,26.3,26.1,47.6,...
-```
-- **Date** = `YYYY.MM.DD` (dot-separated) → parse to ISO `YYYY-MM-DD`.
-- We read **only** `Weight(kg)` (col 2) and `Body Fat(%)` (col 4); ignore the rest. Treat
-  `--` as empty for any cell.
-- Rows are **newest-first**; a date can appear **twice** (e.g. `2025.11.02`) — dedupe to one
-  reading per day using **`Time`** (keep the latest).
+**Goal** — 2–3 deliberately contrasting directions, each delivered as the nine real
+primitives plus a fully composed Dashboard, judged first in the day-62 mid-lapse state.
 
 **Changes**
-- New `src/lib/renphoCsv.ts` — parse the export → `{ date, weightKg, bodyFat }[]`, applying
-  the date conversion, `--`→null, and same-day dedup above.
-- New `src/lib/mergeBodyData.ts` — the **merge policy** (reused by every later phase):
-  for each incoming reading, write into `days[date]` only if the existing value is empty or
-  was itself `renpho`-sourced; **never overwrite a `manual` value**. Convert kg → the user's
-  `weightUnit`.
-- **Out-of-mission-window handling:** rows can predate the current mission `startDate` (the
-  sample is all 2025, before a 2026 mission). Decision: **store them anyway** (they're valid
-  `days` entries and future-proof), but the preview must **split the count** into
-  "in current mission" vs "outside window (stored, not shown)" so the user isn't surprised
-  that older rows don't appear on the Journey/Progress views.
-- [src/pages/Settings.tsx](src/pages/Settings.tsx) — an "Import from Renpho export" action
-  in the Data section with a preview/confirm sheet (mirror the existing import-preview at
-  [Settings.tsx:546](src/pages/Settings.tsx:546)): "N days will be filled (K in this mission,
-  J outside it), M skipped (manual)."
+- `src/lab/directions/<n>/` per direction — **forked lab-only copies** of the
+  primitives, restyled freely (forks are necessary: Tailwind type/shape utilities are
+  literal; only colors/radii/easing are `var()`-driven). Palette variation *within* a
+  direction may use a wrapper class redefining custom props.
+- Each direction delivers: all nine primitives + the composed Dashboard, in all six
+  fixture states, **mid-lapse shown first** — and the mid-lapse Dashboard must contain
+  that direction's **re-entry answer** (what greets the returning user), not a
+  grayed-out ordinary screen.
+- Each direction declares its theme identity (light-first / dark-first / single-theme)
+  and renders whichever theme(s) it claims.
+- Method: ui-ux-pro-max generates palette/type/style-system candidates per direction
+  before building; hallmark drives the exploration and enforces the anti-generic bar.
+- Contrast enforcement (from [update.md](update.md) §3): every pair of directions
+  differs on ≥3 axes; ≥1 direction leaves citrus entirely; ≥1 is dark-first; ≥1 keeps
+  a light identity; no direction is v1 in disguise; "juiced zen" seeds at most one
+  direction, rebuilt from its mood words (tactile, warm, physical), no free pass.
 
 **Verification**
-- Import the real `RENPHO Health-…csv` → 48 unique days parsed (the duplicate `2025.11.02`
-  collapses to one), weight + body fat mapped, units converted, manual days untouched.
-- Preview shows the in-window vs outside-window split correctly.
-- Re-import the same file → idempotent (no double-writes, nothing clobbered).
-- Bad/empty file → clean error, no state change.
+- Each direction renders all six fixtures at 375px (DevTools device toolbar),
+  mid-lapse first; the mid-lapse screen is visually distinct from day-1 (a designed
+  re-entry treatment, not a grayed dashboard).
+- `npm run build` — still no lab chunk; entry gz unchanged.
 
-**Commit** — `Body data: import weight + body fat from a Renpho export file`
+**GATE 1** — owner reacts per direction on the phone at 375px, starting from
+mid-lapse. Kill/keep/merge verdicts recorded in [update.md](update.md) as dated
+decision notes.
+
+**Commit(s)** — one per direction: `Lab: direction 1 — <working name>` etc.
 
 ---
 
-## Phase 3 — Backend proxy scaffold (Tier 1) — ✅ Shipped
+## Phase 3 — Journey renders for the finalists — ⏸ Awaiting Gate 1 → **GATE 2**
 
-**Goal** — a deployed, secured endpoint that turns Renpho's private API into one clean JSON
-contract. No app changes yet — this phase is testable on its own with `curl`.
-
-**Changes** — a **Vercel Function in this same project** at `api/renpho/measurements.ts`
-(TypeScript). Same project as the PWA = same origin, so there's no cross-origin CORS hop.
-Runs on the Node runtime so `node:crypto` is available for the RSA step. (No Python: the
-`renpho_api` logic is re-implemented in ~40 lines of TS — see
-[update.md §5](update.md#5-recommendation--confirmed-decisions).)
-- Implement the login flow with `node:crypto`: RSA-encrypt the password with Renpho's public
-  key → `POST /api/v3/users/sign_in.json?app_id=Renpho` → capture `terminal_user_session_key`.
-- Implement `GET /api/v2/measurements/list.json` (+ `scale_users/list_scale_user` to resolve
-  `user_id`).
-- Expose **one** app-facing endpoint: `GET /api/renpho/measurements?since=<iso>` returning the
-  contract:
-  ```jsonc
-  {
-    "syncedAt": "2026-06-01T08:00:00Z",
-    "unit": "kg",
-    "readings": [
-      { "date": "2026-06-01", "ts": 1748764800, "weightKg": 82.4, "bodyFat": 18.7 }
-      // ...one per reading since `since`, newest first
-    ]
-  }
-  ```
-- **Security/ops:** Renpho creds in **Vercel Environment Variables** only (`.env.local` for
-  `vercel dev`, git-ignored; ship `.env.example`). The function is same-origin with the PWA so
-  no CORS allow-list is needed, **but the URL is still publicly reachable** — gate it with a
-  shared-secret header (also a Vercel env var) so it isn't open to the world. Sensible
-  timeouts + structured error JSON.
-- A captured sample response committed as a fixture for tests/mocking (creds scrubbed).
-- `.gitignore` — confirm `.env*` is ignored before the first commit; `git grep` the email to
-  prove no creds landed in the tree.
-
-**Verification**
-- `curl` with the right header returns normalized readings; without it → 401.
-- Wrong-origin browser request → blocked by CORS.
-- Renpho login failure → 502 with a clean error body, no secret leakage.
-- No credentials anywhere in the committed tree (`git grep` the email/password).
-
-**Commit** — `Renpho proxy: stateless serverless endpoint for normalized measurements`
-
-**Deploy fix (2026-06-01):** the function crashed on Vercel with
-`FUNCTION_INVOCATION_FAILED` (`ERR_MODULE_NOT_FOUND` on `../_lib/renpho`) until the
-relative import was given an explicit `.js` extension — `package.json` is
-`"type": "module"`, so Vercel ships the functions as native ESM and Node's loader
-won't guess extensions. Rule documented in [api/README.md](api/README.md).
-
----
-
-## Phase 4 — Client "Sync now" (Tier 1) — ✅ Shipped
-
-**Goal** — the headline feature: one button pulls the latest weight + body fat into the app.
+**Goal** — the Journey page fully rendered in each surviving direction; the core v2
+complaint ("a grid of dots on a card rather than a walk") is only testable here, so a
+direction that works on the Dashboard and fails on the Journey is dead.
 
 **Changes**
-- [src/types.ts](src/types.ts) `Settings` — add `renphoSync?: { enabled: boolean;
-  syncToken: string; lastSyncedAt: string | null }`. Migrate v9 → v10. The endpoint is the
-  same-origin relative path `/api/renpho/measurements` (Vercel function from Phase 3), so no
-  URL field is needed.
-- **On the one client-side secret:** the *Renpho password* never touches the client (it's a
-  server env var). The `syncToken` is the access gate for the public function URL — the owner
-  pastes it **once** into Settings; it lives only in this device's local store (never in the
-  repo or the shipped bundle) and is sent as the shared-secret header Phase 3 checks. For a
-  single-user personal app this is the right trade.
-- New `src/lib/renphoClient.ts` — `fetchMeasurements(since)` calls the contract with the token
-  header; feed results through the **same** `mergeBodyData.ts` from Phase 2.
-- [src/pages/Settings.tsx](src/pages/Settings.tsx) — a "Body-data sync" section: an
-  enable toggle, a sync-token field, **Sync now** button, last-synced text, inline error on
-  failure. Default off.
-- Throttle + graceful failure: never block the UI, keep last-good data, surface a quiet
-  message on error.
+- `src/lab/directions/<finalist>/Journey*` — Journey + path forks per finalist,
+  rendered in mid-lapse (the gap must be visible on the walk without being
+  scarlet-lettered), day-1, and day-104 states.
+- Stage boundaries (Foundation → Build → Push → Refine → Reveal) visible in the
+  render — this is stage-crossing's direction-level treatment.
+- Any Gate-1 hybrid notes applied to the finalist Dashboards.
 
 **Verification**
-- With the proxy reachable: Sync now → today's weight + body fat appear, tagged `renpho`;
-  a manually-typed day is left alone.
-- Proxy unreachable/offline → friendly error, app stays fully usable, no data lost.
-- Sync disabled / never configured → app identical to pre-feature behavior.
+- Each finalist Journey renders the 105-day arc at 375px in its claimed theme(s); the
+  day-62 state shows the lapse gap legibly, without shame framing.
 
-**Commit** — `Renpho sync: on-demand "Sync now" pulls latest weight + body fat`
+**GATE 2** — winner pinned (or a precisely-defined merge). Losing directions' folders
+stay in the lab until Phase 14 disposition.
+
+**Commit** — `Lab: journey renders for finalist directions`
 
 ---
 
-## Phase 5 — Historical backfill + reconciliation (Tier 2) — *long scope* — ✅ Shipped
+## Phase 4 — The design contract in DESIGN.md — ⏸ Awaiting Gate 2 → **GATE 3**
 
-**Goal** — fill in every day since the mission start, so a week away still leaves a complete
-history. This is the genuinely harder, defer-able work.
+**Goal** — the winner becomes law before any production restyling; every later phase
+verifies against this document, not against memory.
 
-**Changes**
-- Proxy: support full pagination via the `last_at` cursor (fetch *all* since a date).
-- `src/lib/renphoClient.ts` — `fetchAllSince(startDate)` walking the cursor to completion.
-- `src/lib/mergeBodyData.ts` — extend for bulk: multiple readings per day (deterministic
-  pick — latest of day), multi-profile `user_id` selection, and a dry-run that returns a
-  diff (`willFill`, `willUpdateSynced`, `willSkipManual`) for preview.
-- [src/pages/Settings.tsx](src/pages/Settings.tsx) — a "Sync full history" action with a
-  preview/confirm sheet showing the diff before writing.
+**Changes** (all in [DESIGN.md](DESIGN.md))
+- **Replace** the direction sections: Product feel, Design tokens (light + dark),
+  Typography, Motion, Iconography, the Microcopy guide's voice rules, and the visual
+  specs inside Core components.
+- **Keep** the non-negotiables: Mission, Philosophy (witness-not-coach, honest
+  logging, every action reversible), data model, day status, streak, XP, stages,
+  failure path, error handling, accessibility bars.
+- **Author the decision log** (new section — none exists today; house voice: dated
+  headings, "Chose X over Y (reasons)"). Required entries: the winner over each loser;
+  an explicit verdict on **every** re-decidable v2 rule (exclamations/emoji/banned
+  words, radii, shadows, 200ms standard duration, no-confetti, light-first,
+  single-accent); the juiced-zen disposition; the citrus disposition.
+- **New contract sections:** the re-entry moment spec (the first this moment has ever
+  had); the three-register feedback system (light float / new medium in-flow / heavy
+  overlay) with a co-occurrence precedence table (moments stack — re-entry vs
+  streak-break vs stage vs level-up vs perfect-day vs photo-nudge needs a pinned
+  order); the lapse-vs-streak-break boundary (e.g. ≥2 unlogged days = lapse); the
+  net-new token surface names (`--shadow-*`, `--duration-*`, any glow/depth tokens);
+  the theme model, including the boot-flip rule for existing installs (`'system'`
+  users follow the new default; explicit choosers don't move).
+- **Resolve the XP carry-forward contradiction** (spec says XP carries; the store
+  zeroes it): pin the UI-only career-XP derivation
+  `history.reduce((s, m) => s + m.finalXp, 0) + totalXp(current)` and its
+  presentation.
 
 **Verification**
-- Clear a week of days, Sync history → all backfilled correctly; manual days preserved.
-- Days with several readings resolve to one deterministically.
-- A scale with two profiles imports only the selected user.
-- Preview counts match what actually gets written.
+- DESIGN.md has zero references to "bright, calm, intentional" outside the decision
+  log; the log covers all eight re-decidable rules with verdicts.
+- Every one of the eight moments has a spec section naming its feedback register.
+- The carry-forward claim in the completion section matches the pinned derivation.
 
-**What landed** (notes vs. the plan above):
-- **Pagination** ([api/_lib/renpho.ts](api/_lib/renpho.ts)) — `fetchReadings` now walks the
-  `last_at` cursor to completion (`listAllMeasurements`), advancing by the newest `ts` each
-  page, deduping by `ts`, and bounded by `MAX_PAGES`. The common case (a personal account's
-  whole history in one response) stops after one round; the loop is a safety rail and never
-  spins.
-- **Deterministic latest-of-day** lives at the client boundary
-  ([src/lib/renphoClient.ts](src/lib/renphoClient.ts) `toDailyReadings`), keeping the latest
-  `ts` per date before anything reaches the merge — `RenphoReading` carries no timestamp, so
-  resolving it here (mirroring the CSV importer) is the honest place. This also fixed a latent
-  multi-reading-per-day bug on the Phase 4 "Sync now" path.
-- **Diff** — `mergeBodyData` gained `willFill` / `willUpdateSynced` (per-day nature split)
-  alongside the existing in/outside-window counts and `skippedManual` (= willSkipManual). The
-  "Sync full history" sheet shows new-days-filled / refreshed / skipped, plus an
-  outside-window note.
-- **Multi-profile** — resolved server-side by the `RENPHO_USER_ID` env-var pin (the
-  deliberate single-user choice from [update.md §4.1](update.md)); no profile-picker UI was
-  added, by design. "Selected user" = the pinned profile.
-- `fetchAllSince` is a thin named wrapper over the shared GET; the proxy returns the complete
-  set for whatever `since` it's given, so on success the backfill also advances `lastSyncedAt`
-  so a later "Sync now" only grabs newer days.
+**GATE 3** — owner reads and signs the contract. Production phases unlock.
 
-**Commit** — `Renpho sync: full historical backfill with merge preview`
+**Commit** — `Design contract: pin the <winner> direction in DESIGN.md`
 
 ---
 
-## Phase 6 — Automatic sync (Tier 3) — *longest scope, biggest local-first departure* — ⏳ Deferred
+## Phase 5 — Token foundation + theme knock-ons + app icon — ⏸ Awaiting Gate 3
 
-**Goal** — hands-off sync, including days the app was never opened. Build only after Tier 2
-proves out; this is the first phase that puts health data on a server.
+**Goal** — the app wears the contract's palette and gains the token surface the
+direction needs; every theme knock-on lands here, named, not discovered later.
 
 **Changes**
-- **Sync-on-open** (the easy half): on app launch, if `renphoSync.enabled` and last sync is
-  stale, run `fetchAllSince(lastSyncedAt)` in the background, throttled. No new infra.
-- **Truly hands-off** (the heavy half): a **server-side scheduled pull** (cron) into a small
-  datastore, which the client reconciles on next open. This makes the backend *stateful* —
-  decide hosting/datastore, encryption-at-rest, and retention deliberately. Gate behind an
-  explicit opt-in; document the privacy trade in the README.
-- (Do **not** rely on browser Periodic Background Sync — unsupported/unreliable on the
-  Android-PWA target.)
+- [src/index.css](src/index.css) — the contract's palette, both themes; **net-new
+  token groups** `--shadow-*` / `--duration-*` (plus any glow/depth tokens); radii and
+  spacing revisited per contract.
+- [tailwind.config.js](tailwind.config.js) — surface the new groups (`boxShadow`,
+  `transitionDuration`) so no literal values leak into components.
+- New UI-side motion-token module (e.g. extend [src/lib/motion.ts](src/lib/motion.ts))
+  — the single source for ease/duration/spring presets, replacing the
+  `[0.32, 0.72, 0, 1]` duplication (five component files + CSS + Tailwind).
+- [index.html](index.html) — `theme-color` metas, `apple-mobile-web-app-status-bar-style`,
+  and the boot-script default if the primary theme flips.
+- [vite.config.ts](vite.config.ts) — manifest `theme_color` / `background_color`
+  (dark-first ⇒ `background_color` must change or the Android splash flashes white).
+- [public/app-icon.svg](public/app-icon.svg) — redraw on-palette (the current
+  crimson/magenta rocket predates the v2 system) with maskable-safe geometry; split
+  the single `'any maskable'` manifest entry into separate `any` + `maskable` entries;
+  add 192/512 PNG fallbacks.
 
 **Verification**
-- Open the app after days away → history is already complete without pressing Sync.
-- (Hands-off) weigh in with the app closed; the scheduled pull captures it; next open shows it.
-- Opting out / disabling stops all background and server activity; app reverts to manual-only.
+- `grep -rE '#[0-9a-fA-F]{3,8}' src --include='*.tsx'` returns zero hits.
+- `grep -rn '0.32, *0.72' src` returns exactly one hit (the motion-token module).
+- Body/bg and accent/bg pairs measure ≥ 4.5:1 in both themes (DevTools contrast
+  readout; literal ratios recorded in DESIGN.md).
+- Installed Android PWA cold launch: splash matches the manifest `background_color`,
+  no white flash; DevTools → Application → Manifest shows the icon uncropped in the
+  maskable preview.
+- `npm run build` — total gz within +3 kB of the baseline.
 
-**Commit(s)**
-- `Renpho sync: auto-sync on app open`
-- `Renpho sync: server-side scheduled pull (opt-in, stateful)`
+**Commit** — `Tokens: <direction> palette, depth + motion tokens, themed shell and icon`
 
 ---
 
-## Phase 7 — Renpho Health backend variant (cloud.renpho.com) — ✅ Shipped
+## Phase 6 — Shared primitives + one celebration system — ⏸ Awaiting Gate 3
 
-**Why** — the shipped proxy (Phases 3–5) speaks the *classic* Renpho API
-(`renpho.qnclouds.com`, RSA, `app_id=Renpho`). The owner's account is on **Renpho
-Health**, a separate backend — **`cloud.renpho.com`, AES-128-ECB** — that the classic
-flow can't authenticate (it returns "email not registered" → 502). CSV import
-(Phase 2) is the working fallback meanwhile, so this is additive, not a blocker.
+**Goal** — the nine primitives restyled per contract, and the feedback architecture
+rebuilt: one celebration primitive replacing three template copies, plus the missing
+medium register.
 
 **Changes**
-- New server client beside [api/_lib/renpho.ts](api/_lib/renpho.ts) (e.g.
-  `renphoHealth.ts`): the Renpho Health login + measurements against `cloud.renpho.com`
-  with AES-128-ECB, normalized to the **same** `Reading` contract so the app-facing
-  endpoint, `renphoClient.ts`, and `mergeBodyData` are all unchanged.
-- Backend selection: an env flag (e.g. `RENPHO_BACKEND=health|classic`, default
-  `health`), or try Health then fall back to classic. Keep one app-facing endpoint.
-- Same env vars (`RENPHO_EMAIL` / `RENPHO_PASSWORD` / `RENPHO_SYNC_TOKEN`); document
-  where the AES key comes from.
-
-**References** — StartupBros/renpho-mcp-server (targets `cloud.renpho.com` / Renpho
-Health), danvaneijck/renpho-api, RenphoGarminSync-CLI.
+- New celebration primitive replacing [LevelUpOverlay](src/components/LevelUpOverlay.tsx),
+  [StageOverlay](src/components/StageOverlay.tsx),
+  [StreakBreakOverlay](src/components/StreakBreakOverlay.tsx) (three copies of one
+  template). The three become thin configs or are deleted. **The localStorage
+  once-flag keys `mission.stageShown.*` and `mission.streakBreak.*` keep their names**
+  — shipped users must not get re-fired celebrations after the update.
+- New medium-weight in-flow register component — the gap between the XP toast and the
+  full-screen overlays; perfect-day, re-entry acknowledgment, and the photo nudge all
+  speak through it.
+- Restyle per contract: [MissionRing](src/components/MissionRing.tsx),
+  [SlideToConfirm](src/components/SlideToConfirm.tsx) (haptic disposition per
+  contract), [TodayRow](src/components/TodayRow.tsx),
+  [LevelBadge](src/components/LevelBadge.tsx), [BottomNav](src/components/BottomNav.tsx),
+  the weight/waist/body-fat inputs, [BottomSheet](src/components/BottomSheet.tsx),
+  [XpToast](src/components/XpToast.tsx), [UndoToast](src/components/UndoToast.tsx).
+- Extract a shared `SegmentedControl` (currently duplicated verbatim in
+  [Onboarding.tsx](src/pages/Onboarding.tsx) and [Settings.tsx](src/pages/Settings.tsx)).
 
 **Verification**
-- `curl` with the owner's Renpho Health account returns normalized readings (no
-  "email not registered"). CSV import still works unchanged. Classic accounts still
-  work if the backend is selectable.
+- One overlay implementation: the three old overlay files are deleted or are <20-line
+  configs of the shared primitive (`wc -l`).
+- The lab renders every restyled primitive against all six fixtures in both themes at
+  375px — the lab is now the verification gallery.
+- DevTools Rendering → Emulate `prefers-reduced-motion: reduce`: every spring
+  collapses to the contract's reduced variant (the CSS kill-switch does not affect
+  framer-motion — the JS hook must be wired).
+- SlideToConfirm track ≥44px tall; weight/waist inputs compute to ≥16px font-size
+  (DevTools computed styles).
 
-**What landed** (notes vs. the plan above):
-- **New Health client** ([api/_lib/renphoHealth.ts](api/_lib/renphoHealth.ts)) — login
-  (`renpho-aggregation/user/login`) → device discovery (`renpho-aggregation/device/count`)
-  → measurements (`RenphoHealth/scale/queryAllMeasureDataList`), all AES-128-ECB. The
-  *whole* request body is encrypted (password in plaintext inside the blob), not just the
-  password as in classic. Normalizes to the **same** `Reading` contract, so the endpoint,
-  `renphoClient.ts`, and `mergeBodyData` are untouched. It imports the shared
-  `Reading`/`RenphoCredentials` types + error classes from `renpho.ts` (which stays the
-  contract owner — zero changes to the shipped classic file).
-- **Big-int ids** — account/measurement ids (`id`, `bUserId`, `subUserId`) exceed 2^53, so
-  they're regex-extracted from the raw decrypted JSON as strings before `JSON.parse` can
-  round them; user selection matches on those strings.
-- **Backend selection** — a small dispatcher
-  ([api/_lib/renphoBackend.ts](api/_lib/renphoBackend.ts)) routes on `RENPHO_BACKEND`
-  (`health` default / `classic`) and re-exports the shared contract; the handler swapped its
-  import to it and is otherwise unchanged. Chose an explicit flag over try-health-then-classic
-  (predictable, single login, the owner is definitively on Health).
-- **AES key** — the app's fixed 16-byte AES-128 secret is embedded like the classic RSA
-  public key (transport-only, not a per-user secret); documented in
-  [api/README.md](api/README.md) and `.env.example`.
-- **Date** — derived from the row's wall-clock string when present, else from the UTC epoch
-  `timeStamp` (mirrors classic's `local_created_at` preference).
-- No new fixture: the contract output is identical, so `measurements.sample.json` still
-  covers client/merge mocking. Protocol cross-checked against `StartupBros/renpho-mcp-server`.
+**Commit** — `Components: primitives restyled + one celebration system with three registers`
 
-**Commit** — `Renpho sync: support the Renpho Health backend (cloud.renpho.com)`
+---
+
+## Phase 7 — Dashboard decomposition + the daily loop — ⏸ Awaiting Gate 3
+
+**Goal** — [Dashboard.tsx](src/pages/Dashboard.tsx) (636 lines, six of the eight
+moments) becomes a thin composition; the first-open and pillar-log moments land on it.
+
+**Changes**
+- Split into `src/pages/dashboard/` section files (greeting, today card, banner stack,
+  stats strip) + a `useCelebrations` hook absorbing the XP diff-watcher and overlay
+  triggers; the container stays under ~150 lines.
+- First-open moment per contract. "Logged today" derives from `dayStatus()` **always**
+  — the mount effect auto-creates today's entry, so key presence is meaningless.
+  [quotes.ts](src/lib/quotes.ts) deployed per contract instead of only via the
+  reminder banner lottery.
+- Pillar-log feedback per contract. Backfills via
+  [DayEditor](src/components/DayEditor.tsx) stop being silent — XP toast + undo, same
+  as live logs.
+- **Perfect day becomes reachable**: triggered off day-completion state
+  (`dayStatus === 'perfect'`), fired through the medium register, respecting the
+  contract's precedence table (level-up can co-occur).
+
+**Verification**
+- Completing the second pillar on a fully-logged day fires the perfect-day moment in
+  the medium register exactly once; time-travel via Settings startDate re-arms it
+  (once-per-day proven).
+- Backfilling yesterday in DayEditor shows `+N XP` and the undo pill; undo reverts.
+- Perfect day + level-up on the same log fire in the contract's precedence order,
+  never simultaneously.
+- **Before any on-device fixture test: Settings → Export** (the owner's device holds
+  the real mission).
+
+**Commit** — `Dashboard: decomposed shell, first-open greeting, honest logging feedback`
+
+---
+
+## Phase 8 — Re-entry after a lapse + streak break — ⏸ Awaiting Gate 3 — *the flagship*
+
+**Goal** — the single most important moment in the redesign, currently undesigned;
+plus the streak-break moment, currently broken for real lapses.
+
+**Changes**
+- New re-entry surface per the contract spec, built from UI-derived facts only (no
+  store or logic-lib changes): last genuinely-logged day (`dayStatus()` filter over
+  `days` — never key presence), lapse length, days remaining, stage drift, missed
+  photo weeks, where the level and weight stood. Armed once per return via a
+  localStorage flag (same pattern as `mission.streakBreak.*`).
+- **Fix streak-break detection in-component** (the streak lib is untouched): today the
+  overlay inspects only yesterday and `priorStreak < 2` after a multi-day gap means it
+  never fires for an actual lapse. New behaviour per the contract's boundary: a 1-day
+  gap → break treatment with the explicit shield offer; a multi-day gap → the re-entry
+  treatment, which never shames and never leads with the broken streak.
+- Backfill invitation from the re-entry surface into Journey/DayEditor; marking missed
+  days stays exactly as easy as backfilling successes; all writes go through existing
+  store APIs with undo.
+
+**Verification**
+- Time-travel fixture (startDate −62, a multi-week gap) → next open shows the
+  re-entry moment with the literal derived facts (e.g. "last logged Day 41"); the copy
+  contains none of the contract's shame-banned constructions (grep the strings).
+- One-day gap with a shield available → the shield offer appears; spending is explicit
+  and undoable.
+- The re-entry moment fires once per lapse — reload does not re-fire (flag observed in
+  DevTools → Application → Local Storage).
+- Reduced-motion emulation → re-entry renders its static variant.
+
+**Commit** — `Re-entry: returning after a lapse is a designed moment`
+
+---
+
+## Phase 9 — The arc: Journey, stages, level-ups, day 105 — ⏸ Awaiting Gate 3
+
+**Goal** — the walk in production, plus every milestone on it.
+
+**Changes**
+- [Journey.tsx](src/pages/Journey.tsx) + [JourneyPath.tsx](src/components/JourneyPath.tsx)
+  restyled per the Gate-2-proven render.
+- Current stage always visible on the Dashboard (today it appears nowhere on it);
+  stage overlay fires on first open **at or after** the crossing, not only on the
+  exact day (once-flags preserved).
+- Level-up moment rework per contract; career XP/level presentation per the pinned
+  derivation (a flawless mission tops out at Level 12 — the tiers above are career
+  territory).
+- Day 105 becomes a moment (today it renders as a normal day;
+  [MissionCompleted](src/components/MissionCompleted.tsx) only appears day 106+);
+  MissionCompleted restyled, presenting mission two as continuation, not reset.
+
+**Verification**
+- Time-travel fixtures: exact crossing day; opening N days after a crossing (overlay
+  still fires, once); the day 104 → 105 → 106 sequence.
+- The stage indicator is visible on the Dashboard at 375px in both themes.
+
+**Commit** — `Journey: the walk, stage crossings, level-ups, and day 105`
+
+---
+
+## Phase 10 — The weekly ritual: photo + waist + compare — ⏸ Awaiting Gate 3
+
+**Goal** — the ritual stops slipping silently; the compare feels like the payoff.
+
+**Changes**
+- A photo/waist entry joins the banner/register precedence (today the precedence list
+  has no photo entry — a week slips with zero prompting), on the contract-specified
+  day, through the medium register.
+- [Photos.tsx](src/pages/Photos.tsx) ritual framing; [Compare.tsx](src/pages/Compare.tsx)
+  polish; [Progress.tsx](src/pages/Progress.tsx) restyled with recharts themed via
+  tokens (recharts stays — rewriting a 106 kB chunk is a scope trap).
+
+**Verification**
+- A week with no photo → the ritual prompt appears on the contract-specified day,
+  dismissible, and never outranks re-entry in the precedence table.
+- Compare handle ≥44px; chart series measure ≥3:1 against the background in both
+  themes.
+
+**Commit** — `Ritual: the weekly photo + waist prompt and the compare payoff`
+
+---
+
+## Phase 11 — Secondary surfaces sweep — ⏸ Awaiting Gate 3
+
+**Goal** — no v2 orphans; every remaining surface joins the new system.
+
+**Changes**
+- [History.tsx](src/pages/History.tsx), [Settings.tsx](src/pages/Settings.tsx),
+  [Onboarding.tsx](src/pages/Onboarding.tsx) (visual restyle; copy finalized in
+  Phase 12 — Onboarding doubles as the portability test: it must read right for a
+  friend starting their own 105 days with renamed pillars).
+- [InstallBanner](src/components/InstallBanner.tsx), [ReminderBanner](src/components/ReminderBanner.tsx),
+  [RouteSkeleton](src/components/RouteSkeleton.tsx), [ErrorBoundary](src/components/ErrorBoundary.tsx),
+  the photo trio ([PhotoThumb](src/components/PhotoThumb.tsx),
+  [PhotoViewer](src/components/PhotoViewer.tsx),
+  [PhotoActionSheet](src/components/PhotoActionSheet.tsx)).
+- Every empty state per contract, including the new lapse-aware ones.
+
+**Verification**
+- Every route walked at 375px in both themes, live in the browser preview.
+- Grep for v2-only token names returns zero hits.
+
+**Commit** — `Surfaces: history, settings, onboarding join the new system`
+
+---
+
+## Phase 12 — Voice pass — ⏸ Awaiting Gate 3
+
+**Goal** — every user-facing string sounds like one person, per the contract's voice
+verdicts. Moment copy is written in-phase during Phases 7–10 (a moment is not done
+without its words); this phase is the whole-app unification sweep.
+
+**Changes**
+- [src/lib/encouragement.ts](src/lib/encouragement.ts) (nine hard-coded strings +
+  strict precedence — in scope, not protected) and
+  [src/lib/quotes.ts](src/lib/quotes.ts) (40 morning quotes + 10 evening prompts,
+  curated/rewritten).
+- Settings labels, error strings, onboarding copy, overlay/celebration copy, every
+  empty state — via human-copy.
+- Non-negotiable register survives any verdict: witness-not-coach, and non-judgmental
+  failure copy in the spirit of "Yesterday is closed. Today is open." — even if the
+  words change.
+
+**Verification**
+- String inventory grep sweep: zero banned constructions per the contract's
+  (re-decided) list.
+- The eight moments read in sequence on-device sound like the same person.
+
+**Commit** — `Voice: every string sounds like a person`
+
+---
+
+## Phase 13 — Doc-refresh checkpoint — ⏸ Awaiting Gate 3
+
+**Goal** — the docs describe the app that shipped, including drift that predates this
+work.
+
+**Changes**
+- [DESIGN.md](DESIGN.md) microcopy + component sections synced to shipped reality,
+  **including the pre-existing drift list**: `--text-subtle` value, `--accent`
+  aliasing, `--radius-lg` undocumented, ten undocumented dark tokens, reminders +
+  history still listed "Out of scope" despite shipping, the `/history` route
+  undocumented, the fifteen spec-less components (the three old overlays now
+  superseded by the celebration-system spec), an Empty-states entry for the lapse.
+- [PHASES.md](PHASES.md) acceptance criteria updated where the redesign changed them.
+- `screenshots/` — move the v2 set aside (e.g. `screenshots/v2/`) and regenerate the
+  "after" portfolio via the `/screenshots` command; the before/after pair is the
+  portfolio story.
+- [Onboarding.tsx](src/pages/Onboarding.tsx) copy cross-checked against the docs.
+
+**Verification**
+- A fresh-session read of DESIGN.md alone is sufficient to describe every shipped
+  screen (spot-check three components against the running app).
+
+**Commit** — `Docs: DESIGN.md and PHASES.md match the shipped redesign`
+
+---
+
+## Phase 14 — Phase-wide audit checkpoint — ⏸ Awaiting Gate 3
+
+**Goal** — the hard constraints verified with instruments, not eyeballs; fix forward
+inline or record deliberate deferrals in the status blockquote.
+
+**Verification** (this phase *is* its verification list)
+- Contrast: every token pairing in both themes measured (DevTools contrast readout /
+  CCA), literal ratios recorded in DESIGN.md's accessibility section.
+- `prefers-reduced-motion`: every animated moment under DevTools Rendering emulation
+  renders its static/reduced variant.
+- Tap targets ≥44px and inputs ≥16px on every interactive control (DevTools inspect
+  across the key screens).
+- Rem scale at 130% and 175% Android system text scale: Dashboard, Journey, and the
+  re-entry surface show no clipping or overlap (on-device).
+- Offline cold start: installed Android PWA, airplane mode, force-stop, cold launch →
+  fully functional. Includes the fonts item: `.woff2` is absent from the Workbox
+  precache glob — add the fonts or record why not; confirm all new assets (icon PNGs,
+  textures) are in the glob.
+- PWA update path: an installed stale shell updates to the redesign without blanking
+  (the self-heal in [index.html](index.html) exists because this bit before; a
+  whole-app CSS/JS swap is the stress test).
+- Bundle: `npm run build` gzip report vs the [update.md](update.md) §5 baseline —
+  delta recorded per chunk; < 350 kB gz hard gate.
+- Anti-generic audit via hallmark across every screen.
+- Every route at 375px, both themes, live.
+- Lab disposition decided: keep `src/lab/` as the permanent dev gallery (recommended —
+  free in prod, and it is now the verification harness) or delete; either way,
+  re-verify dead-code elimination.
+
+**Commit** — `Audit: measured accessibility, offline, and bundle gates pass`
 
 ---
 
 ## Cross-phase notes
 
-- **Local-first invariant** — Phases 1–2 add no network at all. Phases 3–6 are opt-in; with
-  sync off or the backend absent, the app is byte-for-byte the same offline app. This is the
-  line that keeps the product honest about its *local-first* identity.
-- **Schema bumps** — Phases 1 and 4 each bump the persisted store version (8→9, 9→10). Every
-  migration must default new fields safely so existing users lose nothing (the pattern is in
-  [src/store/mission.ts](src/store/mission.ts:200)).
-- **Secrets** — Renpho credentials live only in the backend's secret store, never in the repo
-  or client. `.env` is git-ignored; `.env.example` is committed. Verify with `git grep`.
-- **One merge path** — `mergeBodyData.ts` (Phase 2) is the single source of truth for the
-  manual-wins policy; the manual importer, Sync now, and backfill all flow through it.
-- **Longevity / ToS** — the Renpho source is unofficial and can break; manual entry
-  (Phases 1–2) is the permanent floor. Note the risk in the README for portfolio reviewers.
+- **The gates are the schedule.** Phases 2–4 cannot complete without a synchronous
+  owner session; `⏸ awaiting gate` is an intentional state, not a stall.
+- **The mid-lapse fixture is the first screen of every review.** Directions,
+  components, and copy are all judged on the bad day before the good day.
+- **The owner's device is the test device.** Every on-device playbook that touches
+  startDate or once-flags starts with Settings → Export.
+- **Once-flag key names are load-bearing** (`mission.stageShown.*`,
+  `mission.streakBreak.*`) — renaming them re-fires celebrations for the shipped
+  install.
+- **Streak semantics are untouchable**: the streak excludes today by design; the
+  Dashboard auto-creates today's entry on mount, so "logged" always derives from
+  `dayStatus()`, never key presence.
+- **Fonts are budget, not vibes.** A new typeface is a stop-and-raise even though it
+  isn't a new runtime dependency — it's first-paint and precache weight.
+- **Haptics are Android-only** (`navigator.vibrate` is silent on iOS Safari) — fine
+  for the primary surface, but no direction may lean on haptics as its identity.
