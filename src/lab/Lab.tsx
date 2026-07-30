@@ -14,6 +14,7 @@ import { dayStatus } from '../lib/dayStatus';
 import { addDaysISO, formatNice } from '../lib/date';
 import { ember } from './directions/ember';
 import { ledger } from './directions/ledger';
+import { waypoint } from './directions/waypoint';
 
 export type LabDirection = {
   id: string;
@@ -28,7 +29,7 @@ export type LabDirection = {
 // Phase 2: forked, freely restyled copies of the nine primitives plus a
 // composed Dashboard each, from src/lab/directions/<n>/. Contrast matrix in
 // src/lab/directions/README.md.
-const DIRECTIONS: LabDirection[] = [ember, ledger];
+const DIRECTIONS: LabDirection[] = [ember, ledger, waypoint];
 
 /** Lab-local theme toggle. Flips the `dark` class on <html> directly (the
  * dark tokens live on `html.dark`) and restores whatever the app had when
