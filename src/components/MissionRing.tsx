@@ -1,86 +1,120 @@
+// The walk strip (DESIGN.md · Core components). No dial: the 105 days laid
+// out as a walked route, colored by the stage they were walked in. Unrecorded
+// days are a dotted stretch — visible, never scarlet. A pin stands at today,
+// and the stage ruler below names the five countries.
+
+import { MapPin } from 'lucide-react';
+import type { DayEntry } from '../types';
+import { addDaysISO } from '../lib/date';
+import { dayStatus } from '../lib/dayStatus';
+import { stagesFor } from '../lib/stage';
+
 type Props = {
   day: number;
   totalDays: number;
-  size?: number;
-  stroke?: number;
-  centerOverride?: React.ReactNode;
+  days: Record<string, DayEntry>;
+  startDate: string;
+  /** Live status for today, so the strip fills in as you log. */
+  todayStatus?: 'logged' | 'empty';
 };
 
-export default function MissionRing({ day, totalDays, size = 180, stroke = 14, centerOverride }: Props) {
-  const clampedDay = Math.max(0, Math.min(totalDays, day));
-  const progress = totalDays === 0 ? 0 : clampedDay / totalDays;
-  const center = size / 2;
-  const radius = center - stroke / 2;
-  const circumference = 2 * Math.PI * radius;
-  const angle = 2 * Math.PI * progress;
-  const dotX = center + radius * Math.sin(angle);
-  const dotY = center - radius * Math.cos(angle);
-  const remaining = Math.max(0, totalDays - clampedDay);
-  const percent = Math.round(progress * 100);
+const STAGE_VAR = ['--stage-0', '--stage-1', '--stage-2', '--stage-3', '--stage-4'];
+
+export default function MissionRing({
+  day,
+  totalDays,
+  days,
+  startDate,
+  todayStatus = 'empty',
+}: Props) {
+  const stages = stagesFor(totalDays);
+  const stageOf = (d: number) => stages.find((s) => d >= s.startDay && d <= s.endDay);
+
+  const segs = Array.from({ length: totalDays }, (_, i) => {
+    const d = i + 1;
+    const hue = `var(${STAGE_VAR[stageOf(d)?.index ?? 0]})`;
+    const base = 'h-1.5 flex-1 rounded-sm';
+    if (d > day) return { key: d, cls: `${base} bg-track`, style: {} };
+    if (d === day) {
+      return {
+        key: d,
+        cls: base,
+        style: {
+          background: todayStatus === 'logged' ? hue : 'var(--track)',
+          outline: `2px solid ${hue}`,
+          outlineOffset: '1px',
+        } as React.CSSProperties,
+      };
+    }
+    const status = dayStatus(days[addDaysISO(startDate, d - 1)]);
+    if (status === 'missed')
+      return {
+        key: d,
+        cls: 'h-0 flex-1 rounded-none border-b-2 border-dotted border-border-strong',
+        style: {},
+      };
+    if (status === 'failed')
+      return { key: d, cls: `${base} bg-border-strong`, style: {} };
+    return { key: d, cls: base, style: { background: hue } as React.CSSProperties };
+  });
+
+  const pinLeft = `${((Math.max(0.5, day - 0.5)) / totalDays) * 100}%`;
+  const remaining = Math.max(0, totalDays - day);
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-        <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--tangerine)" />
-            <stop offset="100%" stopColor="var(--lemon)" />
-          </linearGradient>
-        </defs>
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="var(--surface-2)"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="url(#ringGrad)"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - progress)}
-          transform={`rotate(-90 ${center} ${center})`}
-          style={{ transition: 'stroke-dashoffset 600ms var(--ease-apple)' }}
-        />
-      </svg>
+    <div className="w-full">
+      {/* the pin */}
+      <div className="relative h-6" aria-hidden>
+        <div
+          className="absolute flex -translate-x-1/2 flex-col items-center text-stage"
+          style={{ left: pinLeft }}
+        >
+          <MapPin size={18} strokeWidth={2.25} fill="var(--stage-soft)" />
+        </div>
+      </div>
 
-      {progress > 0 && progress < 1 && (
-        <>
-          <span
-            aria-hidden
-            className="absolute block rounded-full bg-tangerine opacity-50 animate-ring-pulse"
-            style={{ width: 14, height: 14, left: dotX - 7, top: dotY - 7 }}
-          />
-          <span
-            aria-hidden
-            className="absolute block rounded-full bg-tangerine"
-            style={{ width: 10, height: 10, left: dotX - 5, top: dotY - 5 }}
-          />
-        </>
-      )}
+      <div
+        className="flex h-2 items-center gap-px"
+        role="img"
+        aria-label={`Day ${day} of ${totalDays} on the trail`}
+      >
+        {segs.map((s) => (
+          <span key={s.key} className={s.cls} style={s.style} />
+        ))}
+      </div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-        {centerOverride ?? (
-          <>
-            <div className="flex items-baseline gap-1 leading-none tabular">
-              <span className="text-5xl font-bold">{clampedDay}</span>
-              <span className="text-2xl font-semibold text-text-muted">
-                / {totalDays}
-              </span>
-            </div>
-            <div className="mt-2 text-sm text-text-muted tabular">
-              {remaining > 0
-                ? `${percent}% · ${remaining} left`
-                : 'Complete'}
-            </div>
-          </>
-        )}
+      {/* stage ruler */}
+      <div className="mt-2 flex" aria-hidden>
+        {stages.map((s) => (
+          <div
+            key={s.index}
+            className="flex-1 border-t-2 pt-1 text-center"
+            style={{
+              borderColor: `var(${STAGE_VAR[s.index]})`,
+              marginRight: s.index < 4 ? 3 : 0,
+            }}
+          >
+            <span
+              className="text-2xs font-semibold uppercase tracking-wide"
+              style={{
+                color:
+                  s.startDay <= day && day <= s.endDay
+                    ? `var(${STAGE_VAR[s.index]})`
+                    : 'var(--text-subtle)',
+              }}
+            >
+              {s.name.slice(0, 4)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* caption row */}
+      <div className="tabular mt-3 flex justify-between text-xs text-text-subtle">
+        <span>
+          {day} of {totalDays} walked
+        </span>
+        <span>{remaining > 0 ? `${remaining} to the summit` : 'The summit.'}</span>
       </div>
     </div>
   );

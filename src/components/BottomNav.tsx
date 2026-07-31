@@ -1,3 +1,6 @@
+// The map legend (DESIGN.md · Bottom nav): a surface bar with a hairline top;
+// the active destination sits in a stage-soft chip in the stage hue.
+
 import { NavLink } from 'react-router-dom';
 import { Camera, Home, Map, Settings as SettingsIcon, TrendingUp } from 'lucide-react';
 
@@ -12,10 +15,10 @@ const items = [
 export default function BottomNav() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-[color:var(--bg)]/90 backdrop-blur"
+      className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-surface"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="flex justify-around">
+      <ul className="flex justify-around px-1 py-1">
         {items.map(({ to, label, icon: Icon, end }) => (
           <li key={to} className="flex-1">
             <NavLink
@@ -23,13 +26,17 @@ export default function BottomNav() {
               end={end}
               className={({ isActive }) =>
                 [
-                  'flex flex-col items-center justify-center gap-1 py-2 min-h-[56px] transition-colors duration-150 ease-apple',
-                  isActive ? 'text-accent' : 'text-text-muted',
+                  'mx-auto flex min-h-[54px] w-full flex-col items-center justify-center gap-0.5 rounded-card transition-colors duration-fast ease-apple',
+                  isActive ? 'bg-stage-soft text-stage' : 'text-text-subtle',
                 ].join(' ')
               }
             >
-              <Icon size={22} strokeWidth={1.75} />
-              <span className="text-2xs font-medium tracking-wide">{label}</span>
+              {({ isActive }) => (
+                <>
+                  <Icon size={21} strokeWidth={isActive ? 2.25 : 1.75} />
+                  <span className="text-2xs font-semibold tracking-wide">{label}</span>
+                </>
+              )}
             </NavLink>
           </li>
         ))}

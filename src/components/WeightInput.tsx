@@ -28,7 +28,7 @@ export default function WeightInput({ value, unit, onChange }: Props) {
   }, [local, value]);
 
   return (
-    <label className="flex h-12 items-center rounded-card border border-border bg-surface px-4">
+    <label className="flex min-h-[52px] items-center rounded-card border border-border bg-surface px-4 shadow-panel">
       <input
         type="number"
         inputMode="decimal"

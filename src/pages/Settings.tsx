@@ -11,6 +11,7 @@ import {
 } from '../lib/storage';
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
+import Segmented from '../components/SegmentedControl';
 import WeeksInput from '../components/WeeksInput';
 import { addDaysISO, formatNice, subDaysISO, todayISO, totalDays } from '../lib/date';
 import { parseRenphoCsv, type RenphoReading } from '../lib/renphoCsv';
@@ -1155,36 +1156,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
     <div className="flex h-14 items-center justify-between rounded-card border border-border bg-surface px-4">
       <span className="text-text">{label}</span>
       {children}
-    </div>
-  );
-}
-
-function Segmented<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-pill border border-border bg-surface-2 p-1">
-      {options.map((opt) => (
-        <button
-          type="button"
-          key={opt}
-          onClick={() => onChange(opt)}
-          className={[
-            'h-8 min-w-[44px] rounded-pill px-3 text-sm font-medium transition-colors duration-150 ease-apple',
-            value === opt
-              ? 'bg-bg text-text shadow-sm'
-              : 'text-text-muted',
-          ].join(' ')}
-        >
-          {opt}
-        </button>
-      ))}
     </div>
   );
 }

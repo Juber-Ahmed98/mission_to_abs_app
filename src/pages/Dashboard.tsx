@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Download, Moon, Percent, Scale, Settings as SettingsIcon, Shield, Utensils, X } from 'lucide-react';
+import { Dumbbell, Download, Moon, Percent, Scale, Settings as SettingsIcon, Shield, Tent, Utensils, X } from 'lucide-react';
 import { useMission } from '../store/mission';
 import {
   dayNumberFor,
@@ -13,7 +13,7 @@ import {
 import { dayStatus } from '../lib/dayStatus';
 import { calcStreak } from '../lib/streak';
 import { encouragement } from '../lib/encouragement';
-import { stageForDay } from '../lib/stage';
+import { stageForDay, type Stage } from '../lib/stage';
 import { XP, levelFromXp, tierName, totalXp } from '../lib/xp';
 import MissionRing from '../components/MissionRing';
 import MissionCompleted from '../components/MissionCompleted';
@@ -21,8 +21,8 @@ import LevelBadge from '../components/LevelBadge';
 import TodayRow from '../components/TodayRow';
 import XpToast, { type Toast } from '../components/XpToast';
 import LevelUpOverlay from '../components/LevelUpOverlay';
-import StreakBreakOverlay from '../components/StreakBreakOverlay';
 import StageOverlay from '../components/StageOverlay';
+import MomentPanel from '../components/MomentPanel';
 import BottomSheet from '../components/BottomSheet';
 import WeightInput from '../components/WeightInput';
 import BodyFatInput from '../components/BodyFatInput';
@@ -113,9 +113,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [levelUp, setLevelUp] = useState(false);
   const [streakBreakOpen, setStreakBreakOpen] = useState(false);
-  const [stageOverlay, setStageOverlay] = useState<
-    { index: number; name: string } | null
-  >(null);
+  const [stageOverlay, setStageOverlay] = useState<Stage | null>(null);
   const [shieldSheetOpen, setShieldSheetOpen] = useState(false);
 
   useEffect(() => {
@@ -165,7 +163,7 @@ export default function Dashboard() {
     if (dayNum !== stage.startDay) return;
     const key = `mission.stageShown.${stage.index}`;
     if (localStorage.getItem(key) === '1') return;
-    setStageOverlay({ index: stage.index, name: stage.name });
+    setStageOverlay(stage);
     localStorage.setItem(key, '1');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canLogToday, dayNum, total]);
@@ -178,7 +176,7 @@ export default function Dashboard() {
     setSettings({ streakShieldsRemaining: prevShields - 1 });
     setShieldSheetOpen(false);
     setStreakBreakOpen(false);
-    showUndo('Shield used on yesterday', () => {
+    showUndo('Shelter pitched over yesterday', () => {
       setDayEntry(yesterday, {
         rest: prevEntry?.rest,
         diet: prevEntry?.diet,
@@ -295,18 +293,8 @@ export default function Dashboard() {
       ? 'Mission complete'
       : `Day ${dayNum}`;
 
-  const preMissionCenter = (
-    <>
-      <div className="text-xl font-semibold text-text">
-        {daysUntilStart === 0
-          ? 'Begins today'
-          : `Begins in ${daysUntilStart} ${daysUntilStart === 1 ? 'day' : 'days'}`}
-      </div>
-      <div className="mt-1 text-sm text-text-muted">
-        {formatNice(settings.startDate)}
-      </div>
-    </>
-  );
+  const todayLoggedStatus =
+    dayStatus(entry) === 'missed' ? ('empty' as const) : ('logged' as const);
 
   const showStreakPill = canLogToday && streak >= 2;
   const showShieldPill = showStreakPill && shieldsAvailable;
@@ -370,13 +358,54 @@ export default function Dashboard() {
         )}
       </header>
 
-      <div className="flex justify-center pt-2 pb-6">
+      {isPreMission && (
+        <div className="px-5 pt-2 pb-2 text-center">
+          <div className="text-xl font-semibold text-text">
+            {daysUntilStart === 0
+              ? 'Begins today'
+              : `Begins in ${daysUntilStart} ${daysUntilStart === 1 ? 'day' : 'days'}`}
+          </div>
+          <div className="mt-1 text-sm text-text-muted">
+            {formatNice(settings.startDate)}
+          </div>
+        </div>
+      )}
+
+      <section className="mx-5 mt-2 mb-5 rounded-card border border-border bg-surface px-4 pb-3 pt-2 shadow-panel">
         <MissionRing
           day={dayNum}
           totalDays={total}
-          centerOverride={isPreMission ? preMissionCenter : undefined}
+          days={days}
+          startDate={settings.startDate}
+          todayStatus={todayLoggedStatus}
         />
-      </div>
+      </section>
+
+      {streakBreakOpen && (
+        <div className="mx-5 mb-5">
+          <MomentPanel
+            icon={<Tent size={18} strokeWidth={2} />}
+            title="A gap in yesterday's tracks."
+            actions={[
+              ...(canUseShieldOnYesterday
+                ? [
+                    {
+                      label: 'Pitch the shelter',
+                      onClick: () => setShieldSheetOpen(true),
+                      primary: true,
+                    },
+                  ]
+                : []),
+              { label: 'Walk on', onClick: () => setStreakBreakOpen(false) },
+            ]}
+          >
+            {priorStreak} days walked without a break.{' '}
+            {canUseShieldOnYesterday
+              ? 'One shelter left in the pack — pitched, it covers yesterday.'
+              : 'No shelters left in the pack.'}
+          </MomentPanel>
+        </div>
+      )}
 
       <div className="relative px-5">
         <XpToast toast={toast} />
@@ -481,7 +510,7 @@ export default function Dashboard() {
               label={dietLabel}
               icon={<Utensils size={18} strokeWidth={1.75} />}
               xpReward={XP.diet}
-              doneLabel={`Done · +${XP.diet} XP`}
+              doneLabel={`+${XP.diet} XP`}
               status={yesterdayEntry?.diet}
               {...pillarHandlers('diet', yesterday, dietLabel)}
             />
@@ -489,7 +518,7 @@ export default function Dashboard() {
               label={exerciseLabel}
               icon={<Dumbbell size={18} strokeWidth={1.75} />}
               xpReward={XP.exercise}
-              doneLabel={`Done · +${XP.exercise} XP`}
+              doneLabel={`+${XP.exercise} XP`}
               status={yesterdayEntry?.exercise}
               {...pillarHandlers('exercise', yesterday, exerciseLabel)}
             />
@@ -521,7 +550,7 @@ export default function Dashboard() {
                   label={dietLabel}
                   icon={<Utensils size={18} strokeWidth={1.75} />}
                   xpReward={XP.diet}
-                  doneLabel={`Done · +${XP.diet} XP`}
+                  doneLabel={`+${XP.diet} XP`}
                   status={entry?.diet}
                   {...pillarHandlers('diet', today, dietLabel)}
                 />
@@ -529,7 +558,7 @@ export default function Dashboard() {
                   label={exerciseLabel}
                   icon={<Dumbbell size={18} strokeWidth={1.75} />}
                   xpReward={XP.exercise}
-                  doneLabel={`Done · +${XP.exercise} XP`}
+                  doneLabel={`+${XP.exercise} XP`}
                   status={entry?.exercise}
                   {...pillarHandlers('exercise', today, exerciseLabel)}
                 />
@@ -590,43 +619,33 @@ export default function Dashboard() {
         onDismiss={() => setLevelUp(false)}
       />
 
-      <StreakBreakOverlay
-        open={streakBreakOpen}
-        brokenAt={priorStreak}
-        shieldAvailable={canUseShieldOnYesterday}
-        onUseShield={useShieldOnYesterday}
-        onDismiss={() => setStreakBreakOpen(false)}
-      />
-
       <StageOverlay
         open={!!stageOverlay}
-        stageIndex={stageOverlay?.index ?? 0}
-        stageName={stageOverlay?.name ?? ''}
+        stage={stageOverlay}
         onDismiss={() => setStageOverlay(null)}
       />
 
       <BottomSheet open={shieldSheetOpen} onClose={() => setShieldSheetOpen(false)}>
         <div className="px-5 pt-2 pb-5">
-          <div className="text-lg font-semibold tracking-tight">
-            Use shield on yesterday?
-          </div>
+          <div className="text-lg font-bold">Pitch the shelter over yesterday?</div>
           <div className="mt-1 text-sm text-text-muted">
-            Marks {formatNice(yesterday)} as a rest day. Keeps your streak alive.
+            {formatNice(yesterday)} reads as a camp day.
+            {priorStreak >= 2 ? ` The ${priorStreak}-day walk holds.` : ''}
           </div>
           <div className="mt-5 flex gap-2">
             <button
               type="button"
               onClick={() => setShieldSheetOpen(false)}
-              className="h-11 flex-1 rounded-card border border-border bg-surface text-text"
+              className="h-11 flex-1 rounded-card border border-border bg-surface text-sm font-medium text-text"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={useShieldOnYesterday}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover"
+              className="h-11 flex-1 rounded-card bg-stage text-sm font-bold text-surface"
             >
-              Use shield
+              Pitch it
             </button>
           </div>
         </div>

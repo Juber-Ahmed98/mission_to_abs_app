@@ -15,6 +15,7 @@ import { addDaysISO, formatNice } from '../lib/date';
 import { ember } from './directions/ember';
 import { ledger } from './directions/ledger';
 import { waypoint } from './directions/waypoint';
+import SharedGallery from './SharedGallery';
 
 export type LabDirection = {
   id: string;
@@ -155,6 +156,7 @@ export default function Lab() {
   const [fixtureId, setFixtureId] = useState(DEFAULT_FIXTURE_ID);
   const [directionId, setDirectionId] = useState<string | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [showShared, setShowShared] = useState(false);
   const [view, setView] = useState<'dashboard' | 'journey'>('dashboard');
 
   const fixture = FIXTURES.find((f) => f.id === fixtureId) ?? FIXTURES[0];
@@ -212,6 +214,27 @@ export default function Lab() {
       <div className="mt-4">
         <FixtureInspector fixture={fixture} />
       </div>
+
+      {/* Phase 6+: the shared production primitives, restyled per the design
+       * contract — the lab is now their verification gallery. */}
+      <section className="mt-6">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+          Shared primitives (production)
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowShared((s) => !s)}
+          aria-expanded={showShared}
+          className="mt-2 h-9 rounded-pill border border-border bg-surface px-4 text-sm font-medium text-text-muted"
+        >
+          {showShared ? 'Hide shared primitives' : 'Show shared primitives'}
+        </button>
+        {showShared && (
+          <div className="mt-2 overflow-hidden rounded-lg border border-border">
+            <SharedGallery fixture={fixture} />
+          </div>
+        )}
+      </section>
 
       <section className="mt-6">
         <h2 className="text-xs font-medium uppercase tracking-wide text-text-subtle">

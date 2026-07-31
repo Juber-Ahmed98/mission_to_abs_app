@@ -158,6 +158,34 @@ body {
   );
 }
 
+/* The speck drift — the heavy register's sanctioned particles (DESIGN.md ·
+ * Motion): ≤8 specks, 5px, stage-hued, rising 64px over 1.1s ease-out. */
+@keyframes drift {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(-64px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.speck {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--stage);
+  animation: drift 1.1s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speck {
+    display: none;
+  }
+}
+
 input,
 textarea,
 button {

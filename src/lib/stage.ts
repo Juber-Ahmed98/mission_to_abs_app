@@ -7,6 +7,15 @@ export type Stage = {
 
 const STAGE_NAMES = ['Foundation', 'Build', 'Push', 'Refine', 'Reveal'] as const;
 
+/** One zen line per stage, never rotated (DESIGN.md · Microcopy). */
+export const STAGE_ZEN: Record<string, string> = {
+  Foundation: 'Build the floor.',
+  Build: 'Add the weight.',
+  Push: 'Lean in.',
+  Refine: "Sharpen what's working.",
+  Reveal: 'Let it show.',
+};
+
 export function stagesFor(totalDays: number): Stage[] {
   const per = Math.max(1, Math.floor(totalDays / 5));
   const stages: Stage[] = [];

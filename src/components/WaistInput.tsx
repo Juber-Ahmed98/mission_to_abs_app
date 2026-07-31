@@ -43,7 +43,7 @@ export default function WaistInput({ valueCm, unit, onChangeCm }: Props) {
   }, [local, unit, valueCm]);
 
   return (
-    <label className="flex h-12 items-center rounded-card border border-border bg-surface px-4">
+    <label className="flex min-h-[52px] items-center rounded-card border border-border bg-surface px-4 shadow-panel">
       <input
         type="number"
         inputMode="decimal"

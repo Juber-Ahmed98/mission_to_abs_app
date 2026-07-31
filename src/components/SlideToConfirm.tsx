@@ -1,3 +1,7 @@
+// The walkable stretch (DESIGN.md · Slide-to-confirm): the fill is ground
+// gained in the stage hue, the thumb is the walker. Fires on pointerup only
+// at progress ≥ 0.8; one 15ms haptic on confirm.
+
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronRight, X } from 'lucide-react';
 
@@ -34,8 +38,8 @@ function vibrate() {
 
 export default function SlideToConfirm({
   label,
-  hint = 'Slide',
-  doneLabel,
+  hint = 'Walk it',
+  doneLabel = 'Ground gained',
   failedLabel = 'Tap to clear',
   xpReward,
   icon,
@@ -113,11 +117,9 @@ export default function SlideToConfirm({
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging || confirmed || failed) return;
     const delta = e.clientX - startXRef.current;
-    const pct = Math.max(
-      0,
-      Math.min(1, startProgressRef.current + delta / usableRef.current),
+    setProgress(
+      Math.max(0, Math.min(1, startProgressRef.current + delta / usableRef.current)),
     );
-    setProgress(pct);
   };
 
   const onPointerUp = () => {
@@ -132,21 +134,10 @@ export default function SlideToConfirm({
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (failed) return;
-    if (confirmed) {
-      if ((e.key === 'Enter' || e.key === ' ') && onClear) {
-        e.preventDefault();
-        onClear();
-      }
-      return;
-    }
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      fire();
-    }
-  };
-
-  const handleClick = () => {
-    if (confirmed && onClear) onClear();
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (confirmed) onClear?.();
+    else fire();
   };
 
   if (failed) {
@@ -154,7 +145,7 @@ export default function SlideToConfirm({
       <div
         role="button"
         tabIndex={0}
-        aria-label={`${label}, failed. ${failedLabel}`}
+        aria-label={`${label}, marked rough ground. ${failedLabel}`}
         onClick={onClear}
         onKeyDown={(e) => {
           if ((e.key === 'Enter' || e.key === ' ') && onClear) {
@@ -162,13 +153,14 @@ export default function SlideToConfirm({
             onClear();
           }
         }}
-        className="relative h-14 rounded-pill border border-failed/40 bg-failed-bg/60 px-5 flex items-center select-none cursor-pointer"
+        className="relative flex h-14 cursor-pointer select-none items-center rounded-card border bg-failed-bg px-4"
+        style={{ borderColor: 'color-mix(in srgb, var(--failed) 40%, transparent)' }}
       >
-        <span className="mr-3 flex h-9 w-9 items-center justify-center rounded-pill bg-coral-soft text-failed">
-          <X size={18} strokeWidth={2.4} />
+        <span className="mr-3 flex h-8 w-8 items-center justify-center rounded-pill bg-surface text-failed">
+          <X size={16} strokeWidth={2.4} />
         </span>
         <span className="text-base font-medium text-failed">{label}</span>
-        <span className="ml-auto text-sm text-failed/80">{failedLabel}</span>
+        <span className="ml-auto text-sm text-text-subtle">{failedLabel}</span>
       </div>
     );
   }
@@ -184,48 +176,47 @@ export default function SlideToConfirm({
       aria-valuenow={progress}
       aria-valuemin={0}
       aria-valuemax={1}
-      aria-pressed={done}
       onKeyDown={onKeyDown}
-      onClick={handleClick}
-      className={[
-        'relative h-14 rounded-pill bg-surface border overflow-hidden select-none touch-none',
-        done ? 'border-success/40 cursor-pointer' : 'border-border',
-      ].join(' ')}
+      onClick={() => done && onClear?.()}
+      className="relative h-14 select-none touch-none overflow-hidden rounded-card border bg-surface shadow-panel"
+      style={{
+        borderColor: done
+          ? 'color-mix(in srgb, var(--stage) 50%, transparent)'
+          : 'var(--border)',
+      }}
     >
       <div
-        className="absolute inset-y-0 left-0 bg-success-bg"
+        className="absolute inset-y-0 left-0 bg-stage-soft"
         style={{
           width: `${progress * 100}%`,
-          transition: dragging ? 'none' : 'width 350ms var(--ease-apple)',
+          transition: dragging ? 'none' : 'width var(--duration-slide) var(--ease-apple)',
         }}
       />
       <div
         className="pointer-events-none absolute inset-0 flex items-center pl-16"
-        style={{ paddingRight: done ? THUMB_PX + 12 : 20 }}
+        style={{ paddingRight: done ? THUMB_PX + 12 : 18 }}
       >
         {icon && (
-          <span className={done ? 'mr-3 text-success' : 'mr-3 text-text-muted'}>
+          <span className={done ? 'mr-3 text-stage' : 'mr-3 text-text-muted'}>
             {icon}
           </span>
         )}
         <span
           className={[
-            'min-w-0 truncate text-base font-medium',
-            done ? 'text-success' : 'text-text',
+            'min-w-0 truncate text-base font-semibold',
+            done ? 'text-stage' : 'text-text',
           ].join(' ')}
         >
           {label}
         </span>
-        <span className="ml-auto flex shrink-0 items-center gap-2 pl-2 text-sm text-text-subtle whitespace-nowrap">
+        <span className="ml-auto flex shrink-0 items-center gap-2 whitespace-nowrap pl-2 text-sm text-text-subtle">
           {done ? (
             doneLabel
           ) : (
             <>
               <span>{hint}</span>
               {xpReward !== undefined && (
-                <span className="text-xs text-text-subtle tabular-nums">
-                  +{xpReward} XP
-                </span>
+                <span className="tabular text-xs">+{xpReward} XP</span>
               )}
             </>
           )}
@@ -237,19 +228,21 @@ export default function SlideToConfirm({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         className={[
-          'absolute top-1 bottom-1 flex items-center justify-center rounded-pill border shadow-sm bg-bg',
-          done ? 'border-success/40 cursor-default' : 'border-border cursor-grab active:cursor-grabbing',
+          'absolute bottom-1 top-1 flex items-center justify-center rounded-[10px] border',
+          done
+            ? 'cursor-default border-stage bg-stage text-surface'
+            : 'cursor-grab border-border-strong bg-surface text-stage active:cursor-grabbing',
         ].join(' ')}
         style={{
           width: THUMB_PX,
           left: `calc(${TRACK_PAD}px + ${progress} * (100% - ${THUMB_PX + TRACK_PAD * 2}px))`,
-          transition: dragging ? 'none' : 'left 350ms var(--ease-apple)',
+          transition: dragging ? 'none' : 'left var(--duration-slide) var(--ease-apple)',
         }}
       >
         {done ? (
-          <Check size={20} strokeWidth={2.4} className="text-success" />
+          <Check size={20} strokeWidth={2.6} />
         ) : (
-          <ChevronRight size={20} strokeWidth={2} className="text-text-muted" />
+          <ChevronRight size={20} strokeWidth={2.25} />
         )}
       </div>
     </div>

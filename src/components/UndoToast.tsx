@@ -52,7 +52,7 @@ export default function UndoToast() {
     <div
       aria-live="polite"
       className={[
-        'pointer-events-none fixed right-4 z-40 transition-all duration-200 ease-apple',
+        'pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-base ease-apple',
         visible
           ? 'translate-y-0 opacity-100'
           : 'translate-y-2 opacity-0',
@@ -60,7 +60,7 @@ export default function UndoToast() {
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)' }}
     >
       {entry && (
-        <div className="pointer-events-auto flex items-center gap-3 rounded-pill border border-border bg-surface px-4 py-2 shadow-sm">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-card border border-border bg-surface px-4 py-2 shadow-lift">
           <span className="text-sm text-text">{entry.label}</span>
           <button
             type="button"
@@ -69,9 +69,9 @@ export default function UndoToast() {
               bump('undosUsed');
               clearUndo();
             }}
-            className="flex h-9 items-center gap-1.5 rounded-pill px-3 text-sm font-medium text-accent hover:text-accent-hover"
+            className="flex h-9 items-center gap-1.5 rounded-pill px-3 text-sm font-semibold text-stage"
           >
-            <Undo2 size={14} strokeWidth={2} />
+            <Undo2 size={14} strokeWidth={2.25} />
             Undo
           </button>
         </div>

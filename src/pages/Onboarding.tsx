@@ -14,6 +14,7 @@ import { dayNumberFor, formatNice, todayISO } from '../lib/date';
 import { resizeImage } from '../lib/image';
 import { savePhoto } from '../storage/photos';
 import { showUndo } from '../components/UndoToast';
+import Segmented from '../components/SegmentedControl';
 import WeeksInput from '../components/WeeksInput';
 
 type Screen = 0 | 1 | 2;
@@ -449,34 +450,6 @@ function FieldRow({
       <span className="text-text-muted">{icon}</span>
       <span className="flex-1 text-base text-text">{label}</span>
       {children}
-    </div>
-  );
-}
-
-function Segmented<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-pill border border-border bg-surface-2 p-1">
-      {options.map((opt) => (
-        <button
-          type="button"
-          key={opt}
-          onClick={() => onChange(opt)}
-          className={[
-            'h-8 min-w-[44px] rounded-pill px-3 text-sm font-medium transition-colors duration-150 ease-apple',
-            value === opt ? 'bg-bg text-text shadow-sm' : 'text-text-muted',
-          ].join(' ')}
-        >
-          {opt}
-        </button>
-      ))}
     </div>
   );
 }

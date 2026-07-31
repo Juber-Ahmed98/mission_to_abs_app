@@ -17,8 +17,10 @@
 > verification target for every phase from 5 on. Pacing per the owner:
 > **one phase per session.** Phase 5 ✅ shipped 2026-07-31 (tokens, themed
 > shell, new icon; four light tokens amended for measured AA — see the
-> DESIGN.md decision log). Next session: **Phase 6** (shared primitives + one
-> celebration system).
+> DESIGN.md decision log). Phase 6 ✅ shipped 2026-07-31 (primitives restyled,
+> one celebration primitive + the medium register, shared SegmentedControl;
+> the lab gained the shared-primitives verification gallery). Next session:
+> **Phase 7** (Dashboard decomposition + the daily loop).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -302,7 +304,7 @@ phone; DevTools manifest section verified in lieu).
 
 ---
 
-## Phase 6 — Shared primitives + one celebration system — ⏸ Awaiting Gate 3
+## Phase 6 — Shared primitives + one celebration system — ✅ Shipped 2026-07-31
 
 **Goal** — the nine primitives restyled per contract, and the feedback architecture
 rebuilt: one celebration primitive replacing three template copies, plus the missing
@@ -339,6 +341,43 @@ medium register.
   (DevTools computed styles).
 
 **Commit** — `Components: primitives restyled + one celebration system with three registers`
+
+**Shipped notes (2026-07-31)** — all verifications pass. One heavy primitive:
+new [CelebrationOverlay](src/components/CelebrationOverlay.tsx) (stage-soft
+radial wash + blur, ≤8 specks via a production `.speck`/`drift` block in
+index.css, `spring-card` entrance, labeled tap-anywhere button, **no
+auto-dismiss** — the v2 copies auto-closed at 1.7–2s); LevelUpOverlay and
+StageOverlay are now 18/19-line configs (`wc -l`), StreakBreakOverlay is
+deleted and the moment speaks through the new medium register:
+[MomentPanel](src/components/MomentPanel.tsx) (`spring-panel`, icon chip +
+title + facts + actions). The streak-break panel sits in the Dashboard flow
+with the shelter offer, and "Pitch the shelter" now opens the two-step
+confirm sheet (the v2 overlay spent the shield on one tap — the contract
+requires the two-step); once-flag keys `mission.stageShown.*` /
+`mission.streakBreak.*` untouched. StageOverlay takes the full `Stage` (day
+range in the kicker, zen line as the hero — `STAGE_ZEN` moved to
+[src/lib/stage.ts](src/lib/stage.ts)). All nine primitives ported from the
+Gate-approved waypoint forks: MissionRing is the walk strip (105 segs, dotted
+unrecorded, pin, stage ruler, caption row) with its two call sites
+(Dashboard, MissionCompleted) updated to pass `days`/`startDate`;
+SlideToConfirm keeps production logic (nudge, keyboard, 0.8 threshold) under
+the stretch-to-walk skin with `--duration-slide` tokens; BottomSheet gained
+the missing `useReducedMotion` wiring (fades, drag disabled); XpToast is the
+stage pill + flag with a reduced variant; UndoToast is the bottom-center
+legend chip; inputs are 52px panel rows at 17px. Shared
+[SegmentedControl](src/components/SegmentedControl.tsx) (44px targets,
+stage-hue active) replaced the Onboarding/Settings duplicates via aliased
+imports. The lab gained [SharedGallery](src/lab/SharedGallery.tsx) — the
+production primitives against every fixture, the permanent verification
+harness. Verified live at 375px: all six fixtures × both themes, zero console
+errors, `mission` key untouched by the lab; measured: track 56px, inputs
+17px/52px, segments 44px, 8 specks, blur(5px), stage-keyed hues correct in
+all twelve combinations. Build: no lab chunk; entry 127.85 kB gz (+0.99 vs
+Phase 5), CSS 6.50 kB gz (+0.31). **Deferred:** DevTools reduced-motion
+emulation couldn't be driven from this session's browser pane (no
+compositing while hidden) — the JS hook is wired in every framer component
+and specks are `display: none` under the media query; Phase 14 re-verifies
+with instruments per its checklist.
 
 ---
 

@@ -140,9 +140,15 @@ export default function MissionCompleted() {
         <div className="mt-1 text-sm text-text-muted">Day {total}.</div>
       </header>
 
-      <div className="flex justify-center pt-4 pb-6">
-        <MissionRing day={total} totalDays={total} />
-      </div>
+      <section className="mx-5 mt-4 mb-6 rounded-card border border-border bg-surface px-4 pb-3 pt-2 shadow-panel">
+        <MissionRing
+          day={total}
+          totalDays={total}
+          days={days}
+          startDate={settings.startDate}
+          todayStatus="logged"
+        />
+      </section>
 
       {haveHeadline && (
         <section className="px-5 text-center">
