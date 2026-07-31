@@ -11,21 +11,22 @@ export type EncouragementInput = {
 };
 
 export function encouragement(a: EncouragementInput): string {
-  if (a.dayNumber > a.totalDays) return `Mission complete. Day ${a.totalDays}.`;
-  if (a.dayNumber < 1) return 'Begin where you are.';
+  if (a.dayNumber > a.totalDays) return `The summit. Day ${a.totalDays}.`;
+  if (a.dayNumber < 1) return 'The route is plotted.';
 
-  if (a.dayNumber === 1 && !a.todayHasAny) return 'Begin where you are. Day 1.';
-  if (a.dayNumber === a.totalDays) return 'Final day.';
+  if (a.dayNumber === 1 && !a.todayHasAny)
+    return "Trailhead. The first mark is today's log.";
+  if (a.dayNumber === a.totalDays) return 'The summit is today.';
 
   if (a.dayNumber === halfwayDay(a.totalDays)) return 'Halfway. Keep walking.';
 
-  if (a.todayHasBoth) return 'Today is yours.';
-  if (a.streak >= 2) return `Steady. ${a.streak} days.`;
+  if (a.todayHasBoth) return 'Today is walked.';
+  if (a.streak >= 2) return `Steady. ${a.streak} days walked.`;
 
   if (a.yesterdayStatus === 'failed' || a.yesterdayStatus === 'missed') {
     return 'Yesterday is closed. Today is open.';
   }
   if (!a.todayHasAny) return 'Today is open.';
 
-  return 'Consistency over intensity.';
+  return 'One stretch at a time is the whole way there.';
 }

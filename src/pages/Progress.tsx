@@ -386,7 +386,7 @@ export default function ProgressPage() {
             {showProjection && projection && (
               <div className="text-xs text-text-muted tabular">
                 {projection.noisy
-                  ? 'Pace unclear — log more weights.'
+                  ? 'Pace unclear — more readings settle the line.'
                   : `On pace for ${projection.endWeight.toFixed(1)} ${settings.weightUnit}.`}
               </div>
             )}

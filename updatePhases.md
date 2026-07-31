@@ -30,7 +30,11 @@
 > banner precedence, the Photos ritual card, Compare at 44px + keyboard, Progress
 > off the fruit tokens). Phase 11 ✅ shipped 2026-07-31 (secondary surfaces sweep:
 > History/Settings/Onboarding restyled, the fruit aliases deleted, the photo trio
-> hardened, the contract empty states). Next session: **Phase 12** (voice pass).
+> hardened, the contract empty states). Phase 12 ✅ shipped 2026-07-31 (voice
+> pass: encouragement.ts onto the trail lexicon with precedence intact, the 40
+> morning quotes + 10 evening prompts curated — attributed aphorisms and the one
+> fitness line replaced, banned-construction greps all zero). Next session:
+> **Phase 13** (doc-refresh checkpoint).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -704,7 +708,7 @@ system-wide — borders render full-strength); decide whether to add
 
 ---
 
-## Phase 12 — Voice pass — ⏸ Awaiting Gate 3
+## Phase 12 — Voice pass — ✅ Shipped 2026-07-31
 
 **Goal** — every user-facing string sounds like one person, per the contract's voice
 verdicts. Moment copy is written in-phase during Phases 7–10 (a moment is not done
@@ -728,9 +732,29 @@ without its words); this phase is the whole-app unification sweep.
 
 **Commit** — `Voice: every string sounds like a person`
 
----
-
-## Phase 13 — Doc-refresh checkpoint — ⏸ Awaiting Gate 3
+> **Shipped 2026-07-31.** The whole-app sweep found the Phases 7–11 surfaces
+> already in-voice (moments written in-phase); the off-contract remnants were
+> exactly the two in-scope libs plus one Progress footnote.
+> [encouragement.ts](src/lib/encouragement.ts): all nine strings onto the trail
+> lexicon, precedence untouched — post-mission `The summit. Day 105.`, pre-mission
+> `The route is plotted.`, Day 1 `Trailhead. The first mark is today's log.`,
+> final day `The summit is today.`, perfect day `Today is walked.`, streak
+> `Steady. {n} days walked.`, fallback = the pinned standing footer `One stretch
+> at a time is the whole way there.` (the pinned lines — halfway, yesterday-closed,
+> today-open — kept verbatim). [quotes.ts](src/lib/quotes.ts): 28 of the 40
+> morning lines kept, 12 replaced — the attributed aphorisms (`Discipline is
+> freedom`, `Choose the harder right`, `Stay in the boat`), the fitness content
+> (`Eat well. Move well. Rest well.`, `Move first. Think second.`, `Strength is a
+> habit`), and `Today is open.` (collided with the pinned status line) — with
+> trail-placed lines (`Every morning is a trailhead.`, `Slow ground is still
+> ground.`, `The map only asks for the truth.`); two evening prompts reworked
+> (`Mark today as it was.`, `Today still takes a mark.`). Progress:
+> `Pace unclear — log more weights.` → `more readings settle the line.`
+> Verification: banned-construction greps (hype, shame, exclamation-in-string,
+> emoji) zero across src; six encouragement branches + a curated morning quote
+> read live via seeded localStorage on the dev preview (Day 62 streak, perfect
+> day, fallback, pre-mission, Day 1, Day 105), zero console errors. Build: entry
+> 132.25 kB gz (+0.02), CSS 6.64 (unchanged). — Doc-refresh checkpoint — ⏸ Awaiting Gate 3
 
 **Goal** — the docs describe the app that shipped, including drift that predates this
 work.
