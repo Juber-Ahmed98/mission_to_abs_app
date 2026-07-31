@@ -1,9 +1,15 @@
+// The Journey map (DESIGN.md · Journey page): the mission as an actual route —
+// a serpentine trail, 7 days per row, through five stage-colored bands of
+// country. Solid stretches where days were walked, a literal dotted stretch
+// where the record stops (visible, never scarlet), a faint plotted line ahead.
+// Camp flags open each band, the summit flies at the last day, a pin stands at
+// today, and during a lapse the last-logged day wears the dashed camp ring.
+
 import { useMemo, type KeyboardEvent } from 'react';
 import { stagesFor } from '../lib/stage';
 import { dayStatus } from '../lib/dayStatus';
 import type { DayEntry, DayStatus } from '../types';
 import { addDaysISO } from '../lib/date';
-import { useIsNarrow } from '../lib/viewport';
 
 type Props = {
   startDate: string;
@@ -11,17 +17,34 @@ type Props = {
   today: string;
   days: Record<string, DayEntry>;
   onSelect: (date: string) => void;
+  /** Last genuinely-logged day during a lapse — wears the dashed camp ring. */
+  campDate?: string | null;
+  /** Where the pin stands. Defaults to today; pre-mission passes day 1 so the
+   * pin waits at the trailhead. */
+  pinDate?: string;
 };
 
-const DESKTOP_ROWS = 5;
-const NARROW_PER_ROW = 7;
-const NARROW_ROW_SPACING = 32;
-const X_PAD = 22;
-const Y_PAD = 32;
+const PER_ROW = 7;
+const X_PAD = 24;
 const VIEW_W = 360;
-const DESKTOP_VIEW_H = 240;
+const ROW_SPACING = 34;
+/** Extra breathing room above each stage's first row — the band boundary. */
+const STAGE_GAP = 26;
+const Y_TOP = 34;
+const Y_BOTTOM = 26;
+/** ≥44px CSS at the 375px reference frame (the SVG scales with its panel). */
+const HIT_R = 25;
 
-type JourneyNode = {
+const STAGE_VAR = ['--stage-0', '--stage-1', '--stage-2', '--stage-3', '--stage-4'];
+const STAGE_SOFT_VAR = [
+  '--stage-0-soft',
+  '--stage-1-soft',
+  '--stage-2-soft',
+  '--stage-3-soft',
+  '--stage-4-soft',
+];
+
+type TrailNode = {
   dayNum: number;
   date: string;
   x: number;
@@ -29,29 +52,20 @@ type JourneyNode = {
   row: number;
 };
 
-function statusGlyph(status: DayStatus): string | null {
+/** How the trail reads a day's status (DESIGN.md · Day status logic). */
+export function trailWord(status: DayStatus): string {
   switch (status) {
     case 'perfect':
-      return '✓';
+      return 'walked, both pillars';
     case 'partial':
-      return '~';
+      return 'walked, one pillar';
     case 'failed':
-      return '✗';
+      return 'rough ground';
     case 'rest':
-      return '☾';
+      return 'camp day';
     default:
-      return null;
+      return 'unrecorded';
   }
-}
-
-function statusLabel(
-  status: DayStatus | null,
-  isFuture: boolean,
-  isToday: boolean,
-): string {
-  if (isToday) return 'today';
-  if (isFuture) return 'future';
-  return status ?? 'missed';
 }
 
 export default function JourneyPath({
@@ -60,291 +74,335 @@ export default function JourneyPath({
   today,
   days,
   onSelect,
+  campDate = null,
+  pinDate,
 }: Props) {
-  const isNarrow = useIsNarrow();
+  const pin = pinDate ?? today;
   const stages = useMemo(() => stagesFor(totalDays), [totalDays]);
-  const rows = isNarrow
-    ? Math.max(1, Math.ceil(totalDays / NARROW_PER_ROW))
-    : DESKTOP_ROWS;
-  const perRow = isNarrow
-    ? NARROW_PER_ROW
-    : Math.max(1, Math.ceil(totalDays / rows));
-  const VIEW_H = isNarrow
-    ? 2 * Y_PAD + Math.max(0, rows - 1) * NARROW_ROW_SPACING
-    : DESKTOP_VIEW_H;
-  const spacingX = perRow > 1 ? (VIEW_W - 2 * X_PAD) / (perRow - 1) : 0;
-  const spacingY = rows > 1 ? (VIEW_H - 2 * Y_PAD) / (rows - 1) : 0;
+  const stageIndexOfDay = (d: number) =>
+    stages.find((s) => d >= s.startDay && d <= s.endDay)?.index ?? stages.length - 1;
+  const hueOf = (d: number) => `var(${STAGE_VAR[stageIndexOfDay(d)]})`;
 
-  const nodes = useMemo<JourneyNode[]>(() => {
-    const arr: JourneyNode[] = [];
+  // ---- geometry: serpentine rows, a band gap where a new stage begins ----
+  const rows = Math.max(1, Math.ceil(totalDays / PER_ROW));
+  const spacingX = (VIEW_W - 2 * X_PAD) / (PER_ROW - 1);
+
+  const { nodes, rowYs, viewH } = useMemo(() => {
+    const stageOfRow = (row: number) => {
+      const firstDay = row * PER_ROW + 1;
+      return (
+        stages.find((s) => firstDay >= s.startDay && firstDay <= s.endDay)
+          ?.index ?? stages.length - 1
+      );
+    };
+    const ys: number[] = [];
+    for (let r = 0; r < rows; r += 1) {
+      ys.push(Y_TOP + r * ROW_SPACING + stageOfRow(r) * STAGE_GAP);
+    }
+    const arr: TrailNode[] = [];
     for (let i = 0; i < totalDays; i += 1) {
-      const row = Math.floor(i / perRow);
-      const colInRow = i % perRow;
-      const reverse = row % 2 === 1;
-      const col = reverse ? perRow - 1 - colInRow : colInRow;
+      const row = Math.floor(i / PER_ROW);
+      const colInRow = i % PER_ROW;
+      const col = row % 2 === 1 ? PER_ROW - 1 - colInRow : colInRow;
       arr.push({
         dayNum: i + 1,
         date: addDaysISO(startDate, i),
         x: X_PAD + col * spacingX,
-        y: Y_PAD + row * spacingY,
+        y: ys[row],
         row,
       });
     }
-    return arr;
-  }, [startDate, totalDays, perRow, spacingX, spacingY]);
+    return { nodes: arr, rowYs: ys, viewH: ys[rows - 1] + Y_BOTTOM };
+  }, [startDate, totalDays, rows, spacingX, stages]);
 
-  const todayIdx = useMemo(() => {
-    if (nodes.length === 0) return -1;
-    if (today < nodes[0].date) return -1;
-    for (let i = 0; i < nodes.length; i += 1) {
-      if (nodes[i].date === today) return i;
-      if (nodes[i].date > today) return i - 1;
-    }
-    return nodes.length - 1;
-  }, [nodes, today]);
+  const bands = useMemo(
+    () =>
+      stages.map((s) => {
+        const firstRow = Math.floor((s.startDay - 1) / PER_ROW);
+        const lastRow = Math.floor((s.endDay - 1) / PER_ROW);
+        const top = rowYs[firstRow] - 26;
+        return {
+          stage: s,
+          top,
+          height: rowYs[lastRow] + 16 - top,
+          side: firstRow % 2 === 1 ? ('right' as const) : ('left' as const),
+        };
+      }),
+    [stages, rowYs],
+  );
 
-  const { pastPathD, futurePathD } = useMemo(() => {
-    if (nodes.length === 0) return { pastPathD: '', futurePathD: '' };
-    const pastParts: string[] = [];
-    const futureParts: string[] = [];
-    let pastStarted = false;
-
-    const startPast = (n: JourneyNode) => {
-      if (!pastStarted) {
-        pastParts.push(`M ${n.x} ${n.y}`);
-        pastStarted = true;
-      }
-    };
-    const startFuture = (n: JourneyNode) => {
-      if (futureParts.length === 0) {
-        futureParts.push(`M ${n.x} ${n.y}`);
-      }
-    };
-
-    for (let row = 0; row < rows; row += 1) {
-      const rowStartIdx = row * perRow;
-      const rowEndIdx = Math.min(totalDays - 1, (row + 1) * perRow - 1);
-      if (rowStartIdx > totalDays - 1) break;
-      const rowStartNode = nodes[rowStartIdx];
-      const rowEndNode = nodes[rowEndIdx];
-      const nextRowStartIdx = (row + 1) * perRow;
-      const nextStart =
-        nextRowStartIdx <= totalDays - 1 ? nodes[nextRowStartIdx] : null;
-
-      let pivotStr = '';
-      if (nextStart) {
-        const reverse = row % 2 === 1;
-        const bulgeDir = reverse ? -1 : 1;
-        const bulgeMagnitude = spacingY * 0.6;
-        const controlX = rowEndNode.x + bulgeDir * bulgeMagnitude;
-        const controlY = (rowEndNode.y + nextStart.y) / 2;
-        pivotStr = `Q ${controlX} ${controlY} ${nextStart.x} ${nextStart.y}`;
-      }
-
-      if (todayIdx >= rowEndIdx) {
-        startPast(rowStartNode);
-        pastParts.push(`L ${rowEndNode.x} ${rowEndNode.y}`);
-        if (nextStart) {
-          if (todayIdx >= nextRowStartIdx) {
-            pastParts.push(pivotStr);
-          } else {
-            startFuture(rowEndNode);
-            futureParts.push(pivotStr);
-          }
-        }
-      } else if (todayIdx < rowStartIdx) {
-        startFuture(rowStartNode);
-        futureParts.push(`L ${rowEndNode.x} ${rowEndNode.y}`);
-        if (pivotStr) futureParts.push(pivotStr);
+  /** One path per day walked into — so each stretch can be solid, dotted, or
+   * plotted-ahead independently, and the lapse reads as a literal dotted
+   * stretch of trail. */
+  const segs = useMemo(() => {
+    const list: { d: number; date: string; path: string }[] = [];
+    for (let d = 2; d <= totalDays; d += 1) {
+      const a = nodes[d - 2];
+      const b = nodes[d - 1];
+      let path: string;
+      if (a.row === b.row) {
+        path = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
       } else {
-        const todayNode = nodes[todayIdx];
-        if (todayIdx > rowStartIdx) {
-          startPast(rowStartNode);
-          pastParts.push(`L ${todayNode.x} ${todayNode.y}`);
-        }
-        startFuture(todayNode);
-        futureParts.push(`L ${rowEndNode.x} ${rowEndNode.y}`);
-        if (pivotStr) futureParts.push(pivotStr);
+        const dy = b.y - a.y;
+        const bulgeDir = a.row % 2 === 1 ? -1 : 1;
+        const cx = a.x + bulgeDir * dy * 0.55;
+        path = `M ${a.x} ${a.y} Q ${cx} ${(a.y + b.y) / 2} ${b.x} ${b.y}`;
       }
+      list.push({ d, date: b.date, path });
     }
+    return list;
+  }, [nodes, totalDays]);
 
-    return {
-      pastPathD: pastParts.join(' '),
-      futurePathD: futureParts.join(' '),
-    };
-  }, [nodes, perRow, rows, totalDays, spacingY, todayIdx]);
+  const currentStageIdx = stageIndexOfDay(
+    Math.max(1, Math.min(totalDays, nodes.filter((n) => n.date <= today).length)),
+  );
+  const summitNode = nodes[totalDays - 1];
+  const summitDir = summitNode.x > VIEW_W / 2 ? -1 : 1;
 
   return (
-    <div className="w-full">
-      <svg
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        className="block w-full"
-        style={{ overflow: 'visible' }}
-      >
-        {futurePathD && (
+    <svg
+      viewBox={`0 0 ${VIEW_W} ${viewH}`}
+      className="block w-full"
+      style={{ overflow: 'visible' }}
+    >
+      {/* stage bands — the five countries */}
+      {bands.map(({ stage: s, top, height }) => (
+        <rect
+          key={s.index}
+          x={6}
+          y={top}
+          width={VIEW_W - 12}
+          height={height}
+          rx={14}
+          fill={`var(${STAGE_SOFT_VAR[s.index]})`}
+          opacity={s.index === currentStageIdx ? 0.6 : 0.35}
+        />
+      ))}
+
+      {/* camp flags + stage names at each band's start */}
+      {bands.map(({ stage: s, top, side }) => {
+        const inward = side === 'right' ? -1 : 1;
+        const poleX = side === 'right' ? VIEW_W - 16 : 16;
+        const baseY = top + 19;
+        const hue = `var(${STAGE_VAR[s.index]})`;
+        return (
+          <g key={s.index} aria-hidden>
+            <line
+              x1={poleX}
+              y1={baseY}
+              x2={poleX}
+              y2={baseY - 12}
+              stroke={hue}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${poleX} ${baseY - 12} L ${poleX + inward * 7} ${baseY - 9.5} L ${poleX} ${baseY - 7} Z`}
+              fill={hue}
+            />
+            <text
+              x={poleX + inward * 11}
+              y={baseY - 2}
+              textAnchor={side === 'right' ? 'end' : 'start'}
+              fill={hue}
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {s.name} · {s.startDay}–{s.endDay}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* the trail, stretch by stretch */}
+      {segs.map(({ d, date, path }) => {
+        if (date > today)
+          return (
+            <path
+              key={d}
+              d={path}
+              fill="none"
+              stroke="var(--track)"
+              strokeWidth={2}
+              strokeDasharray="4 6"
+            />
+          );
+        const status = dayStatus(days[date]);
+        if (status === 'missed')
+          return (
+            <path
+              key={d}
+              d={path}
+              fill="none"
+              stroke="var(--border-strong)"
+              strokeWidth={2.25}
+              strokeDasharray="0.1 7"
+              strokeLinecap="round"
+            />
+          );
+        return (
           <path
-            d={futurePathD}
+            key={d}
+            d={path}
             fill="none"
-            stroke="var(--surface-2)"
-            strokeWidth={2}
+            stroke={status === 'failed' ? 'var(--border-strong)' : hueOf(d)}
+            strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        )}
-        {pastPathD && (
+        );
+      })}
+
+      {/* summit flag at the last day */}
+      <g aria-hidden>
+        <line
+          x1={summitNode.x}
+          y1={summitNode.y - 3}
+          x2={summitNode.x}
+          y2={summitNode.y - 16}
+          stroke={`var(${STAGE_VAR[stages.length - 1]})`}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+        />
+        <path
+          d={`M ${summitNode.x} ${summitNode.y - 16} L ${summitNode.x + summitDir * 9} ${summitNode.y - 12.5} L ${summitNode.x} ${summitNode.y - 9} Z`}
+          fill={`var(${STAGE_VAR[stages.length - 1]})`}
+        />
+      </g>
+
+      {/* the days */}
+      {nodes.map((node) => {
+        const isPin = node.date === pin;
+        const interactive = node.date <= today;
+        const status = interactive ? dayStatus(days[node.date]) : null;
+        const hue = hueOf(node.dayNum);
+        const isCamp = !!campDate && node.date === campDate;
+
+        // Ahead: a faint plotted dot, not a control.
+        if (!interactive && !isPin)
+          return (
+            <circle
+              key={node.date}
+              cx={node.x}
+              cy={node.y}
+              r={2}
+              fill="var(--track)"
+            />
+          );
+
+        const mark = isPin ? (
+          <>
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={10}
+              fill="var(--stage)"
+              opacity={0.25}
+              className="animate-ring-pulse"
+              style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+            />
+            <g transform={`translate(${node.x}, ${node.y})`}>
+              <path
+                d="M 0 1.5 C -4.6 -3.2 -7 -6.4 -7 -9.6 A 7 7 0 1 1 7 -9.6 C 7 -6.4 4.6 -3.2 0 1.5 Z"
+                fill="var(--stage)"
+                stroke="var(--surface)"
+                strokeWidth={1}
+              />
+              <circle cy={-9.6} r={2.4} fill="var(--surface)" />
+            </g>
+          </>
+        ) : status === 'rest' ? (
           <path
-            d={pastPathD}
+            d={`M ${node.x - 5.5} ${node.y + 3.5} L ${node.x} ${node.y - 5} L ${node.x + 5.5} ${node.y + 3.5} Z`}
+            fill={`var(${STAGE_SOFT_VAR[stageIndexOfDay(node.dayNum)]})`}
+            stroke={hue}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+          />
+        ) : status === 'missed' ? (
+          <circle
+            cx={node.x}
+            cy={node.y}
+            r={2}
             fill="none"
             stroke="var(--border-strong)"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeWidth={1.25}
           />
-        )}
+        ) : (
+          <circle
+            cx={node.x}
+            cy={node.y}
+            r={status === 'failed' ? 4 : 4.5}
+            fill={status === 'failed' ? 'var(--border-strong)' : hue}
+            opacity={status === 'partial' ? 0.55 : 1}
+          />
+        );
 
-        {stages.map((stage, i) => {
-          const reverse = i % 2 === 1;
-          const startNode = nodes[stage.startDay - 1];
-          if (!startNode) return null;
+        // The pre-mission pin waits at the trailhead but isn't a control yet.
+        if (!interactive)
           return (
-            <text
-              key={stage.index}
-              x={reverse ? VIEW_W - X_PAD + 4 : X_PAD - 4}
-              y={startNode.y - 14}
-              textAnchor={reverse ? 'end' : 'start'}
-              fill="var(--text-muted)"
-              style={{
-                fontSize: 11,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                fontWeight: 600,
-              }}
-            >
-              {stage.name}
-            </text>
-          );
-        })}
-
-        {nodes.map((node) => {
-          const isFuture = node.date > today;
-          const isToday = node.date === today;
-          const entry = days[node.date];
-          const status = isFuture ? null : dayStatus(entry);
-          const fill = isToday
-            ? 'var(--tangerine)'
-            : status === 'perfect'
-              ? 'var(--lime)'
-              : status === 'rest'
-                ? 'var(--lemon)'
-                : status === 'partial'
-                  ? 'var(--tangerine)'
-                  : status === 'failed'
-                    ? 'var(--coral)'
-                    : status === 'missed'
-                      ? 'var(--missed)'
-                      : 'transparent';
-          const r = isToday ? 7 : isFuture ? 3.5 : status === 'missed' ? 4 : 5;
-          const hitR = Math.max(22, r + 12);
-          const showGlyph =
-            !isFuture &&
-            !isToday &&
-            status !== null &&
-            status !== 'missed' &&
-            r >= 5;
-          const glyph = showGlyph ? statusGlyph(status) : null;
-          const hasNotes = !!entry?.notes?.trim();
-          const ariaLabel = `Day ${node.dayNum}, ${statusLabel(status, isFuture, isToday)}`;
-          const handleSelect = () => {
-            if (!isFuture) onSelect(node.date);
-          };
-          const handleKey = (e: KeyboardEvent<SVGGElement>) => {
-            if (isFuture) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleSelect();
-            }
-          };
-
-          return (
-            <g
-              key={node.date}
-              role="button"
-              tabIndex={0}
-              aria-label={ariaLabel}
-              onClick={handleSelect}
-              onKeyDown={handleKey}
-              className="group focus:outline-none"
-              style={{
-                cursor: isFuture ? 'default' : 'pointer',
-                outline: 'none',
-              }}
-            >
-              <title>{`Day ${node.dayNum}${isToday ? ' (today)' : ''}`}</title>
-              {isToday && (
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={11}
-                  fill="var(--tangerine)"
-                  opacity={0.25}
-                  className="animate-ring-pulse"
-                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-                />
-              )}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={r}
-                fill={isFuture ? 'transparent' : fill}
-                stroke={isFuture ? 'var(--border-strong)' : 'none'}
-                strokeWidth={1.5}
-              />
-              {glyph && (
-                <text
-                  x={node.x}
-                  y={node.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  opacity={0.85}
-                  style={{
-                    fontSize: 7,
-                    fontWeight: 700,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {glyph}
-                </text>
-              )}
-              {hasNotes && !isFuture && (
-                <circle
-                  cx={node.x + r * 0.75}
-                  cy={node.y - r * 0.75}
-                  r={1.5}
-                  fill="var(--accent)"
-                  style={{ pointerEvents: 'none' }}
-                />
-              )}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={r + 5}
-                fill="none"
-                stroke="var(--accent)"
-                strokeWidth={2}
-                className="opacity-0 group-focus-visible:opacity-100"
-                style={{ pointerEvents: 'none' }}
-              />
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={hitR}
-                fill="transparent"
-              />
+            <g key={node.date} aria-hidden>
+              {mark}
             </g>
           );
-        })}
-      </svg>
-    </div>
+
+        const ariaLabel = `Day ${node.dayNum}, ${
+          isPin ? 'today' : trailWord(status ?? 'missed')
+        }`;
+        const handleSelect = () => onSelect(node.date);
+        const handleKey = (e: KeyboardEvent<SVGGElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSelect();
+          }
+        };
+
+        return (
+          <g
+            key={node.date}
+            role="button"
+            tabIndex={0}
+            aria-label={ariaLabel}
+            onClick={handleSelect}
+            onKeyDown={handleKey}
+            className="group focus:outline-none"
+            style={{ cursor: 'pointer', outline: 'none' }}
+          >
+            <title>{`Day ${node.dayNum}${isPin ? ' (today)' : ''}`}</title>
+
+            {/* the last logged day before a lapse — camp, marked on the map */}
+            {isCamp && (
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={8.5}
+                fill="none"
+                stroke={hue}
+                strokeWidth={1.25}
+                strokeDasharray="2.5 3"
+              />
+            )}
+
+            {mark}
+
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={isPin ? 12 : 7}
+              fill="none"
+              stroke="var(--stage)"
+              strokeWidth={2}
+              className="opacity-0 group-focus-visible:opacity-100"
+              style={{ pointerEvents: 'none' }}
+            />
+            <circle cx={node.x} cy={node.y} r={HIT_R} fill="transparent" />
+          </g>
+        );
+      })}
+    </svg>
   );
 }

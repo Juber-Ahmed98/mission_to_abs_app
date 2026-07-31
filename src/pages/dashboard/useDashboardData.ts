@@ -13,6 +13,7 @@ import {
   yesterdayISO,
 } from '../../lib/date';
 import { dayStatus } from '../../lib/dayStatus';
+import { lastLoggedDate } from '../../lib/lapse';
 import { calcStreak } from '../../lib/streak';
 import { stageForDay } from '../../lib/stage';
 import { levelFromXp, tierName, totalXp } from '../../lib/xp';
@@ -49,17 +50,12 @@ export function useDashboardData() {
     yesterday < settings.startDate ? ('missed' as const) : dayStatus(yesterdayEntry);
 
   // The lapse boundary (DESIGN.md): the gap is counted back from the last
-  // genuinely-logged day — dayStatus() over entries, never key presence (the
-  // mount effect below auto-creates today, and empty entries read 'missed').
-  const lastLogged = useMemo(() => {
-    let best: string | null = null;
-    for (const date of Object.keys(days)) {
-      if (date >= today || date < settings.startDate) continue;
-      if (dayStatus(days[date]) === 'missed') continue;
-      if (best === null || date > best) best = date;
-    }
-    return best;
-  }, [days, today, settings.startDate]);
+  // genuinely-logged day. The derivation lives in lib/lapse so the Journey's
+  // lapse framing reads the same camp.
+  const lastLogged = useMemo(
+    () => lastLoggedDate(days, today, settings.startDate),
+    [days, today, settings.startDate],
+  );
 
   const streak = useMemo(
     () => calcStreak(days, today, settings.startDate),

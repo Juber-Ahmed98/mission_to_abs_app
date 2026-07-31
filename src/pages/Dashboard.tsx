@@ -8,6 +8,7 @@ import MissionRing from '../components/MissionRing';
 import MissionCompleted from '../components/MissionCompleted';
 import LevelUpOverlay from '../components/LevelUpOverlay';
 import StageOverlay from '../components/StageOverlay';
+import SummitOverlay from '../components/SummitOverlay';
 import Greeting from './dashboard/Greeting';
 import MomentStack from './dashboard/MomentStack';
 import BannerStack from './dashboard/BannerStack';
@@ -74,6 +75,7 @@ export default function Dashboard() {
         perfectDayOpen={cele.perfectDayOpen}
         streak={d.streak}
         halfway={d.isHalfwayDay}
+        summitEve={d.canLogToday && d.dayNum === d.total - 1}
         heavyShowing={cele.heavy !== null}
       />
 
@@ -97,14 +99,16 @@ export default function Dashboard() {
       />
 
       <div className="px-5 pt-6 text-center text-sm text-text-muted">
-        {encouragement({
-          dayNumber: d.rawDay,
-          totalDays: d.total,
-          streak: d.streak,
-          yesterdayStatus: d.yesterdayStatus,
-          todayHasBoth: d.todayStatus === 'perfect',
-          todayHasAny: d.todayHasAny,
-        })}
+        {d.canLogToday && d.dayNum === d.total - 1
+          ? 'Sleep well. Tomorrow you crest.'
+          : encouragement({
+              dayNumber: d.rawDay,
+              totalDays: d.total,
+              streak: d.streak,
+              yesterdayStatus: d.yesterdayStatus,
+              todayHasBoth: d.todayStatus === 'perfect',
+              todayHasAny: d.todayHasAny,
+            })}
       </div>
 
       <LevelUpOverlay
@@ -116,6 +120,11 @@ export default function Dashboard() {
       <StageOverlay
         open={cele.heavy === 'stage'}
         stage={cele.stage}
+        onDismiss={cele.dismissHeavy}
+      />
+      <SummitOverlay
+        open={cele.heavy === 'summit'}
+        total={d.total}
         onDismiss={cele.dismissHeavy}
       />
 

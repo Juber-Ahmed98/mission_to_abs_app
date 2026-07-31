@@ -3,7 +3,7 @@
 // days are a dotted stretch — visible, never scarlet. A pin stands at today,
 // and the stage ruler below names the five countries.
 
-import { MapPin } from 'lucide-react';
+import { Flag, MapPin } from 'lucide-react';
 import type { DayEntry } from '../types';
 import { addDaysISO } from '../lib/date';
 import { dayStatus } from '../lib/dayStatus';
@@ -63,12 +63,15 @@ export default function MissionRing({
 
   return (
     <div className="w-full">
-      {/* the pin */}
+      {/* the pin — with the summit flag at its side on the final day */}
       <div className="relative h-6" aria-hidden>
         <div
-          className="absolute flex -translate-x-1/2 flex-col items-center text-stage"
+          className="absolute flex -translate-x-1/2 items-end text-stage"
           style={{ left: pinLeft }}
         >
+          {day === totalDays && (
+            <Flag size={13} strokeWidth={2.5} className="mr-px" />
+          )}
           <MapPin size={18} strokeWidth={2.25} fill="var(--stage-soft)" />
         </div>
       </div>

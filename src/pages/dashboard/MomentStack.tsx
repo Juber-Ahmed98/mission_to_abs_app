@@ -4,7 +4,7 @@
 // under a heavy overlay — it waits in flow until the takeover is dismissed.
 
 import { Link } from 'react-router-dom';
-import { Flag, Milestone, Tent } from 'lucide-react';
+import { Flag, Milestone, Mountain, Tent } from 'lucide-react';
 import MomentPanel from '../../components/MomentPanel';
 import { XP } from '../../lib/xp';
 
@@ -21,6 +21,8 @@ type Props = {
   perfectDayOpen: boolean;
   streak: number;
   halfway: boolean;
+  /** Day 104 — the eve of the summit (DESIGN.md · moment 8). */
+  summitEve: boolean;
   heavyShowing: boolean;
 };
 
@@ -28,7 +30,13 @@ const PERFECT_DAY_XP = XP.diet + XP.exercise + XP.perfectDayBonus;
 
 export default function MomentStack(p: Props) {
   const showPerfect = p.perfectDayOpen && !p.heavyShowing;
-  if (!p.reentryOpen && !p.streakBreakOpen && !showPerfect && !p.halfway)
+  if (
+    !p.reentryOpen &&
+    !p.streakBreakOpen &&
+    !showPerfect &&
+    !p.halfway &&
+    !p.summitEve
+  )
     return null;
 
   return (
@@ -87,6 +95,15 @@ export default function MomentStack(p: Props) {
         >
           Both pillars · +{PERFECT_DAY_XP} XP
           {p.streak >= 2 ? ` · ${p.streak}-day walk behind it` : ''}
+        </MomentPanel>
+      )}
+
+      {p.summitEve && (
+        <MomentPanel
+          icon={<Mountain size={18} strokeWidth={2} />}
+          title="The summit is tomorrow."
+        >
+          One camp left. Walk in like you walked the rest.
         </MomentPanel>
       )}
 

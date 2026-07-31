@@ -58,20 +58,39 @@ export function useCelebrations(a: Args) {
     if (reentryOpen && a.todayStatus !== 'missed') setReentryOpen(false);
   }, [reentryOpen, a.todayStatus]);
 
-  // Stage crossing — exact-day trigger; "at or after" lands in Phase 9.
-  // The mission.stageShown.* key name is load-bearing for shipped installs.
-  // On a re-entry open the takeover is deferred: the once-flag stays
-  // unconsumed so a later open can still fire it.
+  // Stage crossing — fires on first open at or after the crossing day, once
+  // per stage. The mission.stageShown.* key name is load-bearing for shipped
+  // installs. On a re-entry open the takeover is deferred: the once-flag stays
+  // unconsumed so a later open can still fire it. Stages the walk has already
+  // passed through settle silently — the takeover belongs to the country
+  // you're standing in, never the ones behind you.
   useEffect(() => {
     if (!a.canLogToday || reentryFiredRef.current) return;
     const stage = stageForDay(a.dayNum, a.total);
-    if (!stage || stage.index === 0 || a.dayNum !== stage.startDay) return;
+    if (!stage || stage.index === 0) return;
+    for (let i = 1; i < stage.index; i += 1) {
+      localStorage.setItem(`mission.stageShown.${i}`, '1');
+    }
     const key = `mission.stageShown.${stage.index}`;
     if (localStorage.getItem(key) === '1') return;
     localStorage.setItem(key, '1');
     setStagePending(stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a.canLogToday, a.dayNum, a.total]);
+
+  // The summit (moment 8): completing day 105's log — any honest mark counts —
+  // fires the heavy overlay in Reveal gold, once. The flag carries the date so
+  // a startDate time-travel or a new mission re-arms it.
+  const [summitPending, setSummitPending] = useState(false);
+  const isSummitLogged =
+    a.canLogToday && a.dayNum === a.total && a.todayStatus !== 'missed';
+  useEffect(() => {
+    if (!isSummitLogged) return;
+    const key = `mission.summit.${a.today}`;
+    if (localStorage.getItem(key) === '1') return;
+    localStorage.setItem(key, '1');
+    setSummitPending(true);
+  }, [isSummitLogged, a.today]);
 
   // Streak break — exactly 1 unlogged day per the boundary rule; a longer gap
   // routes to re-entry instead (the v2 yesterday-only check never fired for a
@@ -101,13 +120,18 @@ export function useCelebrations(a: Args) {
     setPerfectDayOpen(true);
   }, [a.canLogToday, isPerfect, a.today, a.dayNum]);
 
-  const heavy: 'stage' | 'levelUp' | null = stagePending
-    ? 'stage'
-    : levelUpPending
-      ? 'levelUp'
-      : null;
+  // At most one heavy moment on screen; the summit outranks a stage crossing,
+  // a stage crossing outranks a level-up. The pending one fires after dismissal.
+  const heavy: 'summit' | 'stage' | 'levelUp' | null = summitPending
+    ? 'summit'
+    : stagePending
+      ? 'stage'
+      : levelUpPending
+        ? 'levelUp'
+        : null;
   const dismissHeavy = () => {
-    if (stagePending) setStagePending(null);
+    if (summitPending) setSummitPending(false);
+    else if (stagePending) setStagePending(null);
     else setLevelUpPending(false);
   };
 

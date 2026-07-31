@@ -24,8 +24,10 @@
 > XP toast watcher, first-open greeting per contract, perfect day reachable,
 > DayEditor backfills honest). Phase 8 ✅ shipped 2026-07-31 (the flagship:
 > re-entry after a lapse, the lapse boundary in production, streak-break
-> detection fixed). Next session: **Phase 9** (the arc: Journey, stages,
-> level-ups, day 105).
+> detection fixed). Phase 9 ✅ shipped 2026-07-31 (the arc: the Gate-2 map in
+> production, at-or-after stage crossings, the summit as a moment, the career
+> line at completion). Next session: **Phase 10** (the weekly ritual: photo +
+> waist + compare).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -523,7 +525,7 @@ instruments).
 
 ---
 
-## Phase 9 — The arc: Journey, stages, level-ups, day 105 — ⏸ Awaiting Gate 3
+## Phase 9 — The arc: Journey, stages, level-ups, day 105 — ✅ Shipped 2026-07-31
 
 **Goal** — the walk in production, plus every milestone on it.
 
@@ -546,6 +548,44 @@ instruments).
 - The stage indicator is visible on the Dashboard at 375px in both themes.
 
 **Commit** — `Journey: the walk, stage crossings, level-ups, and day 105`
+
+**Shipped notes (2026-07-31)** — the Gate-2-pinned map is production:
+[JourneyPath.tsx](src/components/JourneyPath.tsx) rewritten as the serpentine
+7-per-row route through the five stage-soft bands (camp flags with day ranges,
+per-stretch trail texture, tent marks, hollow unrecorded rings, the dashed
+camp ring during a lapse, the summit flag in Reveal gold, the drawn pin over a
+pulse ring — pre-mission it waits at the trailhead as a non-control), with day
+hit areas raised to r=25 (≈45px at 375). [Journey.tsx](src/pages/Journey.tsx)
+carries the contoured header (`105 days`, stage chip, lapse-aware context),
+the route-texture legend, the lapse-aware footer, and the map panel: fact rows
+for logged days, the three equal-weight marks with XP labels + the honesty
+line for unrecorded ones — store writes with the pinned undo labels
+(`Day 51 marked a camp day`), the app-level toast, and `Open the full record`
+→ DayEditor for partial/weight backfills. The lapse derivation moved to
+[src/lib/lapse.ts](src/lib/lapse.ts) so Dashboard and Journey read one camp;
+ContourLines extracted to a shared component; the dead `useIsNarrow` viewport
+lib deleted. Stage crossings now fire on first open **at or after** the
+crossing (earlier passed stages settle their `mission.stageShown.*` flags
+silently — the takeover belongs to the country you're standing in); the
+re-entry deferral still leaves flags unconsumed. Day 105: summit-eve panel +
+`Sleep well. Tomorrow you crest.` footer on day 104, the summit flag at the
+pin's side on the walk strip, and completing the final day's log fires the new
+[SummitOverlay](src/components/SummitOverlay.tsx) (heavy, `mission.summit.<date>`
+once-flag, summit > stage > level-up in the queue).
+[MissionCompleted](src/components/MissionCompleted.tsx) restyled: `The summit.`
+header on contours, and the career line per the pinned derivation (`Level 16 ·
+Grounded · 18,500 XP across 2 missions — carried into the next.` in the
+two-mission fixture; store untouched). Verified live at 375px on the dev
+server: mid-lapse Day 62 map (21 dotted stretches, camp ring on Day 41, 5
+bands, 62 focusable days), rough-ground + camp marks with toast/undo/revert,
+re-entry → deferred Push takeover next open with stage-1 settling silently,
+exact-day Build crossing, the 104 → 105 → 106 sequence (eve panel; summit
+fires once on the completing log with the perfect-day panel held until
+dismissal; reload re-fires nothing; completion layout with the career line),
+pre-mission dusk trailhead; zero console errors. Build: entry 131.51 kB gz
+(+1.77 vs Phase 8), CSS 6.68 (+0.07), no lab chunk; hex-grep 0, house-ease
+grep 1, shame-grep 0. **Deferred:** screenshots and reduced-motion emulation
+(hidden browser pane can't composite — Phase 14 re-verifies with instruments).
 
 ---
 

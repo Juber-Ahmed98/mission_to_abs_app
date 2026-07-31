@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Sparkles } from 'lucide-react';
+import { Download, Flag } from 'lucide-react';
 import { useMission } from '../store/mission';
-import { addDaysISO, totalDays } from '../lib/date';
+import { addDaysISO, formatNice, totalDays } from '../lib/date';
 import { adherenceFor } from '../lib/adherence';
 import { longestStreak } from '../lib/streak';
-import { totalXp } from '../lib/xp';
+import { levelFromXp, tierName, totalXp } from '../lib/xp';
 import MissionRing from './MissionRing';
 import PhotoThumb from './PhotoThumb';
 import BottomSheet from './BottomSheet';
+import ContourLines from './ContourLines';
 import {
   buildMissionArchive,
   downloadMissionArchive,
@@ -43,6 +44,16 @@ export default function MissionCompleted() {
     () => totalXp(days, photos, measurements),
     [days, photos, measurements],
   );
+
+  // The career line (DESIGN.md · Career XP): the pinned UI-only derivation —
+  // every archived mission's finalXp plus this walk. Continuation, not reset.
+  const careerXp = useMemo(
+    () => history.reduce((s, m) => s + m.finalXp, 0) + xp,
+    [history, xp],
+  );
+  const careerLevel = useMemo(() => levelFromXp(careerXp), [careerXp]);
+  const careerTier = tierName(careerLevel.level);
+  const missionCount = history.length + 1;
 
   const weights = useMemo(() => {
     return Object.values(days)
@@ -135,9 +146,14 @@ export default function MissionCompleted() {
 
   return (
     <div className="pb-32" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="px-5 pt-8 pb-2">
-        <h1 className="text-3xl font-bold tracking-tight">Mission complete</h1>
-        <div className="mt-1 text-sm text-text-muted">Day {total}.</div>
+      <header className="relative overflow-hidden px-5 pb-2 pt-8">
+        <ContourLines />
+        <div className="relative">
+          <div className="tabular text-sm text-text-muted">
+            {formatNice(lastDay)} · Day {total} of {total}
+          </div>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">The summit.</h1>
+        </div>
       </header>
 
       <section className="mx-5 mt-4 mb-6 rounded-card border border-border bg-surface px-4 pb-3 pt-2 shadow-panel">
@@ -206,6 +222,22 @@ export default function MissionCompleted() {
         </div>
       </section>
 
+      <section className="mt-6 mx-5 rounded-card border border-border bg-surface px-4 py-4">
+        <div className="text-xs uppercase tracking-wider text-text-muted">
+          The walk so far
+        </div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <div className="tabular text-3xl font-bold leading-none text-text">
+            Level {careerLevel.level}
+          </div>
+          <div className="text-sm text-text-muted">{careerTier}</div>
+        </div>
+        <div className="mt-2 text-sm text-text-muted tabular">
+          {careerXp.toLocaleString()} XP across {missionCount}{' '}
+          {missionCount === 1 ? 'mission' : 'missions'} — carried into the next.
+        </div>
+      </section>
+
       {firstPhoto && (
         <section className="mt-6 px-5">
           <div className="text-xs uppercase tracking-wider text-text-muted">
@@ -263,9 +295,9 @@ export default function MissionCompleted() {
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-card bg-accent text-white hover:bg-accent-hover"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-card bg-stage font-bold text-surface"
         >
-          <Sparkles size={16} strokeWidth={1.75} />
+          <Flag size={16} strokeWidth={2.25} />
           Begin a new mission
         </button>
         {history.length > 0 && (
@@ -299,7 +331,7 @@ export default function MissionCompleted() {
               type="button"
               disabled={starting}
               onClick={onConfirmNewMission}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+              className="h-11 flex-1 rounded-card bg-stage font-bold text-surface disabled:opacity-60"
             >
               {starting ? 'Starting…' : 'Begin new'}
             </button>
