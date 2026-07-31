@@ -8,19 +8,27 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['app-icon.svg'],
+      includeAssets: [
+        'app-icon.svg',
+        'app-icon-maskable.svg',
+        'app-icon-192.png',
+        'app-icon-512.png',
+      ],
       manifest: {
         name: 'Mission to Abs',
         short_name: 'AbsMission',
         description: '15-week body recomposition mission.',
-        theme_color: '#FFFFFF',
-        background_color: '#FFFFFF',
+        theme_color: '#F4F1E6',
+        background_color: '#F4F1E6',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './',
         scope: './',
         icons: [
-          { src: 'app-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: 'app-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'app-icon-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: 'app-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
         ],
       },
       workbox: {

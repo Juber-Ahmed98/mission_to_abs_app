@@ -14,7 +14,8 @@ import Dashboard from './pages/Dashboard';
 import JourneyPage from './pages/Journey';
 import OnboardingPage from './pages/Onboarding';
 import { useMission } from './store/mission';
-import { useApplyTheme } from './lib/theme';
+import { useApplyStage, useApplyTheme } from './lib/theme';
+import { dayNumberFor, todayISO, totalDays } from './lib/date';
 import { requestPersistence } from './lib/storage';
 import { bump } from './lib/analytics';
 import { scheduleAll as scheduleAllReminders } from './lib/notifications';
@@ -40,7 +41,10 @@ function Shell() {
   const dayCount = useMission((s) => Object.keys(s.days).length);
   const notifications = useMission((s) => s.settings.notifications);
   const setSettings = useMission((s) => s.setSettings);
+  const startDate = useMission((s) => s.settings.startDate);
+  const durationWeeks = useMission((s) => s.settings.durationWeeks);
   useApplyTheme(themePref);
+  useApplyStage(dayNumberFor(todayISO(), startDate), totalDays(durationWeeks));
   const { pathname } = useLocation();
   const hideNav =
     pathname.startsWith('/compare') ||

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
 import { useReducedMotion } from '../lib/motion';
+import { EASE } from '../lib/motionTokens';
 
 type Props = {
   open: boolean;
@@ -8,8 +9,6 @@ type Props = {
   tier: string;
   onDismiss: () => void;
 };
-
-const EASE = [0.32, 0.72, 0, 1] as const;
 
 export default function LevelUpOverlay({ open, level, tier, onDismiss }: Props) {
   const reducedMotion = useReducedMotion();

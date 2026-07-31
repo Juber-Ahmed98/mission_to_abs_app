@@ -10,6 +10,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import type { LabFixture } from '../../fixtures';
 import { XP } from '../../../lib/xp';
 import { formatNice } from '../../../lib/date';
+import { EASE } from '../../../lib/motionTokens';
 import MissionRing from './MissionRing';
 import TodayRow from './TodayRow';
 import LevelBadge from './LevelBadge';
@@ -234,7 +235,7 @@ export default function Dashboard({ fixture }: { fixture: LabFixture }) {
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
             animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 0.4, ease: EASE }}
             className="em-medium mx-5 mt-4 px-5 py-4"
           >
             <div className="flex items-center gap-3">
@@ -362,7 +363,7 @@ export default function Dashboard({ fixture }: { fixture: LabFixture }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0.1 : 0.35, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: reduced ? 0.1 : 0.35, ease: EASE }}
             onClick={() => setLevelUpOpen(false)}
             className="em-overlay-wash absolute inset-0 z-50 flex cursor-pointer flex-col items-center justify-center"
           >

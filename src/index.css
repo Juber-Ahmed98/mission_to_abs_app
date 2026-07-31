@@ -2,85 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light (primary) */
+/* Design tokens per DESIGN.md (v3 · Waypoint). Light = "daylight" (primary),
+ * dark = "dusk". The accent is not a brand color — it is the current stage,
+ * bound by a stage-<n> class on the document root.
+ * Note: --ease-apple is emitted from tailwind.config.js (base layer) so the
+ * ease literal has exactly one source in src/ (src/lib/motionTokens.ts). */
+
+/* Light (primary, "daylight" — a paper map) */
 :root {
-  --bg: #FFFFFF;
-  --surface: #FAFAF9;
-  --surface-2: #F4F4F2;
-  --border: #E8E8E5;
-  --border-strong: #D4D4D0;
+  --bg: #F4F1E6;
+  --surface: #FCFBF4;
+  --surface-2: #EBE7D6;
+  --border: #DBD5BF;
+  --border-strong: #AFA689;
+  --track: #E3DECB;
 
-  --text: #18181B;
-  --text-muted: #71717A;
-  /* #6B6B73 ≈ 5.3:1 on --bg / 4.8:1 on --surface-2 — clears WCAG AA (4.5:1). */
-  --text-subtle: #6B6B73;
+  --text: #23281F;
+  --text-muted: #5B6150;
+  /* #6A7057 = 4.57:1 on --bg (the lab's #6C7259 measured 4.43 — amended at Phase 5) */
+  --text-subtle: #6A7057;
 
-  --lemon: #FBBF24;
-  --lemon-soft: #FEF3C7;
-  --lime: #84CC16;
-  --lime-soft: #ECFCCB;
-  --tangerine: #FB923C;
-  --tangerine-soft: #FFEDD5;
-  --coral: #FB7185;
-  --coral-soft: #FECDD3;
-  --missed: #E4E4E7;
+  /* The five stages — s0/s1/s4 darkened ≤4% from the lab values to clear
+   * 4.5:1 on --bg (measured; see DESIGN.md accessibility ratios) */
+  --stage-0: #516F99; --stage-0-soft: #E2E8F2;
+  --stage-1: #4C7829; --stage-1-soft: #E4EDD6;
+  --stage-2: #B5501A; --stage-2-soft: #F6E3D6;
+  --stage-3: #6C51B4; --stage-3-soft: #E9E3F6;
+  --stage-4: #866A10; --stage-4-soft: #F2EACC;
 
-  --accent: var(--tangerine);
-  --accent-hover: #F97316;
-  --accent-soft: var(--tangerine-soft);
+  /* Default binding (Foundation); the shell sets stage-<n> on <html> */
+  --stage: var(--stage-0);
+  --stage-soft: var(--stage-0-soft);
+  --accent: var(--stage);
+  --accent-hover: var(--stage);
+  --accent-soft: var(--stage-soft);
 
-  --success: var(--lime);
-  --success-bg: var(--lime-soft);
-  --rest: var(--lemon);
-  --rest-bg: var(--lemon-soft);
-  --partial: var(--tangerine);
-  --partial-bg: var(--tangerine-soft);
-  --failed: var(--coral);
-  --failed-bg: var(--coral-soft);
+  /* Semantic statuses — terrain language */
+  --success: #4C7829;
+  --success-bg: #E4EDD6;
+  --rest: #866A10;
+  --rest-bg: #F2EACC;
+  --partial: #B5501A;
+  --partial-bg: #F6E3D6;
+  --failed: #A83226;
+  --failed-bg: #F6DCD8;
+  --missed: #DBD5BF;
 
-  --radius: 10px;
-  --radius-card: 12px;
+  /* Deprecated v2 aliases — kept only until the component sweep (Phases 6–11)
+   * retires the last fruit-named utility. Do not use in new code. */
+  --lemon: var(--rest);
+  --lemon-soft: var(--rest-bg);
+  --lime: var(--success);
+  --lime-soft: var(--success-bg);
+  --tangerine: var(--accent);
+  --tangerine-soft: var(--accent-soft);
+  --coral: var(--failed);
+  --coral-soft: var(--failed-bg);
+
+  /* Shape */
+  --radius: 12px;
+  --radius-card: 14px;
   --radius-pill: 9999px;
   --radius-lg: 16px;
 
-  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Depth */
+  --shadow-panel: 0 1px 2px rgba(35, 40, 31, 0.07), 0 6px 18px rgba(35, 40, 31, 0.08);
+  --shadow-lift: 0 2px 4px rgba(35, 40, 31, 0.1), 0 14px 34px rgba(35, 40, 31, 0.14);
+
+  /* Motion durations */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-sheet: 280ms;
+  --duration-slide: 340ms;
+  --duration-pop: 450ms;
+  --duration-fill: 500ms;
 }
 
-/* Dark (secondary) */
+/* Dark (secondary, "dusk" — the same country after sundown) */
 html.dark {
-  --bg: #0F0F0E;
-  --surface: #1A1A18;
-  --surface-2: #232320;
-  --border: #2A2A28;
-  --border-strong: #3A3A36;
+  --bg: #151A16;
+  --surface: #1C231E;
+  --surface-2: #253028;
+  --border: #33403A;
+  --border-strong: #4E5F55;
+  --track: #2A342D;
 
-  --text: #FAFAF9;
-  --text-muted: #A1A1AA;
-  --text-subtle: #71717A;
+  --text: #EDF1E5;
+  --text-muted: #A9B39C;
+  --text-subtle: #8C9680;
 
-  --lemon: #F5C443;
-  --lemon-soft: #3A2F0F;
-  --lime: #93D34A;
-  --lime-soft: #1F2E10;
-  --tangerine: #FF9A56;
-  --tangerine-soft: #3A2415;
-  --coral: #FB7E8B;
-  --coral-soft: #3A1C20;
-  --missed: #2A2A28;
+  --stage-0: #82A2CE; --stage-0-soft: #22303F;
+  --stage-1: #8CBB5C; --stage-1-soft: #26331A;
+  --stage-2: #E07E42; --stage-2-soft: #3D2617;
+  --stage-3: #A28BE0; --stage-3-soft: #2C2440;
+  --stage-4: #CBA640; --stage-4-soft: #3A3012;
 
-  --accent: var(--tangerine);
-  --accent-hover: #FFAA70;
-  --accent-soft: var(--tangerine-soft);
+  --success: #8CBB5C;
+  --success-bg: #26331A;
+  --rest: #CBA640;
+  --rest-bg: #3A3012;
+  --partial: #E07E42;
+  --partial-bg: #3D2617;
+  --failed: #E5766A;
+  --failed-bg: #40201B;
+  --missed: #33403A;
 
-  --success: var(--lime);
-  --success-bg: var(--lime-soft);
-  --rest: var(--lemon);
-  --rest-bg: var(--lemon-soft);
-  --partial: var(--tangerine);
-  --partial-bg: var(--tangerine-soft);
-  --failed: var(--coral);
-  --failed-bg: var(--coral-soft);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 22px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 2px 5px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.5);
 }
+
+/* Stage binding — set on <html> by the app shell (and by lab wrappers) */
+.stage-0 { --stage: var(--stage-0); --stage-soft: var(--stage-0-soft); }
+.stage-1 { --stage: var(--stage-1); --stage-soft: var(--stage-1-soft); }
+.stage-2 { --stage: var(--stage-2); --stage-soft: var(--stage-2-soft); }
+.stage-3 { --stage: var(--stage-3); --stage-soft: var(--stage-3-soft); }
+.stage-4 { --stage: var(--stage-4); --stage-soft: var(--stage-4-soft); }
 
 html,
 body,
@@ -109,6 +145,17 @@ body {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Faint contour lines — topography without assets (DESIGN.md · Texture) */
+.contours {
+  background-image: repeating-radial-gradient(
+    ellipse 140% 90% at 82% -30%,
+    transparent 0,
+    transparent 22px,
+    color-mix(in srgb, var(--border-strong) 30%, transparent) 22px,
+    color-mix(in srgb, var(--border-strong) 30%, transparent) 23px
+  );
 }
 
 input,

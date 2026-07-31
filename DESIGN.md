@@ -178,11 +178,11 @@ The 105 days are grouped into 5 stages of 21 days each — and in Waypoint each 
 
 | # | Stage | Days | Hue (light / dark) |
 |---|---|---|---|
-| 0 | Foundation | 1–21 | `#52709B` / `#82A2CE` (slate blue) |
-| 1 | Build | 22–42 | `#4E7C2A` / `#8CBB5C` (moss green) |
+| 0 | Foundation | 1–21 | `#516F99` / `#82A2CE` (slate blue) |
+| 1 | Build | 22–42 | `#4C7829` / `#8CBB5C` (moss green) |
 | 2 | Push | 43–63 | `#B5501A` / `#E07E42` (canyon orange) |
 | 3 | Refine | 64–84 | `#6C51B4` / `#A28BE0` (heather violet) |
-| 4 | Reveal | 85–105 | `#8A6D10` / `#CBA640` (summit gold) |
+| 4 | Reveal | 85–105 | `#866A10` / `#CBA640` (summit gold) |
 
 - The **current stage's hue is the app's accent** — `--accent` aliases `--stage`, bound by a `stage-<n>` class on the app shell. Crossing a stage recolors the room.
 - The current stage is **always visible on the Dashboard** (stage chip in the header: name + day range, stage-soft background) — it appears on every screen's geography, never only in an overlay.
@@ -210,14 +210,15 @@ The 105 days are grouped into 5 stages of 21 days each — and in Waypoint each 
 /* Text — ink on paper */
 --text:          #23281F;
 --text-muted:    #5B6150;
---text-subtle:   #6C7259;
+--text-subtle:   #6A7057;   /* amended from the lab's #6C7259 — see decision log */
 
-/* The five stages — the accent is where you are */
---stage-0: #52709B;  --stage-0-soft: #E2E8F2;
---stage-1: #4E7C2A;  --stage-1-soft: #E4EDD6;
+/* The five stages — the accent is where you are
+ * (s0/s1/s4 amended ≤4% darker than the lab values for AA — see decision log) */
+--stage-0: #516F99;  --stage-0-soft: #E2E8F2;
+--stage-1: #4C7829;  --stage-1-soft: #E4EDD6;
 --stage-2: #B5501A;  --stage-2-soft: #F6E3D6;
 --stage-3: #6C51B4;  --stage-3-soft: #E9E3F6;
---stage-4: #8A6D10;  --stage-4-soft: #F2EACC;
+--stage-4: #866A10;  --stage-4-soft: #F2EACC;
 
 /* Bound by the stage-<n> class on the app shell */
 --stage:         var(--stage-2);        /* example: Push */
@@ -227,8 +228,8 @@ The 105 days are grouped into 5 stages of 21 days each — and in Waypoint each 
 --accent-soft:   var(--stage-soft);
 
 /* Semantic statuses — terrain language */
---success:       #4E7C2A;   --success-bg: #E4EDD6;
---rest:          #8A6D10;   --rest-bg:    #F2EACC;
+--success:       #4C7829;   --success-bg: #E4EDD6;
+--rest:          #866A10;   --rest-bg:    #F2EACC;
 --partial:       #B5501A;   --partial-bg: #F6E3D6;
 --failed:        #A83226;   --failed-bg:  #F6DCD8;
 --missed:        #DBD5BF;
@@ -674,7 +675,19 @@ If yesterday is unlogged AND current time is before 11:00 local: a single row ab
 
 ## Accessibility
 
-- Every stage hue and status token verified WCAG AA (≥ 4.5:1 text, ≥ 3:1 graphics) against its intended background in **both** themes; literal measured ratios recorded here at the audit phase.
+- Every stage hue and status token verified WCAG AA (≥ 4.5:1 text, ≥ 3:1 graphics) against its intended background in **both** themes. Measured at Phase 5 (relative-luminance formula, shipped token values):
+
+  | Token | Light: on `--bg` / `--surface` | Dark: on `--bg` / `--surface` |
+  |---|---|---|
+  | `--text` | 13.32 / 14.51 | 15.37 / 14.00 |
+  | `--text-muted` | 5.68 / 6.19 | 8.07 / 7.35 |
+  | `--text-subtle` | 4.57 / 4.98 | 5.70 / 5.19 |
+  | `--stage-0` | 4.55 / 4.96 | 6.72 / 6.12 |
+  | `--stage-1` | 4.61 / 5.03 | 7.87 / 7.17 |
+  | `--stage-2` | 4.50 / 4.91 | 6.07 / 5.53 |
+  | `--stage-3` | 5.35 / 5.83 | 6.13 / 5.58 |
+  | `--stage-4` | 4.55 / 4.96 | 7.61 / 6.93 |
+  | `--failed` | 5.90 / 6.43 | 5.99 / 5.45 |
 - Day status is never color-only — route **texture** is the second channel (solid / dotted / tent / pin), independent of hue.
 - Slide-to-confirm: keyboard alternative (Enter/Space), `role="slider"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax`.
 - Journey days are real focusable elements; tab order follows day order; focus ring 2px stage hue, 2px offset, never clipped (inset on overflow-hidden containers).
@@ -765,3 +778,14 @@ The v2 system described itself as "bright, calm, intentional" — citrus accents
 - **XP carry-forward contradiction — resolved.** The v2 spec claimed XP carries into mission two; the store zeroes it. Chose the UI-only career derivation over a store change (the UI-only fence holds): `history.reduce((s, m) => s + m.finalXp, 0) + totalXp(days, photos, measurements)`, presented as career level/tier at completion. The store stays untouched.
 - **Tier table corrected to code.** The v2 doc's tier boundaries (1–4/5–9/10–14/15–19) never matched `tierName()` (1–5/6–10/11–15/16–19/20+). The contract pins the code's reality; the logic libs are untouchable.
 - **Streak break demoted from heavy to medium.** Chose an in-flow panel over the v2 full-screen overlay: a broken streak is information plus a decision (the shelter), not a celebration — and a real lapse routes to re-entry, which the v2 overlay never handled (its detection is fixed in-component at the moment phase).
+
+### 2026-07-31 — Phase 5 token amendments (measured AA)
+
+Chose minimally-darkened hues over the lab's literal values where measurement
+failed the contract's own 4.5:1 bar on the light `--bg`: `--text-subtle`
+#6C7259 → **#6A7057** (4.43 → 4.57), `--stage-0` #52709B → **#516F99**
+(4.48 → 4.55), `--stage-1` #4C7829 for #4E7C2A (4.38 → 4.61), `--stage-4`
+#866A10 for #8A6D10 (4.34 → 4.55); `--success`/`--rest` follow their stage
+hues. Each shift is ≤ 4% per channel — imperceptible against the Gate-approved
+renders, and the dark theme needed no changes. The lab folders keep the
+original values (throwaway; Phase 14 disposition).

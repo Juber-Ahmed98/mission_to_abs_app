@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { EASE } from '../lib/motionTokens';
 
 type Toast = { id: number; amount: number; note?: string };
 
@@ -15,7 +16,7 @@ export default function XpToast({ toast }: Props) {
           initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: [0, 1, 1, 0], y: [0, -28, -48, -72] }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.6, times: [0, 0.15, 0.7, 1], ease: [0.32, 0.72, 0, 1] }}
+          transition={{ duration: 1.6, times: [0, 0.15, 0.7, 1], ease: EASE }}
           className="pointer-events-none absolute right-5 top-0 z-10 select-none"
         >
           <span className="rounded-pill bg-accent-soft px-3 py-1 text-sm font-semibold text-accent tabular">

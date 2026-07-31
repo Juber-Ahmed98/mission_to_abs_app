@@ -2,14 +2,13 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { EASE } from '../../../lib/motionTokens';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
 };
-
-const EASE = [0.32, 0.72, 0, 1] as const;
 
 export default function BottomSheet({ open, onClose, children }: Props) {
   const reduced = useReducedMotion();

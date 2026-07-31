@@ -3,6 +3,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { EASE } from '../../../lib/motionTokens';
 
 export type Toast = { id: number; amount: number; note?: string };
 
@@ -46,7 +47,7 @@ export default function XpToast({ toast }: Props) {
               : { opacity: [0, 1, 1, 0], y: [0, -26, -46, -70] }
           }
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.7, times: [0, 0.15, 0.7, 1], ease: [0.32, 0.72, 0, 1] }}
+          transition={{ duration: 1.7, times: [0, 0.15, 0.7, 1], ease: EASE }}
           className="pointer-events-none absolute right-5 top-0 z-10 select-none"
         >
           <span

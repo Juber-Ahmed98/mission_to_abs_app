@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from '../lib/motion';
+import { EASE } from '../lib/motionTokens';
 
 type Props = {
   open: boolean;
@@ -9,8 +10,6 @@ type Props = {
   onUseShield?: () => void;
   onDismiss: () => void;
 };
-
-const EASE = [0.32, 0.72, 0, 1] as const;
 const AUTO_DISMISS_MS = 2000;
 
 export default function StreakBreakOverlay({

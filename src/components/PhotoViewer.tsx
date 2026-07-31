@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { getPhoto } from '../storage/photos';
+import { EASE } from '../lib/motionTokens';
 
 type Props = {
   open: boolean;
@@ -9,8 +10,6 @@ type Props = {
   week: number | null;
   onClose: () => void;
 };
-
-const EASE = [0.32, 0.72, 0, 1] as const;
 
 export default function PhotoViewer({ open, photoKey, week, onClose }: Props) {
   const [url, setUrl] = useState<string | undefined>();

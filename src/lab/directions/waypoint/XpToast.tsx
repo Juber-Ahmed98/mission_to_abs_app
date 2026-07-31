@@ -3,6 +3,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Flag } from 'lucide-react';
+import { EASE } from '../../../lib/motionTokens';
 
 export type Toast = { id: number; amount: number; note?: string };
 
@@ -28,7 +29,7 @@ export default function XpToast({ toast }: Props) {
                 }
           }
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.6, times: [0, 0.18, 0.7, 1], ease: [0.32, 0.72, 0, 1] }}
+          transition={{ duration: 1.6, times: [0, 0.18, 0.7, 1], ease: EASE }}
           className="pointer-events-none absolute right-4 top-0 z-10 select-none"
         >
           <span

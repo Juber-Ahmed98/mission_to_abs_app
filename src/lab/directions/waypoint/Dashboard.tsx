@@ -10,6 +10,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { LabFixture } from '../../fixtures';
 import { XP } from '../../../lib/xp';
 import { formatNice } from '../../../lib/date';
+import { EASE } from '../../../lib/motionTokens';
 import MissionRing from './MissionRing';
 import TodayRow from './TodayRow';
 import LevelBadge from './LevelBadge';
@@ -401,7 +402,7 @@ export default function Dashboard({ fixture }: { fixture: LabFixture }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0.1 : 0.3, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: reduced ? 0.1 : 0.3, ease: EASE }}
             onClick={() => setLevelUpOpen(false)}
             className="wp-overlay-wash absolute inset-0 z-50 flex cursor-pointer flex-col items-center justify-center"
           >

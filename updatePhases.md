@@ -15,7 +15,10 @@
 > the full decision log; **Gate 3 ✅ signed 2026-07-31** (dated entry in
 > [update.md](update.md) §9). **Production is unlocked**; the contract is the
 > verification target for every phase from 5 on. Pacing per the owner:
-> **one phase per session.**
+> **one phase per session.** Phase 5 ✅ shipped 2026-07-31 (tokens, themed
+> shell, new icon; four light tokens amended for measured AA — see the
+> DESIGN.md decision log). Next session: **Phase 6** (shared primitives + one
+> celebration system).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -242,7 +245,7 @@ document; production stays frozen until it signs.
 
 ---
 
-## Phase 5 — Token foundation + theme knock-ons + app icon — ⏸ Awaiting Gate 3
+## Phase 5 — Token foundation + theme knock-ons + app icon — ✅ Shipped 2026-07-31
 
 **Goal** — the app wears the contract's palette and gains the token surface the
 direction needs; every theme knock-on lands here, named, not discovered later.
@@ -276,6 +279,26 @@ direction needs; every theme knock-on lands here, named, not discovered later.
 - `npm run build` — total gz within +3 kB of the baseline.
 
 **Commit** — `Tokens: <direction> palette, depth + motion tokens, themed shell and icon`
+
+**Shipped notes (2026-07-31)** — all verifications pass: zero hex literals in
+`src/**/*.tsx`; the ease literal has exactly one src hit
+([src/lib/motionTokens.ts](src/lib/motionTokens.ts) — the CSS side is emitted
+as `:root { --ease-apple }` from a tailwind.config.js base plugin, outside the
+grep scope, and six production + seven lab files now import `EASE`); entry
+126.86 kB gz (+0.07) and CSS 6.19 kB gz (+0.42) — first paint +0.49 kB against
+the +3 kB budget; manifest carries `#F4F1E6` theme/background, split
+`any`/`maskable` icon entries, and 192/512 PNG fallbacks (precache 19 entries
+including the PNGs). Beyond the plan: the `stage-<n>` shell binding shipped
+here (`useApplyStage` in [src/lib/theme.ts](src/lib/theme.ts) — without it the
+stage-keyed accent is inert), the v2 citrus token names survive as deprecated
+aliases onto the new palette so unmigrated components render correctly until
+the Phase 6–11 sweep retires them, and four light-theme values were amended
+≤4%/channel to clear the contract's measured 4.5:1 bar (`--text-subtle`,
+`--stage-0/1/4` — dated entry in DESIGN.md's decision log; ratios recorded in
+its accessibility table). PNGs rasterized from the SVG via headless Edge (no
+new dependencies). **Deferred to on-device time:** Android cold-launch splash
+color and maskable-preview crop check (needs the installed PWA on the owner's
+phone; DevTools manifest section verified in lieu).
 
 ---
 
