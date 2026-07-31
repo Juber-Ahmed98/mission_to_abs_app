@@ -19,8 +19,11 @@
 > shell, new icon; four light tokens amended for measured AA — see the
 > DESIGN.md decision log). Phase 6 ✅ shipped 2026-07-31 (primitives restyled,
 > one celebration primitive + the medium register, shared SegmentedControl;
-> the lab gained the shared-primitives verification gallery). Next session:
-> **Phase 7** (Dashboard decomposition + the daily loop).
+> the lab gained the shared-primitives verification gallery). Phase 7 ✅
+> shipped 2026-07-31 (Dashboard decomposed to a 127-line container, app-wide
+> XP toast watcher, first-open greeting per contract, perfect day reachable,
+> DayEditor backfills honest). Next session: **Phase 8** (re-entry after a
+> lapse + streak break — the flagship).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -381,7 +384,7 @@ with instruments per its checklist.
 
 ---
 
-## Phase 7 — Dashboard decomposition + the daily loop — ⏸ Awaiting Gate 3
+## Phase 7 — Dashboard decomposition + the daily loop — ✅ Shipped 2026-07-31
 
 **Goal** — [Dashboard.tsx](src/pages/Dashboard.tsx) (636 lines, six of the eight
 moments) becomes a thin composition; the first-open and pillar-log moments land on it.
@@ -412,6 +415,45 @@ moments) becomes a thin composition; the first-open and pillar-log moments land 
   the real mission).
 
 **Commit** — `Dashboard: decomposed shell, first-open greeting, honest logging feedback`
+
+**Shipped notes (2026-07-31)** — the container is 127 lines
+([Dashboard.tsx](src/pages/Dashboard.tsx)), pure composition; derivations live
+in `src/pages/dashboard/useDashboardData.ts`, the triggers in
+`useCelebrations.ts` (with the precedence queue: at most one heavy overlay,
+stage crossing outranks level-up, the pending one fires after dismissal), and
+the sections in `Greeting` / `MomentStack` / `BannerStack` / `TodayCard` /
+`StatsStrip` / `ShelterSheet`. **The XP diff-watcher left the Dashboard
+entirely**: [XpToastHost](src/components/XpToastHost.tsx) mounts in the app
+shell and diffs the store, so a DayEditor backfill on the Journey, a photo
+upload, or a shelter spend fires the same toast with zero per-callsite wiring
+(Photos' local toast copy removed). The perfect-day note is exact — a changed
+day whose `dayStatus()` crossed into `perfect` — replacing the old ≥100-delta
+heuristic that missed live second-pillar perfects; a Settings backup import
+suppresses the one restored-history jump. First-open per contract: date line,
+streak flag, stage chip, contour lines, and a `quotes.ts` morning line while
+today's status is still `missed` (always `dayStatus()`-derived). Perfect day
+fires through the medium panel with the pinned facts, armed by
+`mission.perfectDay.<date>.<dayNum>` — the day number in the key is what lets
+a startDate time-travel re-arm it, and the date keeps a future mission's
+early days from colliding with this one's flags. DayEditor confirms (pillars,
+camp day, weight, body fat, waist) all carry the undo pill; undo labels moved
+to the pinned copy (`Diet logged`, `marked rough ground`); rest became camp
+throughout; the banner slot follows the contract order (welcome-back →
+backup > install > reminder, suppressed under a streak break, welcome-back
+now linking `/onboarding`), and halfway moved from the banner slot into the
+medium register. Verified live at 375px on the dev server (seeded Day-62
+state engineered so the second pillar crossed both a level boundary and a
+perfect day): +30 toast on first pillar; on the second, the `+70 XP · Perfect
+day — flag planted` toast fired immediately, the heavy level-up took the
+screen with the perfect-day panel absent from the DOM, and the panel stood in
+flow after dismissal; overlay survives 6s idle (no auto-dismiss); reload
+re-fires nothing; startDate −1 re-armed the panel at Day 63; Journey → Day 40
+backfill fired toast + `Diet logged` undo, and undo reverted the entry; zero
+console errors. Build: entry 129.33 kB gz (+1.48 vs Phase 6), CSS 6.58 kB
+(+0.08), no lab chunk; hex-literal grep 0, house-ease grep 1. **Deferred:**
+real-gesture slide and reduced-motion emulation (hidden browser pane can't
+composite; the keyboard/a11y path was exercised instead — Phase 14
+re-verifies with instruments).
 
 ---
 

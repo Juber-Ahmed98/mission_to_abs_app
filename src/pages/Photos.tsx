@@ -7,7 +7,6 @@ import { todayISO, weekNumberFor } from '../lib/date';
 import { resizeImage } from '../lib/image';
 import { XP } from '../lib/xp';
 import PhotoThumb from '../components/PhotoThumb';
-import XpToast, { type Toast } from '../components/XpToast';
 import WaistInput from '../components/WaistInput';
 import { showUndo } from '../components/UndoToast';
 import { bump } from '../lib/analytics';
@@ -29,7 +28,6 @@ export default function PhotosPage() {
   const [uploadingWeek, setUploadingWeek] = useState<number | null>(null);
   const [uploadIsReplace, setUploadIsReplace] = useState(false);
   const [busyWeek, setBusyWeek] = useState<number | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
 
   const [sheetWeek, setSheetWeek] = useState<number | null>(null);
   const [viewerWeek, setViewerWeek] = useState<number | null>(null);
@@ -69,11 +67,7 @@ export default function PhotosPage() {
       const key = `week-${week}-${Date.now()}`;
       await savePhoto(key, blob);
       addPhoto({ weekNumber: week, date: today, photoKey: key });
-      if (isNew && !isReplace) {
-        setToast({ id: Date.now(), amount: XP.photo });
-        setTimeout(() => setToast(null), 1700);
-        bump('photosUploaded');
-      }
+      if (isNew && !isReplace) bump('photosUploaded');
       const undoLabel = isReplace
         ? `Replaced week ${week} photo`
         : `Logged week ${week} photo`;
@@ -119,11 +113,7 @@ export default function PhotosPage() {
     } else {
       setMeasurement({ weekNumber: currentWeek, date: today, waistCm: next });
     }
-    if (wasNew && next !== undefined) {
-      setToast({ id: Date.now(), amount: XP.waist });
-      setTimeout(() => setToast(null), 1700);
-      bump('measurementsLogged');
-    }
+    if (wasNew && next !== undefined) bump('measurementsLogged');
     const label =
       next === undefined
         ? `Cleared week ${currentWeek} waist`
@@ -166,10 +156,6 @@ export default function PhotosPage() {
           </button>
         )}
       </header>
-
-      <div className="relative">
-        <XpToast toast={toast} />
-      </div>
 
       <input
         ref={fileRef}

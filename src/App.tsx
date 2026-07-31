@@ -10,6 +10,7 @@ import BottomNav from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
 import RouteSkeleton from './components/RouteSkeleton';
 import UndoToast from './components/UndoToast';
+import XpToastHost from './components/XpToastHost';
 import Dashboard from './pages/Dashboard';
 import JourneyPage from './pages/Journey';
 import OnboardingPage from './pages/Onboarding';
@@ -111,6 +112,7 @@ function Shell() {
           </Routes>
         </Suspense>
       </ErrorBoundary>
+      <XpToastHost />
       <UndoToast />
       {!hideNav && <BottomNav />}
     </div>

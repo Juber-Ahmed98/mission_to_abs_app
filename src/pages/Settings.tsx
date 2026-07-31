@@ -11,6 +11,7 @@ import {
 } from '../lib/storage';
 import { DISMISS_KEY as INSTALL_DISMISS_KEY, SESSION_KEY as INSTALL_SESSION_KEY } from '../components/InstallBanner';
 import BottomSheet from '../components/BottomSheet';
+import { suppressNextXpToast } from '../components/XpToastHost';
 import Segmented from '../components/SegmentedControl';
 import WeeksInput from '../components/WeeksInput';
 import { addDaysISO, formatNice, subDaysISO, todayISO, totalDays } from '../lib/date';
@@ -209,6 +210,7 @@ export default function SettingsPage() {
         }
         photoMetas.push(meta);
       }
+      suppressNextXpToast();
       replaceAll({
         settings: importPreview.settings,
         days: importPreview.days,
