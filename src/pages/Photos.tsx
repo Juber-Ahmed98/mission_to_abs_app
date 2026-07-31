@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, GitCompareArrows, Ruler } from 'lucide-react';
+import { Camera, Check, GitCompareArrows, Ruler } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { savePhoto, deletePhoto } from '../storage/photos';
 import { todayISO, weekNumberFor } from '../lib/date';
@@ -165,7 +165,71 @@ export default function PhotosPage() {
         className="hidden"
       />
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      {/* The ritual's home (DESIGN.md · moment 7): the current week's slot,
+          framed — one photo, one waist reading. */}
+      {isCurrentInMission && (
+        <section className="mt-4 rounded-card border border-border bg-surface px-5 py-4 shadow-panel">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-stage-soft text-stage">
+              <Camera size={18} strokeWidth={2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-text">The weekly ritual</h2>
+              <p className="mt-0.5 text-sm text-text-muted">
+                Week {currentWeek} of {settings.durationWeeks} — one photo, one
+                waist reading.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 space-y-2.5">
+            {findPhoto(currentWeek) ? (
+              <div className="flex min-h-[44px] items-center justify-between rounded-card border border-border bg-surface-2 px-3">
+                <span className="flex items-center gap-2 text-sm text-text">
+                  <Check size={15} strokeWidth={2.25} className="text-success" />
+                  Photo logged
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setViewerWeek(currentWeek)}
+                  className="min-h-[44px] px-1 text-sm font-semibold text-stage"
+                >
+                  View
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={busyWeek === currentWeek}
+                onClick={() => openPicker(currentWeek, false)}
+                className="h-11 w-full rounded-card bg-stage text-sm font-bold text-surface"
+              >
+                {busyWeek === currentWeek ? 'Saving…' : "Log this week's photo"}
+              </button>
+            )}
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
+                <Ruler size={12} strokeWidth={1.75} />
+                Waist
+              </div>
+              <WaistInput
+                valueCm={currentMeasurement?.waistCm}
+                unit={settings.waistUnit}
+                onChangeCm={onWaistChange}
+              />
+              {!currentMeasurement && (
+                <div className="mt-1.5 text-xs text-text-muted">
+                  +{XP.waist} XP for the reading.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <h2 className="mb-2 mt-6 text-xs uppercase tracking-wider text-text-muted">
+        The record
+      </h2>
+      <div className="grid grid-cols-3 gap-2">
         {slots.map((week) => {
           const photo = findPhoto(week);
           const isCurrent = week === currentWeek;
@@ -218,25 +282,6 @@ export default function PhotosPage() {
           );
         })}
       </div>
-
-      {isCurrentInMission && (
-        <section className="mt-6">
-          <h2 className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-text-muted">
-            <Ruler size={12} strokeWidth={1.75} />
-            Week {currentWeek} waist
-          </h2>
-          <WaistInput
-            valueCm={currentMeasurement?.waistCm}
-            unit={settings.waistUnit}
-            onChangeCm={onWaistChange}
-          />
-          {!currentMeasurement && (
-            <div className="mt-2 text-xs text-text-muted">
-              +{XP.waist} XP for logging this week.
-            </div>
-          )}
-        </section>
-      )}
 
       <PhotoActionSheet
         open={sheetWeek != null}

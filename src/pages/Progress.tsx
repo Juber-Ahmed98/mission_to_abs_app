@@ -12,6 +12,7 @@ import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { dayNumberFor, todayISO, totalDays } from '../lib/date';
 import { adherenceFor } from '../lib/adherence';
+import ContourLines from '../components/ContourLines';
 
 type WeightPoint = { day: number; weight: number; ma?: number; trend?: number };
 type WaistPoint = { day: number; waistCm: number };
@@ -175,62 +176,74 @@ export default function ProgressPage() {
   const hasBodyFat = bodyFatSeries.length > 0;
 
   return (
-    <div className="pb-28 px-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="pt-8 pb-1">
-        <div className="text-sm text-text-muted">Progress</div>
-      </header>
-
-      {!hasWeight ? (
-        <div className="mt-16 text-center text-sm text-text-muted">
-          Log weight to see trend.
-        </div>
-      ) : (
-        <>
-          <div className="mt-1">
-            <div className="text-sm text-text-muted">vs. start</div>
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <div
-                className={[
-                  'text-4xl font-bold tabular leading-none',
-                  losing ? 'text-success' : weightDelta > 0 ? 'text-failed' : 'text-text',
-                ].join(' ')}
-              >
-                {weightDeltaStr}
-                <span className="ml-1 text-xl font-normal text-text-muted">
-                  {settings.weightUnit}
-                </span>
-              </div>
-              {hasWaist && (
-                <div
+    <div className="pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* ---- header on faint contours, like the Journey's ---- */}
+      <header className="relative overflow-hidden px-5 pb-4 pt-7">
+        <ContourLines />
+        <div className="relative">
+          <div className="text-sm font-medium text-text-muted">Progress</div>
+          {hasWeight ? (
+            <>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <h1
                   className={[
-                    'text-2xl font-semibold tabular leading-none',
-                    losingWaist ? 'text-success' : waistDeltaCm > 0 ? 'text-failed' : 'text-text-muted',
+                    'tabular text-3xl font-bold leading-tight tracking-tight',
+                    losing ? 'text-success' : weightDelta > 0 ? 'text-failed' : 'text-text',
                   ].join(' ')}
                 >
-                  {waistDeltaStr}
-                  <span className="ml-1 text-sm font-normal text-text-muted">
-                    {settings.waistUnit} waist
+                  {weightDeltaStr}
+                  <span className="ml-1.5 text-lg font-normal text-text-muted">
+                    {settings.weightUnit}
+                  </span>
+                </h1>
+                {hasWaist && (
+                  <div
+                    className={[
+                      'text-xl font-semibold tabular leading-none',
+                      losingWaist ? 'text-success' : waistDeltaCm > 0 ? 'text-failed' : 'text-text-muted',
+                    ].join(' ')}
+                  >
+                    {waistDeltaStr}
+                    <span className="ml-1 text-sm font-normal text-text-muted">
+                      {settings.waistUnit} waist
+                    </span>
+                  </div>
+                )}
+              </div>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
+                vs. the start of the walk
+              </p>
+              {weekDelta !== null && (
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-text-muted">
+                  {weekDelta < 0 ? (
+                    <ArrowDown size={12} strokeWidth={2} className="text-success" />
+                  ) : weekDelta > 0 ? (
+                    <ArrowUp size={12} strokeWidth={2} className="text-failed" />
+                  ) : (
+                    <Minus size={12} strokeWidth={2} />
+                  )}
+                  <span className="tabular">
+                    {Math.abs(weekDelta).toFixed(1)} {settings.weightUnit} this week
                   </span>
                 </div>
               )}
-            </div>
-            {weekDelta !== null && (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-text-muted">
-                {weekDelta < 0 ? (
-                  <ArrowDown size={12} strokeWidth={2} className="text-success" />
-                ) : weekDelta > 0 ? (
-                  <ArrowUp size={12} strokeWidth={2} className="text-failed" />
-                ) : (
-                  <Minus size={12} strokeWidth={2} />
-                )}
-                <span className="tabular">
-                  {Math.abs(weekDelta).toFixed(1)} {settings.weightUnit} this week
-                </span>
-              </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-1 text-3xl font-bold leading-tight tracking-tight">
+                No readings yet
+              </h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
+                Log a weight and the line begins.
+              </p>
+            </>
+          )}
+        </div>
+      </header>
 
-          <section className="mt-6 rounded-card border border-border bg-surface px-4 py-4">
+      {hasWeight && (
+        <div className="px-5">
+          <section className="mt-1 rounded-card border border-border bg-surface px-4 py-4 shadow-panel">
             <div className="text-xs uppercase tracking-wider text-text-muted">Adherence</div>
             <div className="mt-1 flex items-baseline gap-1.5">
               <div className="text-4xl font-bold tabular leading-none text-text">
@@ -247,7 +260,7 @@ export default function ProgressPage() {
             </div>
           </section>
 
-          <div className="mt-6 rounded-card border border-border bg-surface p-3 pl-1 pt-5">
+          <div className="mt-6 rounded-card border border-border bg-surface p-3 pl-1 pt-5 shadow-panel">
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
@@ -289,12 +302,13 @@ export default function ProgressPage() {
                   {settings.goalWeight !== undefined && (
                     <ReferenceLine
                       y={settings.goalWeight}
-                      stroke="var(--accent-soft)"
+                      stroke="var(--border-strong)"
                       strokeWidth={1.5}
+                      strokeDasharray="6 5"
                       label={{
                         value: `Goal ${settings.goalWeight} ${settings.weightUnit}`,
                         position: 'insideTopRight',
-                        fill: 'var(--text-muted)',
+                        fill: 'var(--text-subtle)',
                         fontSize: 10,
                       }}
                     />
@@ -303,10 +317,10 @@ export default function ProgressPage() {
                     type="monotone"
                     dataKey="weight"
                     name="Weight"
-                    stroke="var(--tangerine)"
+                    stroke="var(--stage)"
                     strokeWidth={2.5}
-                    dot={{ r: 2.5, fill: 'var(--tangerine)', strokeWidth: 0 }}
-                    activeDot={{ r: 4.5, fill: 'var(--tangerine)' }}
+                    dot={{ r: 2.5, fill: 'var(--stage)', strokeWidth: 0 }}
+                    activeDot={{ r: 4.5, fill: 'var(--stage)' }}
                     isAnimationActive={false}
                     connectNulls={false}
                   />
@@ -315,7 +329,7 @@ export default function ProgressPage() {
                       type="monotone"
                       dataKey="ma"
                       name="7-day avg"
-                      stroke="var(--lemon)"
+                      stroke="var(--stage)"
                       strokeWidth={1.5}
                       strokeDasharray="4 4"
                       dot={false}
@@ -340,11 +354,11 @@ export default function ProgressPage() {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-2 flex flex-col">
             <button
               type="button"
               onClick={() => setShowMA((v) => !v)}
-              className="flex items-center gap-2 text-sm text-text-muted"
+              className="flex min-h-[44px] items-center gap-2 text-sm text-text-muted"
             >
               <span
                 className={[
@@ -357,7 +371,7 @@ export default function ProgressPage() {
             <button
               type="button"
               onClick={() => setShowProjection((v) => !v)}
-              className="flex items-center gap-2 text-sm text-text-muted"
+              className="flex min-h-[44px] items-center gap-2 text-sm text-text-muted"
             >
               <span
                 className={[
@@ -381,7 +395,7 @@ export default function ProgressPage() {
               <div className="text-xs uppercase tracking-wider text-text-muted">
                 Waist
               </div>
-              <div className="mt-2 rounded-card border border-border bg-surface p-3 pl-1 pt-4">
+              <div className="mt-2 rounded-card border border-border bg-surface p-3 pl-1 pt-4 shadow-panel">
                 <div className="h-32 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
@@ -429,10 +443,10 @@ export default function ProgressPage() {
                       <Line
                         type="monotone"
                         dataKey="waist"
-                        stroke="var(--lemon)"
+                        stroke="var(--rest)"
                         strokeWidth={2}
-                        dot={{ r: 2, fill: 'var(--lemon)', strokeWidth: 0 }}
-                        activeDot={{ r: 4, fill: 'var(--lemon)' }}
+                        dot={{ r: 2, fill: 'var(--rest)', strokeWidth: 0 }}
+                        activeDot={{ r: 4, fill: 'var(--rest)' }}
                         isAnimationActive={false}
                       />
                     </LineChart>
@@ -447,7 +461,7 @@ export default function ProgressPage() {
               <div className="text-xs uppercase tracking-wider text-text-muted">
                 Body fat
               </div>
-              <div className="mt-2 rounded-card border border-border bg-surface p-3 pl-1 pt-4">
+              <div className="mt-2 rounded-card border border-border bg-surface p-3 pl-1 pt-4 shadow-panel">
                 <div className="h-32 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
@@ -489,10 +503,10 @@ export default function ProgressPage() {
                       <Line
                         type="monotone"
                         dataKey="bodyFat"
-                        stroke="var(--lime)"
+                        stroke="var(--success)"
                         strokeWidth={2}
-                        dot={{ r: 2, fill: 'var(--lime)', strokeWidth: 0 }}
-                        activeDot={{ r: 4, fill: 'var(--lime)' }}
+                        dot={{ r: 2, fill: 'var(--success)', strokeWidth: 0 }}
+                        activeDot={{ r: 4, fill: 'var(--success)' }}
                         isAnimationActive={false}
                       />
                     </LineChart>
@@ -501,7 +515,7 @@ export default function ProgressPage() {
               </div>
             </section>
           )}
-        </>
+        </div>
       )}
     </div>
   );

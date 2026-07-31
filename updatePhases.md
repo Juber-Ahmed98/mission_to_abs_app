@@ -26,8 +26,9 @@
 > re-entry after a lapse, the lapse boundary in production, streak-break
 > detection fixed). Phase 9 ✅ shipped 2026-07-31 (the arc: the Gate-2 map in
 > production, at-or-after stage crossings, the summit as a moment, the career
-> line at completion). Next session: **Phase 10** (the weekly ritual: photo +
-> waist + compare).
+> line at completion). Phase 10 ✅ shipped 2026-07-31 (the weekly ritual in the
+> banner precedence, the Photos ritual card, Compare at 44px + keyboard, Progress
+> off the fruit tokens). Next session: **Phase 11** (secondary surfaces sweep).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -589,7 +590,7 @@ grep 1, shame-grep 0. **Deferred:** screenshots and reduced-motion emulation
 
 ---
 
-## Phase 10 — The weekly ritual: photo + waist + compare — ⏸ Awaiting Gate 3
+## Phase 10 — The weekly ritual: photo + waist + compare — ✅ Shipped 2026-07-31
 
 **Goal** — the ritual stops slipping silently; the compare feels like the payoff.
 
@@ -608,6 +609,37 @@ grep 1, shame-grep 0. **Deferred:** screenshots and reduced-motion emulation
   themes.
 
 **Commit** — `Ritual: the weekly photo + waist prompt and the compare payoff`
+
+**Shipped** — the ritual prompt now leads the banner slot
+([BannerStack](src/pages/dashboard/BannerStack.tsx)): on the last day of each
+mission week (startDate-anchored, `dayNum % 7 === 0`) while the week's photo or
+waist is still open, a MomentPanel (camera chip, `Week {n}'s photo and waist
+reading.`, state-aware facts line) with `Open Photos` + `Skip this week`;
+dismissal writes the `mission.ritual.<date>` once-flag, and the existing
+`suppressed` gate keeps it below re-entry and streak break per the precedence
+table. [Photos](src/pages/Photos.tsx) leads with the ritual card — camera chip,
+`Week {n} of {m} — one photo, one waist reading.`, the photo CTA / logged-state
+row, and the waist input moved up from the page foot; the grid now sits under
+`The record`. [Compare](src/pages/Compare.tsx): 44×44 handle and back button,
+`role="slider"` with arrow-key nudging, fixed white-on-black type (the theme
+tokens went invisible in light mode on the always-black lightbox), captions
+carry the year so cross-mission compares read apart.
+[Progress](src/pages/Progress.tsx) restyled: contour header with the delta as
+the headline (`vs. the start of the walk`), and every recharts series onto
+tokens per contract — weight `--stage`, 7-day MA `--stage` dashed, projection
+`--text-muted` dashed, waist `--rest`, body fat `--success`, goal ghost
+`--border-strong` dashed; the page's `--tangerine`/`--lemon`/`--lime` uses were
+the last fruit tokens outside Phase-11 surfaces. Verified live at 375px:
+contract-day prompt (day 7) with dismiss + no reload re-fire, partial-state
+facts line, lapse-on-contract-day shows re-entry and no ritual, non-contract
+day silent, waist logging fires toast + undo, compare handle/back measured
+44px with keyboard + drag both moving the divider, dark + light chart strokes
+resolve to stage/rest hues, empty state (`No readings yet`); zero console
+errors. Series contrast computed: all ≥4.5:1 vs `--bg` in both themes (3:1
+required). Build: entry 131.78 kB gz (+0.27 vs Phase 9), CSS 6.72 (+0.04);
+hex-grep 0, house-ease grep 1, shame-grep 0. **Deferred:** screenshots and
+reduced-motion emulation (hidden browser pane — Phase 14 re-verifies with
+instruments).
 
 ---
 

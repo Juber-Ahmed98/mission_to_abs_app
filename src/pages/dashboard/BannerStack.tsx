@@ -1,11 +1,15 @@
-// The housekeeping banner slot (DESIGN.md · precedence 8): single-occupancy,
-// welcome-back (migration) then backup > install > reminder. Moment panels
-// outrank the whole slot — an open streak-break panel suppresses it.
+// The single-occupancy banner slot (DESIGN.md · precedence 7–8): the weekly
+// ritual prompt first (medium register, contract day only), then housekeeping —
+// welcome-back (migration), backup > install > reminder. Moment panels outrank
+// the whole slot — an open re-entry or streak-break panel suppresses it, so
+// the ritual never outranks either.
 
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Download, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Camera, Download, X } from 'lucide-react';
 import { useMission } from '../../store/mission';
+import { dayNumberFor, todayISO, totalDays } from '../../lib/date';
+import MomentPanel from '../../components/MomentPanel';
 import InstallBanner, { useInstallPrompt } from '../../components/InstallBanner';
 import ReminderBanner, { useInAppReminder } from '../../components/ReminderBanner';
 
@@ -15,9 +19,40 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export default function BannerStack({ suppressed }: { suppressed: boolean }) {
   const days = useMission((s) => s.days);
+  const settings = useMission((s) => s.settings);
+  const photos = useMission((s) => s.photos);
+  const measurements = useMission((s) => s.measurements);
   const lastExportedAt = useMission((s) => s.settings.lastExportedAt);
+  const navigate = useNavigate();
   const { canInstall, install, dismiss: dismissInstall } = useInstallPrompt();
   const { reminder, dismiss: dismissReminder } = useInAppReminder();
+
+  // The weekly ritual (DESIGN.md · moment 7): the prompt enters the slot on
+  // the last day of each mission week (startDate-anchored) while the week's
+  // photo or waist reading is still open. Dismissible for that week — the
+  // once-flag is keyed by the contract date, so a new week re-arms it.
+  const today = todayISO();
+  const rawDay = dayNumberFor(today, settings.startDate);
+  const inMission = rawDay >= 1 && rawDay <= totalDays(settings.durationWeeks);
+  const ritualWeek = inMission && rawDay % 7 === 0 ? rawDay / 7 : null;
+  const hasPhoto =
+    ritualWeek !== null && photos.some((p) => p.weekNumber === ritualWeek);
+  const hasWaist =
+    ritualWeek !== null &&
+    measurements.some(
+      (m) => m.weekNumber === ritualWeek && typeof m.waistCm === 'number',
+    );
+  const ritualKey = `mission.ritual.${today}`;
+  const [ritualDismissed, setRitualDismissed] = useState(false);
+  const ritualOpen =
+    ritualWeek !== null &&
+    !(hasPhoto && hasWaist) &&
+    !ritualDismissed &&
+    localStorage.getItem(ritualKey) !== '1';
+  const dismissRitual = () => {
+    localStorage.setItem(ritualKey, '1');
+    setRitualDismissed(true);
+  };
 
   const [welcomeBackDismissed, setWelcomeBackDismissed] = useState(false);
   const welcomeBack =
@@ -42,6 +77,31 @@ export default function BannerStack({ suppressed }: { suppressed: boolean }) {
   }, [days, lastExportedAt]);
 
   if (suppressed) return null;
+
+  if (ritualOpen && ritualWeek !== null) {
+    return (
+      <div className="mx-5 mb-3">
+        <MomentPanel
+          icon={<Camera size={18} strokeWidth={2} />}
+          title={`Week ${ritualWeek}'s photo and waist reading.`}
+          actions={[
+            {
+              label: 'Open Photos',
+              onClick: () => navigate('/photos'),
+              primary: true,
+            },
+            { label: 'Skip this week', onClick: dismissRitual },
+          ]}
+        >
+          {hasPhoto
+            ? 'The photo is in. The waist reading is still open.'
+            : hasWaist
+              ? 'The waist is logged. The photo is still open.'
+              : 'The week closes today — both are still open.'}
+        </MomentPanel>
+      </div>
+    );
+  }
 
   if (welcomeBack) {
     return (

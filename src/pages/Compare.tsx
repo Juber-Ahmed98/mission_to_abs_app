@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { useMission } from '../store/mission';
 import { getPhoto } from '../storage/photos';
-import { formatNice } from '../lib/date';
 import type { WeekPhoto } from '../types';
 
 type Resolved = {
@@ -92,11 +92,16 @@ export default function Compare() {
   const formatWeight = (n: number, unit: string) =>
     `${n.toFixed(1).replace(/\.0$/, '')} ${unit}`;
 
+  // The page is always black (a lightbox), so the type is fixed white-on-black
+  // rather than theme tokens — light theme's dark text would vanish here. The
+  // caption carries the year: a cross-mission compare shows two "Week n"s, and
+  // the full date is what tells them apart.
   const caption = (r: Resolved | undefined) => {
     if (!r) return null;
-    const date = formatNice(r.photo.date);
+    const d = parseISO(r.photo.date);
+    const date = Number.isNaN(d.getTime()) ? '—' : format(d, 'MMM d, yyyy');
     return (
-      <span className="text-2xs tabular text-text-subtle">
+      <span className="text-2xs tabular text-white/55">
         {date}
         {r.weight !== undefined ? ` · ${formatWeight(r.weight, r.weightUnit)}` : ''}
       </span>
@@ -112,7 +117,7 @@ export default function Compare() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black text-text">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
       <div
         className="absolute left-2 z-20"
         style={{ top: 'calc(env(safe-area-inset-top) + 6px)' }}
@@ -120,7 +125,7 @@ export default function Compare() {
         <button
           onClick={() => navigate(-1)}
           aria-label="Back"
-          className="rounded-full bg-black/40 p-2.5 backdrop-blur"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur"
         >
           <ChevronLeft size={22} />
         </button>
@@ -161,7 +166,23 @@ export default function Compare() {
           style={{ left: `${splitPct}%` }}
         />
         <div
-          className="absolute top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90"
+          role="slider"
+          tabIndex={0}
+          aria-label="Compare divider"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(splitPct)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              setSplitPct((p) => Math.max(0, p - 4));
+            }
+            if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              setSplitPct((p) => Math.min(100, p + 4));
+            }
+          }}
+          className="absolute top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-lift"
           style={{ left: `${splitPct}%` }}
         >
           <div className="mx-0.5 h-4 w-0.5 rounded bg-black/40" />
@@ -170,15 +191,15 @@ export default function Compare() {
       </div>
 
       <div
-        className="flex justify-between px-5 py-3 text-sm text-text-muted"
+        className="flex justify-between px-5 py-3 text-sm text-white/75"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
         <div className="flex flex-col">
-          <span>Week {a?.photo.weekNumber ?? '—'}</span>
+          <span className="font-semibold">Week {a?.photo.weekNumber ?? '—'}</span>
           {caption(a)}
         </div>
         <div className="flex flex-col items-end">
-          <span>Week {b?.photo.weekNumber ?? '—'}</span>
+          <span className="font-semibold">Week {b?.photo.weekNumber ?? '—'}</span>
           {caption(b)}
         </div>
       </div>
