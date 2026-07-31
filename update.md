@@ -293,6 +293,14 @@ The page the direction could have died on didn't kill it. Phase 4 (the
 DESIGN.md design contract) is unblocked; production remains frozen until
 **Gate 3** signs the contract.
 
+### 2026-07-31 — Gate 3: the contract is signed
+
+Owner read the v3 Waypoint contract and signed same-day ("sign all"), with the
+pacing instruction **one phase per session** for the production run. The
+contract in [DESIGN.md](DESIGN.md) is now law: every production phase (5–14)
+builds and verifies against that document, not memory. Production is unlocked;
+Phase 5 (token foundation + theme knock-ons + app icon) is first.
+
 ## 10. Why this order
 
 Exploration goes first because it is reversible — three directions in a dev-only lab

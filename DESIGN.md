@@ -7,8 +7,8 @@
 > Build sequence in [updatePhases.md](updatePhases.md); spec and argument in
 > [update.md](update.md); v1/v2 build history in [PHASES.md](PHASES.md).
 >
-> **Gate 3:** the owner reads and signs this contract. Production phases stay
-> frozen until then. *Signed: ____________*
+> **Gate 3:** ✅ signed by the owner, 2026-07-31 ("sign all"). This contract is
+> law; production phases are unlocked and verify against this document.
 
 ---
 

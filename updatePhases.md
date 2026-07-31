@@ -12,8 +12,10 @@
 > ✅ built 2026-07-30; **Gate 2 ✅ passed 2026-07-31: Waypoint pinned on the
 > walk, no amendments** (dated verdict in [update.md](update.md) §9). Phase 4
 > ✅ shipped 2026-07-31 — DESIGN.md is now the v3 Waypoint design contract with
-> the full decision log; **GATE 3 pending** (owner reads and signs the
-> contract). **No production file changes until Gate 3 signs.**
+> the full decision log; **Gate 3 ✅ signed 2026-07-31** (dated entry in
+> [update.md](update.md) §9). **Production is unlocked**; the contract is the
+> verification target for every phase from 5 on. Pacing per the owner:
+> **one phase per session.**
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -215,7 +217,7 @@ verifies against this document, not against memory.
 - Every one of the eight moments has a spec section naming its feedback register.
 - The carry-forward claim in the completion section matches the pinned derivation.
 
-**GATE 3** — owner reads and signs the contract. Production phases unlock.
+**GATE 3** — ✅ signed 2026-07-31. Production phases unlocked.
 
 **Commit** — `Design contract: pin the <winner> direction in DESIGN.md`
 
