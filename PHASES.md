@@ -1,7 +1,35 @@
-# Mission to Abs — v2 Build Phases
+# Mission to Abs — v2 Build Phases (historical)
 
-> Execution plan for the v2 design. v1 (the original 6 phases) is shipped.
-> For product spec, tokens, and data shapes, see [DESIGN.md](DESIGN.md).
+> Execution plan for the v2 design. v1 (the original 6 phases) is shipped, and
+> so is everything below. **This document is history**: the v3 Waypoint redesign
+> ([DESIGN.md](DESIGN.md), built via [updatePhases.md](updatePhases.md)) has
+> since superseded several acceptance criteria in place. Where this plan and the
+> shipped app disagree, the v3 contract wins. The notable supersessions:
+>
+> - **Citrus tokens are gone.** `--coral` (Phase 2's ✗ hover), the "lemon"
+>   rest-day and waist-sparkline colors (Phases 5–6), and the `--accent-soft`
+>   goal ghost line are retired — statuses speak the terrain tokens
+>   (`--failed`, `--rest`, stage hues) and the goal ghost is `--border-strong`
+>   dashed.
+> - **StreakBreakOverlay (Phase 4) no longer exists.** Streak break is a
+>   medium-register in-flow panel with a two-step shelter confirm; detection
+>   keys off the lapse boundary (exactly 1 unlogged day — a longer gap routes
+>   to the re-entry moment). Nothing auto-dismisses at 2s anymore; heavy
+>   overlays are tap-to-dismiss only.
+> - **Streak copy** is `Steady. N days walked.` (Phase 1's `Steady. N days.`
+>   was re-voiced onto the trail lexicon in the v3 voice pass).
+> - **The mission ring is the walk strip** — Phase 4's ring-center cleanup
+>   criteria no longer apply; the Dashboard renders the 105-segment trail
+>   strip.
+> - **The Journey is the serpentine stage-band map** — Phase 8's S-curve,
+>   glyph-in-node, and past-path-gradient criteria are superseded by the v3
+>   Journey spec (route texture is the status channel; 44px targets and real
+>   focusable days survive).
+> - **`Use shield on yesterday?` is now the shelter language** — two-step
+>   confirm, undoable, introduced during onboarding.
+> - The completion screen carries the career line (UI-only derivation) and
+>   missions archive **in-app** to `/history`; the export remains the base64
+>   file.
 
 **Ordering principle**: highest leverage first. Each phase ends in a usable slice — never half-broken between phases. Phases are grouped so a Claude Code session can finish one phase end-to-end without thrashing across unrelated files.
 

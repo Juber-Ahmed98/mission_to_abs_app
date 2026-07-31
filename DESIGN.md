@@ -34,11 +34,11 @@ A private, offline-first PWA for a 15-week body-recomposition mission. The user 
 ## Tech stack
 - **Build**: Vite + React 18 + TypeScript
 - **Styling**: Tailwind CSS (light mode primary, dark mode opt-in via toggle or `prefers-color-scheme`). Type scale in `rem` for OS-level text-size respect.
-- **State**: Zustand (single persisted store, schema v3)
+- **State**: Zustand (single persisted store, schema v10)
 - **Storage**:
-  - `localStorage` for entries, settings, photo metadata, progression (XP), measurements
+  - `localStorage` for entries, settings, photo metadata, measurements, mission history, and the once-flags
   - **IndexedDB** (`idb-keyval`) for photo blobs
-- **Charts**: Recharts (line chart only; themed via tokens, never replaced)
+- **Charts**: Recharts (line charts only — weight, waist, body fat; themed via tokens, never replaced)
 - **Icons**: `lucide-react`
 - **Animations**: Framer Motion — purposeful (slide-to-confirm, celebration overlay, map-panel sheets, toasts, page transitions)
 - **Dates**: `date-fns`
@@ -48,16 +48,21 @@ A private, offline-first PWA for a 15-week body-recomposition mission. The user 
 
 Target bundle: < 350 KB gzipped (entry route lazy-splits Compare, Photos, Progress). Regression gate: delta against the measured baseline in [update.md](update.md) §5.
 
-## Data model (v3)
+## Data model (schema v10, as shipped — [src/types.ts](src/types.ts))
 
 ```ts
+type ValueSource = 'manual' | 'renpho';  // provenance: hand-typed values are never clobbered by a sync
+
 type DayEntry = {
   date: string;                       // 'YYYY-MM-DD'
   weight?: number;                    // in user's current unit
+  bodyFat?: number;                   // %, optional (Renpho sync or hand-typed)
   diet?: 'success' | 'fail';
   exercise?: 'success' | 'fail';
   rest?: boolean;                     // marks a planned rest day; counts as a win, no XP penalty
   notes?: string;
+  weightSource?: ValueSource;         // absent = legacy/unknown, treated as manual
+  bodyFatSource?: ValueSource;
 };
 
 type WeekMeasurement = {
@@ -77,39 +82,48 @@ type Settings = {
   durationWeeks: number;              // default 15
   weightUnit: 'kg' | 'lb';            // default 'kg' — toggling converts stored numbers in place
   waistUnit: 'cm' | 'in';             // default 'cm' — display only; storage is always cm
+  pillarLabels: { diet: string; exercise: string };  // display-only names; DayEntry keys stay diet/exercise
   theme: 'light' | 'dark' | 'system'; // default 'system'
   goalWeight?: number;                // optional, set in onboarding; in current weightUnit
   goalWaistCm?: number;               // optional, set in onboarding
   onboarded: boolean;                 // gates /onboarding route
   streakShieldsRemaining: number;     // starts at 1, refills on new mission
+  lastExportedAt: string | null;      // drives the backup nudge
+  analyticsEnabled: boolean;          // opt-in local counters, never leaves device
+  notifications: { morning: boolean; evening: boolean };  // in-app reminder banners
+  renphoSync: { enabled: boolean; syncToken: string; lastSyncedAt: string | null };
 };
 
-type Progression = {
-  xp: number;                         // total XP, monotonically increasing
-};
+// Mission XP is derived, not stored: totalXp(days, photos, measurements).
 
-type MissionArchive = {
+type ArchivedMission = {                // in-app history entry (startNewMission)
+  id: string;
   archivedAt: string;
   settings: Settings;
   days: Record<string, DayEntry>;
   measurements: WeekMeasurement[];
-  photos: Array<WeekPhoto & { base64: string }>;
+  photos: WeekPhoto[];                  // blobs stay in IndexedDB under their keys
   finalXp: number;
+  stats: { perfectDays: number; longestStreak: number; weightDelta?: number; waistDeltaCm?: number };
 };
 ```
 
 **Storage layout**
-- `mission.settings` → `Settings`
-- `mission.days` → `Record<isoDate, DayEntry>`
-- `mission.measurements` → `WeekMeasurement[]`
-- `mission.photos` → `WeekPhoto[]`
-- `mission.progression` → `Progression`
-- IndexedDB store `mission-photos` → `Blob` keyed by `photoKey`
+- `mission` → one persisted Zustand blob (`persist` version 10): `{ settings, days, photos, measurements, history: ArchivedMission[] }`
+- `mission.<flag>.*` → the once-flags (separate plain localStorage keys — see below)
+- IndexedDB store `mission-photos` → `Blob` keyed by `photoKey` (current mission and archived missions alike)
+- The Settings → Export file is a separate shape: full JSON with photos inlined as base64, for off-device backup.
 
-**Migration**
-- v2 → v3: add `onboarded: false` (existing users skip onboarding via a one-shot dashboard banner instead), `streakShieldsRemaining: 1`, `waistUnit: 'cm'`, empty `measurements: []`. Stored weights are not converted; users who change units after v3 lands trigger a one-time conversion prompt.
+**Migration** — staged in the store's `migrate` (each step defaults new fields so existing users are byte-for-byte unchanged): v3 `onboarded`/shields/waist unit/measurements · v4 `lastExportedAt` · v5 `analyticsEnabled` · v6 `notifications` · v7 `pillarLabels` · v8 `history` · v9 `bodyFat` + source fields · v10 `renphoSync`. A `merge` deep-merges persisted settings over defaults so partial imports never leave fields undefined.
 
-**Once-flag continuity (load-bearing).** The localStorage once-flag key names `mission.stageShown.*` and `mission.streakBreak.*` keep their names through the redesign — renaming them re-fires celebrations for shipped installs. The re-entry moment adds `mission.reentry.*` in the same pattern.
+**Once-flag continuity (load-bearing).** The localStorage once-flag key names keep their names through any redesign — renaming them re-fires celebrations for shipped installs. The shipped family:
+- `mission.stageShown.<stageIndex>` — stage crossing (passed stages settle silently)
+- `mission.streakBreak.<yesterdayISO>` — the 1-day break panel
+- `mission.reentry.<lastLoggedISO>` — re-entry, once per return; a new camp re-arms
+- `mission.summit.<date>` — the day-105 summit overlay
+- `mission.perfectDay.<date>.<dayNum>` — perfect day; the day number lets a startDate time-travel re-arm it
+- `mission.ritual.<date>` — the weekly ritual prompt, keyed by the contract day
+- `mission.welcomeBack` / `mission.welcomeBackDismissed` — the one-shot migration banner
 
 ## Day status logic
 The logic is unchanged from v2; the presentation language is the trail. For each past day:
@@ -184,7 +198,7 @@ The 105 days are grouped into 5 stages of 21 days each — and in Waypoint each 
 | 3 | Refine | 64–84 | `#6C51B4` / `#A28BE0` (heather violet) |
 | 4 | Reveal | 85–105 | `#866A10` / `#CBA640` (summit gold) |
 
-- The **current stage's hue is the app's accent** — `--accent` aliases `--stage`, bound by a `stage-<n>` class on the app shell. Crossing a stage recolors the room.
+- The **current stage's hue is the app's accent** — `--accent` aliases `--stage`, bound by a `stage-<n>` class on `<html>` (`useApplyStage` in [src/lib/theme.ts](src/lib/theme.ts)). Crossing a stage recolors the room.
 - The current stage is **always visible on the Dashboard** (stage chip in the header: name + day range, stage-soft background) — it appears on every screen's geography, never only in an overlay.
 - Stage crossings are a heavy-register moment (see [The moments](#the-moments)).
 - Halfway (Day 53 for a 15-week mission) gets a medium-register in-flow note, not an overlay.
@@ -237,6 +251,7 @@ The 105 days are grouped into 5 stages of 21 days each — and in Waypoint each 
 /* Shape */
 --radius:        12px;
 --radius-card:   14px;
+--radius-lg:     16px;   /* large surfaces (sheets, overlays) */
 --radius-pill:   9999px;
 
 /* Depth — net-new group */
@@ -284,7 +299,7 @@ The same country after sundown: deep green-black ground, hues lifted for contras
 --shadow-lift:   0 2px 5px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.5);
 ```
 
-**Token rules.** All net-new groups (`--shadow-*`, `--duration-*`, `--stage-*`, `--track`) surface through [tailwind.config.js](tailwind.config.js) (`boxShadow`, `transitionDuration`, colors) so no literal values leak into components — `grep -rE '#[0-9a-fA-F]{3,8}' src --include='*.tsx'` must return zero hits after the token phase. Contrast bars: body/bg and stage-hue/bg pairs ≥ 4.5:1 in both themes, measured, with literal ratios recorded in the Accessibility section at the audit phase.
+**Token rules.** All net-new groups (`--shadow-*`, `--duration-*`, `--stage-*`, `--track`) surface through [tailwind.config.js](tailwind.config.js) (`boxShadow`, `transitionDuration`, colors) so no literal values leak into components — `grep -rE '#[0-9a-fA-F]{3,8}' src --include='*.tsx'` must return zero hits after the token phase. Contrast bars: body/bg and stage-hue/bg pairs ≥ 4.5:1 in both themes, measured, with literal ratios recorded in the Accessibility section at the audit phase. **Known limitation (Phase 14 decision pending):** Tailwind `/40`-style alpha modifiers are silent no-ops on the `var()`-based palette — such borders render full-strength; either add `<alpha-value>` plumbing or drop the modifiers at the audit.
 
 **Texture.** The header area carries faint contour lines (`repeating-radial-gradient` of `--border-strong` at 30% via `color-mix` — topography without image assets). Panels are `--surface` cards with `--border` hairlines, `--radius-card`, and `--shadow-panel`.
 
@@ -364,12 +379,12 @@ When moments land together, this order is law:
 2. **Re-entry** (lapse ≥ 2 days) — medium panel, always first in flow. It **suppresses** the streak-break treatment (a lapse is not a break) and **defers any pending heavy overlay to the next open** — the return is never greeted with a takeover.
 3. **Streak break** (gap of exactly 1 day) — medium panel with the shelter offer. Mutually exclusive with re-entry by the boundary rule.
 4. **Stage crossing** — heavy; fires on first open **at or after** the crossing (once per stage, flag preserved), except on a re-entry open (deferred once, above).
-5. **Level-up** — heavy; fires on the log that crosses the threshold. If a heavy overlay is already showing, it queues and fires after dismissal. At most one heavy moment per user action; stage crossing outranks level-up when both are pending.
+5. **Level-up** — heavy; fires on the log that crosses the threshold. If a heavy overlay is already showing, it queues and fires after dismissal. At most one heavy moment per user action; within the heavy queue **summit > stage crossing > level-up** when more than one is pending.
 6. **Perfect day** — medium; fires on completion of the second pillar (`dayStatus === 'perfect'`), once per day. When it co-occurs with a level-up, the light XP toast fires immediately, the heavy level-up takes the screen, and the perfect-day panel is present in flow after dismissal — the two never render simultaneously.
 7. **Weekly ritual prompt** (photo + waist) — medium, in the banner slot on the contract day. Never outranks re-entry or a streak break.
 8. **Housekeeping banners** (backup nudge, install, reminder, migration) — last, one at a time, in the existing single-banner gate.
 
-The banner slot is single-occupancy: re-entry > streak break > ritual > backup > install > reminder. Light-register toasts fire immediately regardless of what else is on screen; the undo pill always accompanies its action.
+The banner slot is single-occupancy: an open re-entry or streak-break panel suppresses the whole slot; within it, ritual > welcome-back (migration) > backup > install > reminder. Light-register toasts fire immediately regardless of what else is on screen; the undo pill always accompanies its action.
 
 ## The moments
 
@@ -381,7 +396,7 @@ The Dashboard greets before anything is done: the date line, the streak flag (if
 
 ### 2 · Logging a pillar — *light register (+ medium on perfect day)*
 The slide stays: walk the stretch, the fill is ground gained in the stage hue, the thumb pops to a check, one 15ms haptic. The XP toast pops with the flag (`+30 XP`). The ✗ affordance marks rough ground with the same weight and its own undo. **Backfills through the DayEditor and the Journey map panel get the identical treatment — XP toast + undo pill, never silent.**
-**Perfect day** (second pillar completed, `dayStatus === 'perfect'`): the toast carries the bonus (`+70 XP · Perfect day — flag planted`) and the medium-register panel lands in flow: flag chip in the stage hue, `Flag planted — a perfect day.`, facts line (`Both pillars · +100 XP · N-day walk behind it`). Once per day; re-armed only by a new day.
+**Perfect day** (second pillar completed, `dayStatus === 'perfect'`): the toast carries the bonus (`+70 XP · Perfect day — flag planted`) and the medium-register panel lands in flow: flag chip in the stage hue, `Flag planted — a perfect day.`, facts line (`Both pillars · +100 XP`, plus `· N-day walk behind it` when the streak ≥ 2). Once per day; re-armed only by a new day.
 **Register:** light; perfect day adds medium.
 
 ### 3 · Level-up — *heavy register*
@@ -413,7 +428,7 @@ The prompt enters the banner precedence on **the last day of each mission week**
 **Register:** medium.
 
 ### 8 · Day 105 and mission completion — *heavy register into a page state*
-Day 105 itself is a moment: on the final day's open, the summit is one step away on every surface (`One camp left. The summit is tomorrow.` on day 104's eve; the summit flag at the pin's side on 105). Completing day 105's log fires the heavy overlay in Reveal gold — the summit. From day 106 (`dayNumber > totalDays`) the Dashboard renders the completion layout:
+Day 105 itself is a moment: on the final day's open, the summit is one step away on every surface (the day-104 eve panel `The summit is tomorrow.` / `One camp left. Walk in like you walked the rest.`; the summit flag at the pin's side on 105; the standing line reads `The summit is today.`). Completing day 105's log fires the heavy overlay in Reveal gold — the summit. From day 106 (`dayNumber > totalDays`) the Dashboard renders the completion layout:
 - Final walk strip (fully drawn), `105 / 105`
 - One headline number: `−4.2 kg · −7 cm waist`
 - Stats block: `Perfect days 78 / 105 · Diet 84% · Exercise 79% · Longest streak 31`
@@ -432,9 +447,9 @@ Sticky bottom tab nav, 5 items, thumb-zone:
 
 1. **Dashboard** (`/`) — the walk strip at the top (the route, always), header on contour lines with the date, streak flag, `Day N`, and stage chip; then the moment panels in precedence order; today's ground (slide rows + camp-day action); level badge; weight reading; footer line. Special states: pre-mission countdown, re-entry, completion.
 2. **Journey** (`/journey`) — the map: a serpentine trail through five stage-colored bands of country (full spec in Core components). Tap a day → the map panel (bottom sheet) to view or mark it.
-3. **Progress** (`/progress`) — weight line chart with optional 7-day moving average and goal ghost line; waist series below if logged; adherence stats card (perfect days, diet %, exercise %); trendline projection to Day 105. Recharts, themed via tokens: weight series in the current stage hue, waist in `--rest`, projection dashed `--text-muted`, series ≥ 3:1 against `--bg` in both themes.
-4. **Photos** (`/photos`) — weekly thumbnails timeline + weekly waist input on the current-week slot; the ritual's home. Tap a filled slot → action sheet (View / Replace / Compare / Delete). Two-photo compare via Compare route with draggable divider.
-5. **Settings** (`/settings`) — start date, duration, weight unit, waist unit, theme, export JSON, import JSON (with diff preview), reset all data (two-step confirm), storage usage.
+3. **Progress** (`/progress`) — contour header with the delta as the headline (`vs. the start of the walk`); weight line chart with optional 7-day moving average and goal ghost line; waist and body-fat series below if logged; adherence stats card (perfect days, diet %, exercise %); trendline projection to Day 105. Recharts, themed via tokens: weight `--stage`, 7-day MA `--stage` dashed, projection `--text-muted` dashed, waist `--rest`, body fat `--success`, goal ghost `--border-strong` dashed. Series contrast: ≥ 3:1 against `--bg` required; the shipped hues measure ≥ 4.5:1 in both themes. Noisy projection reads `Pace unclear — more readings settle the line.`
+4. **Photos** (`/photos`) — leads with the ritual card (camera chip, `Week {n} of {m} — one photo, one waist reading.`, the photo CTA / logged row, and the waist input); the grid sits under `The record`. Tap a filled slot → action sheet (View / Replace / Compare / Delete). Two-photo compare via Compare route: draggable divider on a 44×44 handle, `role="slider"` with arrow-key nudging, captions carry the year so cross-mission compares read apart.
+5. **Settings** (`/settings`) — sections as shipped: Schedule (start date, duration) · Pillars (display-only rename of the two daily pillars) · Reminders (morning quote / evening reflection in-app banners) · Appearance (theme, weight unit, waist unit) · Analytics (opt-in local counters) · Data (export JSON, import JSON with diff preview, storage usage, history entry point) · Body-data sync (opt-in Renpho proxy: enable, sync token, last synced) · Danger (reset all data, two-step confirm on failed tokens).
 
 Additional non-tabbed routes:
 - `/onboarding` — three-screen first-run flow. Guarded by `settings.onboarded`.
@@ -446,24 +461,27 @@ Additional non-tabbed routes:
 
 ## Onboarding flow
 
-Three screens, full-bleed, swipeable. Skippable from screen 2 onward (`Set this up later` link, muted). Sets `settings.onboarded = true` on completion or skip. Copy finalized in the voice pass; structure is contract:
+Three screens, full-bleed, button-stepped (dot progress + a 44px back chevron from screen 2; not swipe-driven). Skippable from screen 2 onward. Sets `settings.onboarded = true` on completion or skip. As shipped:
 
 **Screen 1 — Value prop & commitment**
-- Headline: `105 days. One yes/no a day.`
+- Headline over contour lines: `105 days.` / `One yes/no a day.` (two lines, the second muted)
 - Sub: `Mission to Abs is a witness, not a coach. Bring your own plan. The app holds you to it.`
 - Three feature lines (icon + one phrase): `Daily log` · `Weekly photo + waist` · `Walk your journey`
+- The shelter, introduced up front in a panel card (never a surprise at the one-day gap): `One shelter in the pack — pitched, it covers a single missed day and the walk holds.`
 - Primary CTA: `Begin`
 
 **Screen 2 — Schedule & goals**
-- Start date (date input, default today); duration (default 15 weeks); goal weight and waist (optional); unit segmented controls
+- Headline: `Set your mission.` · Sub: `These can change later in Settings.`
+- Start date (date input, default today); duration (default 15 weeks); unit segmented controls; goal weight and waist (optional)
 - Skip link: `Set goals later` · Primary CTA: `Continue`
 
 **Screen 3 — Baseline**
-- Headline: `Where you are today.`
-- Today's weight (required for a chart), photo (optional), waist (optional)
+- Headline: `Where you are today.` · Sub: `Optional. Set a baseline so you can watch the change.`
+- Today's weight, waist, and photo — all optional (photo row reads `Optional` → `Saving…` → `Logged`)
+- Future start note: `Starts {date} · N days to go.`
 - Skip link: `Skip baseline` · Primary CTA: `Begin Day 1` (or `Begin in N days`)
 
-Onboarding introduces the shelter (streak shield) up front, and doubles as the portability test — it must read right for a friend starting their own 105 days with renamed pillars.
+Onboarding doubles as the portability test — it must read right for a friend starting their own 105 days with renamed pillars.
 
 **Existing-user migration**: users upgrading with `onboarded: false` see a one-shot dismissible banner: `Welcome back. Set your goals?` linking to `/onboarding`.
 
@@ -643,7 +661,6 @@ If yesterday is unlogged AND current time is before 11:00 local: a single row ab
 | Re-entry title | `Back on the trail.` |
 | Re-entry body | `Camp was Day 41 — the dotted stretch is behind you now. You're standing in Push with 43 days to the summit.` |
 | Re-entry invitation | `Today's log puts you back on the map.` / `Mark the missed stretch` |
-| Re-entry footer | `The trail never left. Yesterday is closed; today is open.` |
 | Journey lapse header | `Camp was Day 41 — the dotted stretch is behind you, 43 days to the summit.` |
 | Journey lapse footer | `Every unrecorded stretch can still be drawn in. The route never left the map.` |
 | Journey default footer | `The map fills in one stretch at a time.` |
@@ -652,19 +669,38 @@ If yesterday is unlogged AND current time is before 11:00 local: a single row ab
 | Backfill undo | `Day 48 marked walked` (· `marked a camp day` · `marked rough ground`) |
 | Level-up | `HIGHER GROUND` / `{level}` / `{tier}` / `Tap anywhere to keep walking` |
 | Stage crossing | `{STAGE} · {start}–{end}` + the stage's zen line |
-| Halfway (Day 53) | `Halfway. Keep walking.` |
-| Day 1 | `Trailhead.` / `105 days of country ahead. The first step is today's log.` |
+| Halfway (Day 53) | `Halfway.` / `Keep walking.` |
+| Day 1 (standing line) | `Trailhead. The first mark is today's log.` |
+| Day 1 (Journey header) | `Trailhead. The whole route is plotted; the first mark is today's log.` |
+| Final day (standing line) | `The summit is today.` |
 | Day 104 eve | `The summit is tomorrow.` / `One camp left. Walk in like you walked the rest.` / footer `Sleep well. Tomorrow you crest.` |
 | Mission complete | `The summit. Day 105.` |
+| Career line (completion) | `Level 16 · Grounded` / `18,500 XP across 2 missions — carried into the next.` |
 | Standing footer | `One stretch at a time is the whole way there.` |
 | Photo / weight / waist logged | `Logged.` |
 | Weight context | `Last reading 82.5 kg · heading for 78` |
 | Level badge caption | `290 / 1,000 XP` · `710 to the next marker` |
 | Undo toast | `{Pillar} logged` · `Undo` |
-| Ritual prompt | `Week 9's photo and waist reading.` |
+| Ritual prompt | `Week 9's photo and waist reading.` + state-aware facts: `The week closes today — both are still open.` / `The photo is in. The waist reading is still open.` / `The waist is logged. The photo is still open.` |
+| No shelter left | `No shelters left in the pack.` |
+| Noisy projection (Progress) | `Pace unclear — more readings settle the line.` |
 | Onboarding screen 1 | `105 days. One yes/no a day.` |
 | Reset confirm prompt | `Type RESET to erase everything.` |
 | Import diff header | `Backup contains:` |
+
+**The standing line** ([src/lib/encouragement.ts](src/lib/encouragement.ts) — nine strings, strict precedence, as shipped in the voice pass):
+
+1. Post-mission → `The summit. Day 105.`
+2. Pre-mission → `The route is plotted.`
+3. Day 1, nothing logged → `Trailhead. The first mark is today's log.`
+4. Final day → `The summit is today.`
+5. Halfway day → `Halfway. Keep walking.`
+6. Both pillars done → `Today is walked.`
+7. Streak ≥ 2 → `Steady. {n} days walked.`
+8. Yesterday failed/unrecorded → `Yesterday is closed. Today is open.`
+9. Nothing logged today → `Today is open.` · fallback → `One stretch at a time is the whole way there.`
+
+**Morning quotes / evening prompts** ([src/lib/quotes.ts](src/lib/quotes.ts)): 40 morning lines and 10 evening prompts, date-hashed, curated in the voice pass — no attributed aphorisms, no fitness content, no collision with the pinned status lines.
 
 **Stage zen lines** (one each, never rotated — voice-pass candidates, register locked):
 - Foundation: `Build the floor.`
@@ -726,7 +762,7 @@ The v2 behavioral criteria all still hold (onboarding gate, slide threshold sema
 - [ ] Bundle < 350 kB gz; delta per chunk recorded against the §5 baseline
 
 ## Out of scope (deliberately)
-- Accounts, login, cloud sync (Renpho proxy sync shipped separately and stays as-is)
+- Accounts, login, cloud sync of the mission itself (the opt-in Renpho **body-data** sync ships in-app — Settings → Body-data sync, via the proxy — and stays; the mission record never leaves the device)
 - Social / sharing / leaderboards
 - Workout plans, meal plans, recipes, video content
 - Push notifications (local in-app reminder banner shipped in v2.x and stays)
@@ -778,6 +814,19 @@ The v2 system described itself as "bright, calm, intentional" — citrus accents
 - **XP carry-forward contradiction — resolved.** The v2 spec claimed XP carries into mission two; the store zeroes it. Chose the UI-only career derivation over a store change (the UI-only fence holds): `history.reduce((s, m) => s + m.finalXp, 0) + totalXp(days, photos, measurements)`, presented as career level/tier at completion. The store stays untouched.
 - **Tier table corrected to code.** The v2 doc's tier boundaries (1–4/5–9/10–14/15–19) never matched `tierName()` (1–5/6–10/11–15/16–19/20+). The contract pins the code's reality; the logic libs are untouchable.
 - **Streak break demoted from heavy to medium.** Chose an in-flow panel over the v2 full-screen overlay: a broken streak is information plus a decision (the shelter), not a celebration — and a real lapse routes to re-entry, which the v2 overlay never handled (its detection is fixed in-component at the moment phase).
+
+### 2026-07-31 — Phase 13 doc-refresh: the contract synced to shipped reality
+
+Chose describing the app that shipped over preserving the contract's pre-build wording; every delta below was already live and verified in its phase. What moved:
+
+- **Data model** rewritten to [src/types.ts](src/types.ts) / store reality (schema v10): `bodyFat` + value-source provenance, `pillarLabels`, `lastExportedAt`, `analyticsEnabled`, `notifications`, `renphoSync`; XP is derived, never stored; in-app `ArchivedMission` history (photos stay in IndexedDB) distinct from the base64 export file. Storage is one persisted `mission` blob, not per-slice keys.
+- **Once-flag family** completed: `summit.<date>`, `perfectDay.<date>.<dayNum>`, `ritual.<date>`, `welcomeBack` join the documented set.
+- **Banner slot order** as shipped: ritual > welcome-back > backup > install > reminder (re-entry / streak break suppress the slot outright); the heavy queue pins summit > stage > level-up.
+- **The re-entry footer line** (`The trail never left. Yesterday is closed; today is open.`) was a lab-only line that never shipped in the production panel — dropped from the copy table; the standing-line fallback covers the register.
+- **Day 1 copy** pinned to the shipped pair: the standing line `Trailhead. The first mark is today's log.` and the Journey header variant; the contract's pre-voice-pass draft (`105 days of country ahead…`) is retired.
+- **Onboarding** documented as built: button-stepped (not swipeable), `Set your mission.` on screen 2, all-optional baseline, the shelter card copy on screen 1.
+- **Settings / Progress / Photos** page specs expanded to the shipped sections and series tokens (7-day MA, body fat `--success`, goal ghost `--border-strong` dashed; measured ≥ 4.5:1).
+- `--radius-lg: 16px` documented; the Tailwind `/alpha` no-op limitation recorded for the Phase 14 decision.
 
 ### 2026-07-31 — Phase 5 token amendments (measured AA)
 

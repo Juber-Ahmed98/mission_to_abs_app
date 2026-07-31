@@ -33,8 +33,11 @@
 > hardened, the contract empty states). Phase 12 ✅ shipped 2026-07-31 (voice
 > pass: encouragement.ts onto the trail lexicon with precedence intact, the 40
 > morning quotes + 10 evening prompts curated — attributed aphorisms and the one
-> fitness line replaced, banned-construction greps all zero). Next session:
-> **Phase 13** (doc-refresh checkpoint).
+> fitness line replaced, banned-construction greps all zero). Phase 13 ✅ shipped
+> 2026-07-31 (doc-refresh: DESIGN.md synced to shipped reality with a dated
+> decision-log entry, PHASES.md headed as historical with the v3 supersessions,
+> v2 screenshots archived to `screenshots/v2/` and the after-portfolio
+> regenerated). Next session: **Phase 14** (the audit checkpoint).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -754,10 +757,45 @@ without its words); this phase is the whole-app unification sweep.
 > emoji) zero across src; six encouragement branches + a curated morning quote
 > read live via seeded localStorage on the dev preview (Day 62 streak, perfect
 > day, fallback, pre-mission, Day 1, Day 105), zero console errors. Build: entry
-> 132.25 kB gz (+0.02), CSS 6.64 (unchanged). — Doc-refresh checkpoint — ⏸ Awaiting Gate 3
+> 132.25 kB gz (+0.02), CSS 6.64 (unchanged).
+
+---
+
+## Phase 13 — Doc-refresh checkpoint — ✅ Shipped 2026-07-31
 
 **Goal** — the docs describe the app that shipped, including drift that predates this
 work.
+
+**Shipped notes (2026-07-31)** — the audit diffed the contract against the shipped
+code surface by surface; every delta found was already live and verified in its
+phase, so the docs moved, not the code. [DESIGN.md](DESIGN.md): the data model
+rewritten to [src/types.ts](src/types.ts)/store reality (schema **v10** — `bodyFat`
++ value-source provenance, `pillarLabels`, `lastExportedAt`, `analyticsEnabled`,
+`notifications`, `renphoSync`; XP derived, never stored; in-app `ArchivedMission`
+history distinct from the base64 export; storage is one persisted `mission` blob,
+not the five per-slice keys the doc claimed); the once-flag family completed
+(`summit.<date>`, `perfectDay.<date>.<dayNum>`, `ritual.<date>`, `welcomeBack`);
+banner-slot order pinned as shipped (ritual > welcome-back > backup > install >
+reminder) and the heavy queue as summit > stage > level-up; the moment-copy table
+corrected to production strings (the lab-only re-entry footer line dropped, Day 1
+pinned to the shipped pair, career line + ritual facts + no-shelter + noisy-projection
+rows added) plus the nine-string standing-line precedence written out; Onboarding
+documented as built (button-stepped, `Set your mission.`, all-optional baseline,
+the shelter card); Progress/Photos/Settings page specs expanded to shipped
+(MA/body-fat/goal-ghost series tokens, ritual card, the eight Settings sections);
+`--radius-lg` documented; the Tailwind `/alpha` no-op recorded for Phase 14; all of
+it logged as a dated decision-log entry. [PHASES.md](PHASES.md): headed as
+historical with the v3 supersessions listed (citrus tokens, StreakBreakOverlay,
+streak copy, ring→walk strip, Journey rewrite, shelter language). This file's
+Phase 13 heading restored (Phase 12's shipped note had clobbered it).
+`screenshots/`: the v2 set moved to `screenshots/v2/` and the after-portfolio
+regenerated — 8 shots at 402×874 @3× (matching the v2 set) via headless Edge +
+playwright-core in a scratch profile, against a seeded day-47 Push mission
+(13-day streak, one pillar walked, 6 ritual photos as generated silhouettes,
+body-fat series, an archived mission with thumbnails for History, fresh profile
+for the onboarding shot). Verification: contract vs code spot-checks covered the
+re-entry panel, banner stack, onboarding, Progress series, and Settings sections;
+the captures themselves are the fresh-session read of every screen.
 
 **Changes**
 - [DESIGN.md](DESIGN.md) microcopy + component sections synced to shipped reality,
@@ -780,7 +818,7 @@ work.
 
 ---
 
-## Phase 14 — Phase-wide audit checkpoint — ⏸ Awaiting Gate 3
+## Phase 14 — Phase-wide audit checkpoint — ⏸ Next session
 
 **Goal** — the hard constraints verified with instruments, not eyeballs; fix forward
 inline or record deliberate deferrals in the status blockquote.
