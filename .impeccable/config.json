@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-07-31T02:23:26.070Z",
+        "reason": "Signed DESIGN.md v3 contract pins shipped Inter Variable; a new typeface is a stop-and-raise (first-paint/precache budget)"
+      }
+    ]
+  }
+}
