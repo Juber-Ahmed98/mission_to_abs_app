@@ -66,20 +66,25 @@ type Props = {
 
 export default function InstallBanner({ onInstall, onDismiss }: Props) {
   return (
-    <div className="mx-5 mb-3 mt-4 flex items-center gap-3 rounded-card border border-border bg-surface p-3">
-      <div className="flex-1">
-        <div className="text-sm text-text">Install Mission to Abs</div>
+    <div className="mx-5 mb-3 mt-4 flex items-center gap-2 rounded-card border border-border bg-surface py-2 pl-4 pr-1 shadow-panel">
+      <div className="flex-1 py-1">
+        <div className="text-sm font-medium text-text">Install Mission to Abs</div>
         <div className="text-xs text-text-muted">Add to home screen. Works offline.</div>
       </div>
       <button
         type="button"
         onClick={onInstall}
-        className="rounded-pill bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent"
+        className="h-11 shrink-0 rounded-pill bg-accent-soft px-4 text-sm font-medium text-accent"
       >
         Install
       </button>
-      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="text-text-muted">
-        <X size={18} />
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill text-text-muted hover:text-text"
+      >
+        <X size={18} strokeWidth={1.75} />
       </button>
     </div>
   );

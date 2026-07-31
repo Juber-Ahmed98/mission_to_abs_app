@@ -49,7 +49,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
     return (
       <div className="min-h-dvh flex items-center justify-center bg-bg px-5">
-        <div className="w-full max-w-sm rounded-card border border-border bg-surface p-6 text-center">
+        <div className="w-full max-w-sm rounded-card border border-border bg-surface p-6 text-center shadow-panel">
           <h1 className="text-2xl font-semibold text-text">
             Something went wrong.
           </h1>
@@ -58,7 +58,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => location.reload()}
-              className="block h-12 w-full rounded-card bg-accent text-bg font-medium"
+              className="block h-12 w-full rounded-card bg-accent text-surface font-medium"
             >
               Reload
             </button>

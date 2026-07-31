@@ -38,15 +38,6 @@ export default {
         'stage-4': 'var(--stage-4)',
         'stage-4-soft': 'var(--stage-4-soft)',
 
-        // Deprecated v2 aliases — retired by the Phase 6–11 component sweep.
-        lemon: 'var(--lemon)',
-        'lemon-soft': 'var(--lemon-soft)',
-        lime: 'var(--lime)',
-        'lime-soft': 'var(--lime-soft)',
-        tangerine: 'var(--tangerine)',
-        'tangerine-soft': 'var(--tangerine-soft)',
-        coral: 'var(--coral)',
-        'coral-soft': 'var(--coral-soft)',
         missed: 'var(--missed)',
 
         accent: 'var(--accent)',

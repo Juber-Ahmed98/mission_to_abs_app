@@ -229,6 +229,11 @@ export default function PhotosPage() {
       <h2 className="mb-2 mt-6 text-xs uppercase tracking-wider text-text-muted">
         The record
       </h2>
+      {filledWeeks.length === 0 && (
+        <p className="mb-2 text-sm text-text-muted">
+          Week 1&rsquo;s photo starts the record.
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-2">
         {slots.map((week) => {
           const photo = findPhoto(week);

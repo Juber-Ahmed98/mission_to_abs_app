@@ -7,6 +7,7 @@ import { addDaysISO, formatNice, totalDays } from '../lib/date';
 import { adherenceFor } from '../lib/adherence';
 import PhotoThumb from '../components/PhotoThumb';
 import BottomSheet from '../components/BottomSheet';
+import ContourLines from '../components/ContourLines';
 
 const CM_PER_INCH = 2.54;
 
@@ -65,25 +66,28 @@ export default function HistoryPage() {
 
   return (
     <div className="pb-28 px-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <header className="flex items-center gap-2 pt-8 pb-5">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Back"
-          className="-ml-2 inline-flex h-9 w-9 items-center justify-center rounded-pill text-text-muted hover:text-text"
-        >
-          <ChevronLeft size={22} strokeWidth={1.75} />
-        </button>
-        <div>
-          <div className="text-sm text-text-muted">History</div>
-          <div className="text-3xl font-bold tracking-tight">Past missions</div>
+      <header className="relative -mx-5 overflow-hidden px-5 pt-7 pb-4">
+        <ContourLines />
+        <div className="relative flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="-ml-3 inline-flex h-11 w-11 items-center justify-center rounded-pill text-text-muted hover:text-text"
+          >
+            <ChevronLeft size={22} strokeWidth={1.75} />
+          </button>
+          <div>
+            <div className="text-sm font-medium text-text-muted">History</div>
+            <div className="text-3xl font-bold tracking-tight">Past missions</div>
+          </div>
         </div>
       </header>
 
       {journey && (
         <Link
           to={`/compare/${journey.first.photoKey}/${journey.last.photoKey}`}
-          className="mb-3 flex items-center gap-2 rounded-card border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-text hover:border-accent/50"
+          className="mb-3 flex min-h-[44px] items-center gap-2 rounded-card border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-text shadow-panel hover:border-accent/50"
         >
           <GitCompareArrows size={16} strokeWidth={1.75} className="text-accent" />
           <span className="flex-1">Compare your first &amp; latest photo</span>
@@ -139,7 +143,7 @@ export default function HistoryPage() {
                 type="button"
                 disabled={deleting}
                 onClick={confirmDelete}
-                className="h-11 flex-1 rounded-card bg-coral text-white disabled:opacity-60"
+                className="h-11 flex-1 rounded-card bg-failed font-medium text-surface disabled:opacity-60"
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </button>
@@ -178,7 +182,7 @@ function MissionRow({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3 pr-12 text-left hover:border-accent/40"
+        className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3 pr-12 text-left shadow-panel hover:border-accent/40"
       >
         <div className="flex shrink-0 gap-1">
           <Thumb photoKey={firstPhoto?.photoKey} />
@@ -211,7 +215,7 @@ function MissionRow({
         type="button"
         onClick={onDelete}
         aria-label="Delete mission"
-        className="absolute right-1.5 top-1.5 inline-flex h-9 w-9 items-center justify-center rounded-pill text-text-subtle hover:text-failed"
+        className="absolute right-1 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-pill text-text-subtle hover:text-failed"
       >
         <Trash2 size={16} strokeWidth={1.75} />
       </button>
@@ -289,7 +293,7 @@ function MissionSummary({ mission }: { mission: ArchivedMission }) {
         </div>
       )}
 
-      <section className="mt-5 rounded-card border border-border bg-surface px-4 py-4">
+      <section className="mt-5 rounded-card border border-border bg-surface px-4 py-4 shadow-panel">
         <div className="text-xs uppercase tracking-wider text-text-muted">Adherence</div>
         <div className="mt-1 flex items-baseline gap-1.5">
           <div className="text-4xl font-bold tabular leading-none text-text">
@@ -341,7 +345,7 @@ function MissionSummary({ mission }: { mission: ArchivedMission }) {
             <div className="mt-2 text-center">
               <Link
                 to={`/compare/${firstPhoto.photoKey}/${lastPhoto.photoKey}`}
-                className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs text-text-muted hover:text-text"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-pill border border-border bg-surface px-4 text-xs font-medium text-text-muted hover:text-text"
               >
                 Compare then &amp; now
               </Link>

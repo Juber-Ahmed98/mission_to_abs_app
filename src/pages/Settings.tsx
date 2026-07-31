@@ -802,7 +802,7 @@ export default function SettingsPage() {
             type="button"
             disabled={busy !== null}
             onClick={openResetSheet}
-            className="block h-12 w-full rounded-card border border-coral/40 bg-coral-soft px-4 text-left text-failed disabled:opacity-50"
+            className="block h-12 w-full rounded-card border border-failed/40 bg-failed-bg px-4 text-left text-failed disabled:opacity-50"
           >
             {busy === 'reset' ? 'Resetting…' : 'Reset all data'}
           </button>
@@ -843,7 +843,7 @@ export default function SettingsPage() {
               type="button"
               disabled={resetInput !== 'RESET' || busy === 'reset'}
               onClick={confirmReset}
-              className="h-11 flex-1 rounded-card bg-coral text-white disabled:opacity-50"
+              className="h-11 flex-1 rounded-card bg-failed font-medium text-surface disabled:opacity-50"
             >
               {busy === 'reset' ? 'Erasing…' : 'Erase'}
             </button>
@@ -894,7 +894,7 @@ export default function SettingsPage() {
               type="button"
               disabled={busy === 'import'}
               onClick={commitImport}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+              className="h-11 flex-1 rounded-card bg-accent font-medium text-surface hover:bg-accent-hover disabled:opacity-60"
             >
               {busy === 'import' ? 'Restoring…' : 'Replace'}
             </button>
@@ -946,7 +946,7 @@ export default function SettingsPage() {
               type="button"
               disabled={busy === 'renpho' || renphoFilled === 0}
               onClick={commitRenphoImport}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+              className="h-11 flex-1 rounded-card bg-accent font-medium text-surface hover:bg-accent-hover disabled:opacity-60"
             >
               {busy === 'renpho' ? 'Importing…' : 'Import'}
             </button>
@@ -1000,7 +1000,7 @@ export default function SettingsPage() {
               type="button"
               disabled={busy === 'backfill' || backfillTotal === 0}
               onClick={commitBackfill}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover disabled:opacity-60"
+              className="h-11 flex-1 rounded-card bg-accent font-medium text-surface hover:bg-accent-hover disabled:opacity-60"
             >
               {busy === 'backfill' ? 'Syncing…' : 'Sync'}
             </button>
@@ -1029,7 +1029,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={confirmWeightUnitChange}
-              className="h-11 flex-1 rounded-card bg-accent text-white hover:bg-accent-hover"
+              className="h-11 flex-1 rounded-card bg-accent font-medium text-surface hover:bg-accent-hover"
             >
               Convert
             </button>
@@ -1080,7 +1080,7 @@ function StorageRow({
   const pct = estimate.percent;
   const warn = pct >= 80;
   const critical = pct >= 95;
-  const border = critical ? 'border-coral/60' : warn ? 'border-coral/40' : 'border-border';
+  const border = critical ? 'border-failed/60' : warn ? 'border-failed/40' : 'border-border';
   const textColor = warn ? 'text-failed' : 'text-text';
   return (
     <div className={`rounded-card border ${border} bg-surface px-4 py-3`}>

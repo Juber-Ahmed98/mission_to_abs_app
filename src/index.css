@@ -48,17 +48,6 @@
   --failed-bg: #F6DCD8;
   --missed: #DBD5BF;
 
-  /* Deprecated v2 aliases — kept only until the component sweep (Phases 6–11)
-   * retires the last fruit-named utility. Do not use in new code. */
-  --lemon: var(--rest);
-  --lemon-soft: var(--rest-bg);
-  --lime: var(--success);
-  --lime-soft: var(--success-bg);
-  --tangerine: var(--accent);
-  --tangerine-soft: var(--accent-soft);
-  --coral: var(--failed);
-  --coral-soft: var(--failed-bg);
-
   /* Shape */
   --radius: 12px;
   --radius-card: 14px;

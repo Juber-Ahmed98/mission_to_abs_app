@@ -8,6 +8,7 @@ import {
   Map,
   Ruler,
   Scale,
+  Tent,
 } from 'lucide-react';
 import { useMission } from '../store/mission';
 import { dayNumberFor, formatNice, todayISO } from '../lib/date';
@@ -16,6 +17,7 @@ import { savePhoto } from '../storage/photos';
 import { showUndo } from '../components/UndoToast';
 import Segmented from '../components/SegmentedControl';
 import WeeksInput from '../components/WeeksInput';
+import ContourLines from '../components/ContourLines';
 
 type Screen = 0 | 1 | 2;
 
@@ -115,7 +117,7 @@ export default function OnboardingPage() {
             type="button"
             onClick={() => setScreen((screen - 1) as Screen)}
             aria-label="Back"
-            className="-ml-2 mb-3 inline-flex h-9 w-9 items-center justify-center rounded-pill text-text-muted hover:text-text"
+            className="-ml-3 mb-3 inline-flex h-11 w-11 items-center justify-center rounded-pill text-text-muted hover:text-text"
           >
             <ChevronLeft size={22} strokeWidth={1.75} />
           </button>
@@ -180,7 +182,7 @@ export default function OnboardingPage() {
           <button
             type="button"
             onClick={() => setScreen(1)}
-            className="block h-14 w-full rounded-pill bg-accent text-bg text-base font-medium"
+            className="block h-14 w-full rounded-pill bg-accent text-surface text-base font-medium"
           >
             Begin
           </button>
@@ -190,14 +192,14 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => setScreen(2)}
-              className="block h-14 w-full rounded-pill bg-accent text-bg text-base font-medium"
+              className="block h-14 w-full rounded-pill bg-accent text-surface text-base font-medium"
             >
               Continue
             </button>
             <button
               type="button"
               onClick={() => commit(false)}
-              className="mt-3 block w-full text-center text-sm text-text-muted"
+              className="mt-2 block min-h-[44px] w-full text-center text-sm text-text-muted"
             >
               Set goals later
             </button>
@@ -208,14 +210,14 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => commit(true)}
-              className="block h-14 w-full rounded-pill bg-accent text-bg text-base font-medium"
+              className="block h-14 w-full rounded-pill bg-accent text-surface text-base font-medium"
             >
               {startsInFuture ? `Begin in ${daysUntilStart} days` : 'Begin Day 1'}
             </button>
             <button
               type="button"
               onClick={() => commit(false)}
-              className="mt-3 block w-full text-center text-sm text-text-muted"
+              className="mt-2 block min-h-[44px] w-full text-center text-sm text-text-muted"
             >
               Skip baseline
             </button>
@@ -229,11 +231,16 @@ export default function OnboardingPage() {
 function Screen1() {
   return (
     <div>
-      <h1 className="text-4xl tracking-tight">105 days.</h1>
-      <h2 className="text-4xl tracking-tight text-text-muted">
-        One yes/no a day.
-      </h2>
-      <p className="mt-8 max-w-sm text-base text-text-muted leading-relaxed">
+      <div className="relative -mx-5 overflow-hidden px-5 pb-6 pt-2">
+        <ContourLines />
+        <div className="relative">
+          <h1 className="text-4xl tracking-tight">105 days.</h1>
+          <h2 className="text-4xl tracking-tight text-text-muted">
+            One yes/no a day.
+          </h2>
+        </div>
+      </div>
+      <p className="mt-2 max-w-sm text-base text-text-muted leading-relaxed">
         Mission to Abs is a witness, not a coach. Bring your own plan. The app
         holds you to it.
       </p>
@@ -251,6 +258,15 @@ function Screen1() {
           label="Walk your journey"
         />
       </ul>
+      {/* The shelter, introduced up front (DESIGN.md · Streak) so it is never
+          a surprise when it's offered after a one-day gap. */}
+      <div className="mt-10 flex items-start gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-panel">
+        <Tent size={18} strokeWidth={1.75} className="mt-0.5 shrink-0 text-accent" />
+        <p className="text-sm leading-relaxed text-text-muted">
+          One shelter in the pack — pitched, it covers a single missed day and
+          the walk holds.
+        </p>
+      </div>
     </div>
   );
 }

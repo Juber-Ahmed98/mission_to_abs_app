@@ -65,13 +65,20 @@ export default function ReminderBanner({ reminder, onDismiss }: Props) {
   const label = reminder.kind === 'morning' ? 'Morning' : 'Evening';
 
   return (
-    <div className="mx-5 mb-3 mt-4 flex items-center gap-3 rounded-card border border-border bg-surface p-3">
-      <div className="flex-1">
-        <div className="text-xs text-text-muted">{label}</div>
-        <div className="mt-0.5 text-sm text-text">{reminder.text}</div>
+    <div className="mx-5 mb-3 mt-4 flex items-center gap-2 rounded-card border border-border bg-surface py-2 pl-4 pr-1 shadow-panel">
+      <div className="flex-1 py-1">
+        <div className="text-2xs font-semibold uppercase tracking-wider text-text-subtle">
+          {label}
+        </div>
+        <div className="mt-0.5 text-sm leading-relaxed text-text">{reminder.text}</div>
       </div>
-      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="text-text-muted">
-        <X size={18} />
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill text-text-muted hover:text-text"
+      >
+        <X size={18} strokeWidth={1.75} />
       </button>
     </div>
   );

@@ -28,7 +28,9 @@
 > production, at-or-after stage crossings, the summit as a moment, the career
 > line at completion). Phase 10 ✅ shipped 2026-07-31 (the weekly ritual in the
 > banner precedence, the Photos ritual card, Compare at 44px + keyboard, Progress
-> off the fruit tokens). Next session: **Phase 11** (secondary surfaces sweep).
+> off the fruit tokens). Phase 11 ✅ shipped 2026-07-31 (secondary surfaces sweep:
+> History/Settings/Onboarding restyled, the fruit aliases deleted, the photo trio
+> hardened, the contract empty states). Next session: **Phase 12** (voice pass).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -643,7 +645,7 @@ instruments).
 
 ---
 
-## Phase 11 — Secondary surfaces sweep — ⏸ Awaiting Gate 3
+## Phase 11 — Secondary surfaces sweep — ✅ Shipped 2026-07-31
 
 **Goal** — no v2 orphans; every remaining surface joins the new system.
 
@@ -664,6 +666,41 @@ instruments).
 - Grep for v2-only token names returns zero hits.
 
 **Commit** — `Surfaces: history, settings, onboarding join the new system`
+
+**Shipped** — the fruit-token aliases are gone: the deprecated citrus vars
+deleted from [index.css](src/index.css) and [tailwind.config.js](tailwind.config.js)
+after the last uses (History/Settings/PhotoActionSheet delete + danger flows)
+moved onto `--failed`/`--failed-bg` with `--surface` text; every
+`bg-accent text-white`/`text-bg` primary is now `text-surface` (white text
+failed contrast on the lifted dark-theme hues).
+[History](src/pages/History.tsx): contour-line header, shadow-panel cards,
+44×44 back + delete targets. [Settings](src/pages/Settings.tsx): failed-token
+danger zone and storage warnings. [Onboarding](src/pages/Onboarding.tsx):
+contours behind the screen-1 headline, the shelter introduced up front in a
+panel card (per contract — never a surprise at the one-day gap), 44px
+back/skip targets; copy still Phase-12 scope. Housekeeping banners
+([Install](src/components/InstallBanner.tsx) /
+[Reminder](src/components/ReminderBanner.tsx)) onto the panel idiom with 44×44
+dismiss; [ErrorBoundary](src/components/ErrorBoundary.tsx) on tokens;
+RouteSkeleton needed nothing. The photo trio:
+[PhotoThumb](src/components/PhotoThumb.tsx) gained the contract's decode-failure
+state (muted `ImageOff` glyph + `Couldn't load this photo.`, delete still
+reachable), [PhotoViewer](src/components/PhotoViewer.tsx) close at 44×44,
+[PhotoActionSheet](src/components/PhotoActionSheet.tsx) rows ≥44px. Empty
+states completed per contract: Photos `Week 1's photo starts the record.`,
+Progress `Two readings draw the first line.` for < 2 readings (both live-verified).
+Verified live at 375px, daylight + dusk, via DOM/computed-style instruments
+(hidden browser pane again — no compositing, so screenshots defer to Phase 14):
+onboarding flow end-to-end, Settings danger/primaries both themes, History with
+a seeded archive (row, summary sheet, delete confirm on failed tokens, and the
+broken-photo state exercised by the ghost key), Photos ritual + record line,
+photo action sheet in dusk; zero console errors; zero sub-40px targets on the
+swept pages. Greps: hex 0, fruit 0 (all of src, lab included), shame 0,
+house-ease 1. Build: entry 132.23 kB gz (+0.45 vs Phase 10), CSS 6.64 (−0.08 —
+the alias deletion). **Noted for Phase 14:** Tailwind `/40`-style alpha
+modifiers are silent no-ops on the var()-based palette (pre-existing,
+system-wide — borders render full-strength); decide whether to add
+`<alpha-value>` plumbing or drop the modifiers.
 
 ---
 

@@ -61,9 +61,9 @@ export default function PhotoViewer({ open, photoKey, week, onClose }: Props) {
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="rounded-full bg-black/40 p-2.5 text-white backdrop-blur"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-pill bg-black/40 text-white backdrop-blur"
             >
-              <X size={22} />
+              <X size={22} strokeWidth={1.75} />
             </button>
           </div>
           <div className="relative flex-1">

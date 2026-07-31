@@ -108,9 +108,9 @@ export default function PhotoActionSheet({
                 type="button"
                 onClick={() => setMode('menu')}
                 aria-label="Back"
-                className="-ml-2 inline-flex h-9 w-9 items-center justify-center rounded-full text-text-muted hover:text-text"
+                className="-ml-3 inline-flex h-11 w-11 items-center justify-center rounded-pill text-text-muted hover:text-text"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={20} strokeWidth={1.75} />
               </button>
               <div>
                 <div className="text-lg font-semibold tracking-tight">
@@ -151,7 +151,7 @@ export default function PhotoActionSheet({
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="h-11 flex-1 rounded-card bg-coral text-white hover:opacity-90 disabled:opacity-60"
+                className="h-11 flex-1 rounded-card bg-failed font-medium text-surface hover:opacity-90 disabled:opacity-60"
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </button>
@@ -179,16 +179,16 @@ function SheetRow({ icon, label, onClick, disabled, hint, tone = 'default' }: Sh
       onClick={onClick}
       disabled={disabled}
       className={[
-        'flex w-full items-center gap-3 rounded-card px-3 py-3 text-left transition-colors duration-150 ease-apple',
+        'flex min-h-[44px] w-full items-center gap-3 rounded-card px-3 py-3 text-left transition-colors duration-fast ease-apple',
         disabled
           ? 'opacity-50'
           : tone === 'danger'
-            ? 'text-coral hover:bg-coral-soft/60'
+            ? 'text-failed hover:bg-failed-bg/60'
             : 'text-text hover:bg-surface',
       ].join(' ')}
     >
       <span
-        className={tone === 'danger' ? 'text-coral' : 'text-text-muted'}
+        className={tone === 'danger' ? 'text-failed' : 'text-text-muted'}
         aria-hidden
       >
         {icon}

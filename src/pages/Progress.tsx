@@ -211,7 +211,9 @@ export default function ProgressPage() {
                 )}
               </div>
               <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
-                vs. the start of the walk
+                {series.length < 2
+                  ? 'Two readings draw the first line.'
+                  : 'vs. the start of the walk'}
               </p>
               {weekDelta !== null && (
                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-text-muted">
@@ -234,7 +236,7 @@ export default function ProgressPage() {
                 No readings yet
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-text-muted">
-                Log a weight and the line begins.
+                Two readings draw the first line.
               </p>
             </>
           )}
