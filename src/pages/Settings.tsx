@@ -559,7 +559,7 @@ export default function SettingsPage() {
               onChange={(e) => {
                 if (e.target.value) setSettings({ startDate: e.target.value });
               }}
-              className="h-10 rounded-card border border-border bg-surface-2 px-3 text-sm text-text outline-none"
+              className="h-11 rounded-card border border-border bg-surface-2 px-3 text-lg text-text outline-none"
             />
           </Row>
           <Row label="Duration">
@@ -673,7 +673,7 @@ export default function SettingsPage() {
           <StorageRow estimate={storage} persisted={persisted} />
           <Link
             to="/history"
-            className="flex h-12 w-full items-center justify-between rounded-card border border-border bg-surface px-4 text-text hover:border-accent/40"
+            className="flex h-12 w-full items-center justify-between rounded-card border border-border bg-surface px-4 text-text hover:border-accent-40"
           >
             <span>Past missions</span>
             <span className="flex items-center gap-1 text-sm tabular text-text-muted">
@@ -753,7 +753,7 @@ export default function SettingsPage() {
                   value={settings.renphoSync.syncToken}
                   onChange={(e) => setRenphoToken(e.target.value)}
                   placeholder="Paste your sync token"
-                  className="mt-2 block h-11 w-full rounded-card border border-border bg-surface-2 px-3 text-sm text-text outline-none"
+                  className="mt-2 block h-11 w-full rounded-card border border-border bg-surface-2 px-3 text-lg text-text outline-none"
                 />
                 <div className="mt-2 text-xs text-text-subtle">
                   The one-time secret that authorizes this device. Your Renpho
@@ -802,7 +802,7 @@ export default function SettingsPage() {
             type="button"
             disabled={busy !== null}
             onClick={openResetSheet}
-            className="block h-12 w-full rounded-card border border-failed/40 bg-failed-bg px-4 text-left text-failed disabled:opacity-50"
+            className="block h-12 w-full rounded-card border border-failed-40 bg-failed-bg px-4 text-left text-failed disabled:opacity-50"
           >
             {busy === 'reset' ? 'Resetting…' : 'Reset all data'}
           </button>
@@ -1080,7 +1080,7 @@ function StorageRow({
   const pct = estimate.percent;
   const warn = pct >= 80;
   const critical = pct >= 95;
-  const border = critical ? 'border-failed/60' : warn ? 'border-failed/40' : 'border-border';
+  const border = critical ? 'border-failed-60' : warn ? 'border-failed-40' : 'border-border';
   const textColor = warn ? 'text-failed' : 'text-text';
   return (
     <div className={`rounded-card border ${border} bg-surface px-4 py-3`}>
@@ -1148,7 +1148,7 @@ function PillarLabelInput({
           if (trimmed !== value) onChangeRef.current(trimmed);
         }
       }}
-      className="h-10 w-40 rounded-card border border-border bg-surface-2 px-3 text-right text-sm text-text outline-none"
+      className="h-11 w-40 rounded-card border border-border bg-surface-2 px-3 text-right text-lg text-text outline-none"
     />
   );
 }

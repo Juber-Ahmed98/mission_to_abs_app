@@ -6,6 +6,12 @@ const isProd = process.env.NODE_ENV === 'production';
 // config (outside src/) emits the CSS side, including :root --ease-apple.
 const EASE_CSS = 'cubic-bezier(0.32, 0.72, 0, 1)';
 
+// Translucent token veils. Tailwind's /NN alpha modifiers are silent no-ops on
+// var()-based colors (the class is never emitted — elements fell back to the
+// preflight gray), so tints are named colors built with color-mix instead:
+// `border-accent-40`, never `border-accent/40`.
+const veil = (token, pct) => `color-mix(in srgb, var(${token}) ${pct}%, transparent)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: isProd
@@ -52,6 +58,20 @@ export default {
         'partial-bg': 'var(--partial-bg)',
         failed: 'var(--failed)',
         'failed-bg': 'var(--failed-bg)',
+
+        'accent-30': veil('--accent', 30),
+        'accent-40': veil('--accent', 40),
+        'accent-50': veil('--accent', 50),
+        'rest-30': veil('--rest', 30),
+        'rest-40': veil('--rest', 40),
+        'success-40': veil('--success', 40),
+        'failed-40': veil('--failed', 40),
+        'failed-60': veil('--failed', 60),
+        'failed-bg-60': veil('--failed-bg', 60),
+      },
+      // Bare `border` must never leak Tailwind's preflight #e5e7eb.
+      borderColor: {
+        DEFAULT: 'var(--border)',
       },
       borderRadius: {
         DEFAULT: 'var(--radius)',

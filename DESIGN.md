@@ -711,19 +711,34 @@ If yesterday is unlogged AND current time is before 11:00 local: a single row ab
 
 ## Accessibility
 
-- Every stage hue and status token verified WCAG AA (≥ 4.5:1 text, ≥ 3:1 graphics) against its intended background in **both** themes. Measured at Phase 5 (relative-luminance formula, shipped token values):
+- Every token pairing the UI uses verified WCAG AA (≥ 4.5:1 text, ≥ 3:1 graphics) in **both** themes. Measured at Phase 14 (relative-luminance formula over the shipped token values — the audit widened Phase 5's bg/surface-only table to every real pairing, and amended tokens where the wider net caught misses):
 
-  | Token | Light: on `--bg` / `--surface` | Dark: on `--bg` / `--surface` |
+  | Token | Light: on `--bg` / `--surface` / `--surface-2` | Dark: on `--bg` / `--surface` / `--surface-2` |
   |---|---|---|
-  | `--text` | 13.32 / 14.51 | 15.37 / 14.00 |
-  | `--text-muted` | 5.68 / 6.19 | 8.07 / 7.35 |
-  | `--text-subtle` | 4.57 / 4.98 | 5.70 / 5.19 |
-  | `--stage-0` | 4.55 / 4.96 | 6.72 / 6.12 |
-  | `--stage-1` | 4.61 / 5.03 | 7.87 / 7.17 |
-  | `--stage-2` | 4.50 / 4.91 | 6.07 / 5.53 |
-  | `--stage-3` | 5.35 / 5.83 | 6.13 / 5.58 |
-  | `--stage-4` | 4.55 / 4.96 | 7.61 / 6.93 |
-  | `--failed` | 5.90 / 6.43 | 5.99 / 5.45 |
+  | `--text` | 13.32 / 14.51 / 12.14 | 15.37 / 14.00 / 11.95 |
+  | `--text-muted` | 5.68 / 6.19 / 5.18 | 8.07 / 7.35 / 6.28 |
+  | `--text-subtle` | 4.97 / 5.41 / 4.53 | 5.85 / 5.32 / 4.55 |
+  | `--stage-0` | 4.90 / 5.34 / — | 6.72 / 6.12 / — |
+  | `--stage-1` = `--success` | 4.80 / 5.24 / — | 7.87 / 7.17 / — |
+  | `--stage-2` = `--partial` | 4.91 / 5.36 / — | 6.07 / 5.53 / — |
+  | `--stage-3` | 5.35 / 5.83 / — | 6.13 / 5.58 / — |
+  | `--stage-4` = `--rest` | 4.84 / 5.27 / — | 7.61 / 6.93 / — |
+  | `--failed` | 5.90 / 6.43 / 5.38 | 5.99 / 5.45 / 4.65 |
+
+  Hue text on its own soft tint (chips, active nav, toggles — the pairing Phase 5 never measured):
+
+  | Pairing | Light | Dark |
+  |---|---|---|
+  | `--stage-0` on `--stage-0-soft` | 4.54 | 5.13 |
+  | `--stage-1` on `--stage-1-soft` | 4.51 | 5.97 |
+  | `--stage-2` on `--stage-2-soft` | 4.53 | 4.86 |
+  | `--stage-3` on `--stage-3-soft` | 4.83 | 5.10 |
+  | `--stage-4` on `--stage-4-soft` | 4.57 | 5.63 |
+  | `--failed` on `--failed-bg` | 5.13 | 4.95 |
+
+  `--text` on every soft tint: ≥ 11.37 both themes. `--surface` as the label on every hue fill (primary buttons): ≥ 5.24 both themes.
+
+  **Pairing boundaries (load-bearing):** stage/status hues are never text on `--surface-2` (they measure 4.38–4.48 light there) — `--surface-2` fills carry `--text-muted`/`--text-subtle` only. The translucent veil borders (`border-accent-40` etc.) are decorative; information never rides on them. `--border-strong` measures ~2.2:1 as the goal-ghost dashed line and the lapse dotted stroke — in both places the information is carried redundantly (the goal label, the map-panel facts, the route geometry and legend), never by the stroke's hue alone.
 - Day status is never color-only — route **texture** is the second channel (solid / dotted / tent / pin), independent of hue.
 - Slide-to-confirm: keyboard alternative (Enter/Space), `role="slider"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax`.
 - Journey days are real focusable elements; tab order follows day order; focus ring 2px stage hue, 2px offset, never clipped (inset on overflow-hidden containers).
@@ -838,3 +853,56 @@ failed the contract's own 4.5:1 bar on the light `--bg`: `--text-subtle`
 hues. Each shift is ≤ 4% per channel — imperceptible against the Gate-approved
 renders, and the dark theme needed no changes. The lab folders keep the
 original values (throwaway; Phase 14 disposition).
+
+### 2026-07-31 — Phase 14 token amendments (the wider AA net)
+
+Chose amending tokens over narrowing the claim. The audit measured every
+pairing the UI actually uses — not just hue-on-`--bg` — and the light theme
+failed where a hue is text on its own soft tint (BottomNav active, stage
+chips, Toggle/DayEditor active states, the install CTA: 4.09–4.32). Fixed in
+lock-step, hue darkened + soft lightened ≤ 5.5%/channel, statuses mirroring
+their stage hues: `--stage-0` #516F99→**#4D6A92** / soft #E2E8F2→**#E3E9F3**,
+`--stage-1`/`--success` #4C7829→**#4A7528** / #E4EDD6→**#E5EDD7**,
+`--stage-2`/`--partial` #B5501A→**#AB4C19** (also clears the 4.4966-on-`--bg`
+rounding edge Phase 5 recorded as 4.50) / #F6E3D6→**#F6E5D8**,
+`--stage-4`/`--rest` #866A10→**#81660F** / #F2EACC→**#F2EBCE**; `--stage-3`
+needed nothing. `--text-subtle` re-amended to clear `--surface-2`, the darkest
+neutral it sits on (PhotoThumb's failure caption): light #6A7057→**#656A53**,
+dark #8C9680→**#8E9882** — the only dark-theme miss. The app-icon SVGs keep
+their drawn hues (rasterized artwork, not UI text; the ~5% drift is invisible
+at icon size).
+
+### 2026-07-31 — Phase 14: veil colors over Tailwind alpha modifiers
+
+Chose named `color-mix` veil colors (`border-accent-40`, `bg-failed-bg-60`…)
+over both `<alpha-value>` channel plumbing and dropping the tints. The audit
+found the `/NN` story worse than Phase 11 recorded: Tailwind never emits those
+classes on `var()` colors at all, so rest-state sites (camp button, banner
+cards, danger buttons, Toggle actives) leaked the **preflight default
+`#e5e7eb`** — an off-token gray, glaring in dusk — and hover tints simply
+didn't exist. The veils make the authored translucency real at the authored
+percentages; `borderColor.DEFAULT` is now `var(--border)` so a bare `border`
+can never leak the preflight gray again. `/NN` on token colors is banned;
+veils are the sanctioned tint.
+
+### 2026-07-31 — Phase 14: the lab stays
+
+Chose keeping `src/lab/` in full — shell, SharedGallery, and all three
+direction folders including the Gate-1 losers — over deleting the dead
+exploration. It is the permanent verification harness (the production
+primitives render against every fixture there), the Gate-1 record lives in
+its README, and dead-code elimination keeps it at zero production cost
+(re-proven this phase: no lab chunk, no class leakage). Caveat recorded: the
+direction folders keep their Gate-era token values, which predate the
+Phase 5/14 amendments — the lab is a museum, the contract is the law.
+
+### 2026-07-31 — Phase 14: offline fonts and a deterministic precache
+
+Chose precaching only the latin Inter subset (48 kB) over all seven subsets
+(218 kB) or none: it covers every string the app itself draws, so an offline
+cold start renders on-brand; the other six subsets stay runtime-fetched and
+only matter for user-typed notes in non-Latin scripts, which fall back to
+system fonts offline. Also removed the duplicate precache entries the plugin's
+`includeManifestIcons` default silently appended (benign while revisions
+match, install-breaking if they ever drift) — the manifest is now a
+deterministic 16 entries.

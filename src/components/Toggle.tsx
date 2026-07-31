@@ -22,7 +22,7 @@ export default function Toggle({ label, value, onChange }: Props) {
           className={[
             'flex h-11 w-11 items-center justify-center rounded-pill border transition-colors duration-150 ease-apple',
             value === 'success'
-              ? 'border-success/40 bg-success-bg text-success'
+              ? 'border-success-40 bg-success-bg text-success'
               : 'border-border bg-surface-2 text-text-muted',
           ].join(' ')}
         >
@@ -36,7 +36,7 @@ export default function Toggle({ label, value, onChange }: Props) {
           className={[
             'flex h-11 w-11 items-center justify-center rounded-pill border transition-colors duration-150 ease-apple',
             value === 'fail'
-              ? 'border-failed/40 bg-failed-bg text-failed'
+              ? 'border-failed-40 bg-failed-bg text-failed'
               : 'border-border bg-surface-2 text-text-muted',
           ].join(' ')}
         >

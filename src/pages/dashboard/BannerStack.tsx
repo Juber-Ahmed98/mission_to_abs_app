@@ -105,7 +105,7 @@ export default function BannerStack({ suppressed }: { suppressed: boolean }) {
 
   if (welcomeBack) {
     return (
-      <section className="mx-5 mb-3 flex items-center gap-3 rounded-card border border-accent/30 bg-accent-soft p-3">
+      <section className="mx-5 mb-3 flex items-center gap-3 rounded-card border border-accent-30 bg-accent-soft p-3">
         <div className="flex-1">
           <div className="text-sm text-text">Welcome back.</div>
           <Link
@@ -131,7 +131,7 @@ export default function BannerStack({ suppressed }: { suppressed: boolean }) {
     return (
       <Link
         to="/settings"
-        className="mx-5 mb-3 flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 text-sm hover:border-accent/40"
+        className="mx-5 mb-3 flex items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3 text-sm hover:border-accent-40"
       >
         <span className="flex items-center gap-2 text-text-muted">
           <Download size={14} strokeWidth={1.75} />

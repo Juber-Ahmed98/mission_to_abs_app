@@ -46,7 +46,7 @@ export default function TodayRow({
           type="button"
           aria-label={`Mark ${label} failed`}
           onClick={onFail}
-          className="h-14 w-11 flex items-center justify-center rounded-card border border-border bg-surface text-text-subtle hover:text-failed hover:border-failed/40 focus:text-failed focus:border-failed/40 transition-colors duration-fast ease-apple"
+          className="h-14 w-11 flex items-center justify-center rounded-card border border-border bg-surface text-text-subtle hover:text-failed hover:border-failed-40 focus:text-failed focus:border-failed-40 transition-colors duration-fast ease-apple"
         >
           <X size={18} strokeWidth={2} />
         </button>

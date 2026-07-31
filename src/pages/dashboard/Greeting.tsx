@@ -42,7 +42,7 @@ export default function Greeting(p: Props) {
               type="button"
               onClick={p.onShield}
               aria-label="Use streak shield"
-              className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-pill border border-border bg-surface px-3 text-sm text-text-muted transition-colors duration-150 ease-apple hover:border-accent/40 hover:text-accent"
+              className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-pill border border-border bg-surface px-3 text-sm text-text-muted transition-colors duration-150 ease-apple hover:border-accent-40 hover:text-accent"
             >
               <Shield size={14} strokeWidth={1.75} />
               <span className="tabular">{p.shieldCount}</span>

@@ -137,7 +137,7 @@ export default function DayEditor({ date, showNotes = true }: Props) {
             className={[
               'flex h-11 w-11 items-center justify-center rounded-pill border transition-colors duration-150 ease-apple',
               isRest
-                ? 'border-rest/40 bg-rest-bg text-rest'
+                ? 'border-rest-40 bg-rest-bg text-rest'
                 : 'border-border bg-surface-2 text-text-muted',
             ].join(' ')}
           >

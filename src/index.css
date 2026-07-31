@@ -19,16 +19,18 @@
 
   --text: #23281F;
   --text-muted: #5B6150;
-  /* #6A7057 = 4.57:1 on --bg (the lab's #6C7259 measured 4.43 — amended at Phase 5) */
-  --text-subtle: #6A7057;
+  /* #656A53 = 4.53:1 on --surface-2, the darkest neutral it sits on (Phase 5's
+   * #6A7057 cleared --bg but measured 4.16 on --surface-2 — amended at Phase 14) */
+  --text-subtle: #656A53;
 
-  /* The five stages — s0/s1/s4 darkened ≤4% from the lab values to clear
-   * 4.5:1 on --bg (measured; see DESIGN.md accessibility ratios) */
-  --stage-0: #516F99; --stage-0-soft: #E2E8F2;
-  --stage-1: #4C7829; --stage-1-soft: #E4EDD6;
-  --stage-2: #B5501A; --stage-2-soft: #F6E3D6;
+  /* The five stages — hues darkened / softs lightened ≤5.5%/channel at Phase 14
+   * so hue-on-its-own-soft (chips, nav, toggles) measures ≥4.5:1, not just
+   * hue-on-bg (see DESIGN.md accessibility ratios; stage-3 needed nothing) */
+  --stage-0: #4D6A92; --stage-0-soft: #E3E9F3;
+  --stage-1: #4A7528; --stage-1-soft: #E5EDD7;
+  --stage-2: #AB4C19; --stage-2-soft: #F6E5D8;
   --stage-3: #6C51B4; --stage-3-soft: #E9E3F6;
-  --stage-4: #866A10; --stage-4-soft: #F2EACC;
+  --stage-4: #81660F; --stage-4-soft: #F2EBCE;
 
   /* Default binding (Foundation); the shell sets stage-<n> on <html> */
   --stage: var(--stage-0);
@@ -37,13 +39,13 @@
   --accent-hover: var(--stage);
   --accent-soft: var(--stage-soft);
 
-  /* Semantic statuses — terrain language */
-  --success: #4C7829;
-  --success-bg: #E4EDD6;
-  --rest: #866A10;
-  --rest-bg: #F2EACC;
-  --partial: #B5501A;
-  --partial-bg: #F6E3D6;
+  /* Semantic statuses — terrain language (values mirror stage-1/4/2) */
+  --success: #4A7528;
+  --success-bg: #E5EDD7;
+  --rest: #81660F;
+  --rest-bg: #F2EBCE;
+  --partial: #AB4C19;
+  --partial-bg: #F6E5D8;
   --failed: #A83226;
   --failed-bg: #F6DCD8;
   --missed: #DBD5BF;
@@ -78,7 +80,8 @@ html.dark {
 
   --text: #EDF1E5;
   --text-muted: #A9B39C;
-  --text-subtle: #8C9680;
+  /* 4.55:1 on --surface-2 (the pre-audit #8C9680 measured 4.43 — Phase 14) */
+  --text-subtle: #8E9882;
 
   --stage-0: #82A2CE; --stage-0-soft: #22303F;
   --stage-1: #8CBB5C; --stage-1-soft: #26331A;

@@ -147,7 +147,7 @@ export default function TodayCard(p: Props) {
           Today's ground
         </h2>
         {entry?.rest ? (
-          <div className="rounded-card border border-rest/30 bg-rest-bg px-4 py-4 text-center">
+          <div className="rounded-card border border-rest-30 bg-rest-bg px-4 py-4 text-center">
             <div className="text-sm font-medium text-text">Camp day.</div>
             <div className="text-xs text-text-muted">
               Resting is still being on the trail.
@@ -184,7 +184,7 @@ export default function TodayCard(p: Props) {
               <button
                 type="button"
                 onClick={toggleCamp}
-                className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-text"
+                className="inline-flex min-h-11 items-center gap-1.5 px-3 text-xs text-text-muted hover:text-text"
               >
                 <Moon size={12} strokeWidth={1.75} />
                 Camp day

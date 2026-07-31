@@ -40,7 +40,7 @@ export default function WeeksInput({ value, onChange }: Props) {
             setLocal(String(value));
           }
         }}
-        className="h-10 w-20 rounded-card border border-border bg-surface-2 px-3 text-right text-sm tabular text-text outline-none"
+        className="h-11 w-20 rounded-card border border-border bg-surface-2 px-3 text-right text-lg tabular text-text outline-none"
       />
       <span className="text-sm text-text-muted">weeks</span>
     </div>

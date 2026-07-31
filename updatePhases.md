@@ -37,7 +37,13 @@
 > 2026-07-31 (doc-refresh: DESIGN.md synced to shipped reality with a dated
 > decision-log entry, PHASES.md headed as historical with the v3 supersessions,
 > v2 screenshots archived to `screenshots/v2/` and the after-portfolio
-> regenerated). Next session: **Phase 14** (the audit checkpoint).
+> regenerated). Phase 14 ✅ shipped 2026-07-31 (the audit checkpoint: measured
+> contrast with a second round of token amendments, the alpha-modifier fix as
+> color-mix veils, offline fonts + a deterministic precache, reduced-motion and
+> tap-target/text-scale verification by instrument, bundle gate passed with
+> ~94 kB headroom, hallmark audit clean, lab kept as the permanent gallery).
+> **The redesign is complete.** What remains is the on-device checklist
+> deferred in the Phase 14 notes — owner's phone required.
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -818,7 +824,7 @@ the captures themselves are the fresh-session read of every screen.
 
 ---
 
-## Phase 14 — Phase-wide audit checkpoint — ⏸ Next session
+## Phase 14 — Phase-wide audit checkpoint — ✅ Shipped 2026-07-31
 
 **Goal** — the hard constraints verified with instruments, not eyeballs; fix forward
 inline or record deliberate deferrals in the status blockquote.
@@ -848,6 +854,83 @@ inline or record deliberate deferrals in the status blockquote.
   re-verify dead-code elimination.
 
 **Commit** — `Audit: measured accessibility, offline, and bundle gates pass`
+
+**Shipped notes (2026-07-31)** — instruments: a Node relative-luminance script
+over the token source for contrast, and a playwright-core + headless-Edge
+harness (scratch profile, seeded day-47 / mid-lapse / fresh fixtures) for
+everything live. What the instruments caught, all fixed forward inline:
+
+- **Contrast (the wider net):** measuring every pairing the UI actually uses —
+  not just hue-on-`--bg` — failed the light theme wherever a hue is text on its
+  own soft tint (BottomNav active, stage chips, Toggle/DayEditor actives, the
+  install CTA: 4.09–4.32), plus `--text-subtle` on `--surface-2` in both themes
+  and the `--stage-2`-on-`--bg` 4.4966 rounding edge. Amended hue+soft in
+  lock-step ≤ 5.5%/channel (stage-3 needed nothing), statuses mirroring their
+  stage hues; every used pairing now ≥ 4.5:1 in both themes, full tables + the
+  pairing-boundary notes in DESIGN.md's accessibility section, dated
+  decision-log entry alongside.
+- **The Tailwind `/alpha` no-op (Phase 11's flag) was worse than recorded:**
+  the `/NN` classes were never emitted at all — rest-state sites leaked the
+  preflight default `#e5e7eb` (an off-token gray, glaring in dusk) and hover
+  tints simply didn't exist. Resolved as named `color-mix` **veil colors**
+  (`border-accent-40`…) at the authored percentages, 18 call sites swapped,
+  `borderColor.DEFAULT` pinned to `var(--border)`, `/NN` on tokens banned —
+  decision-log entry with the full story.
+- **Offline fonts + precache:** the latin Inter woff2 (48 kB — every string
+  the app itself draws) joined the Workbox glob; the other six subsets stay
+  runtime-fetched (user-typed non-Latin notes fall back to system fonts
+  offline — recorded why-not per the checklist). Also found the plugin's
+  `includeManifestIcons` default silently duplicating all four icon entries
+  (benign while revisions match, install-breaking if they drift, and the
+  source of the historical 19/20-entry wobble) — disabled; the precache is a
+  deterministic 16 entries, icons and PNGs verified in the manifest.
+- **Reduced motion, by instrument at last:** under emulation the stage
+  takeover renders static — specks 8 → 0 (`display: none` confirmed via
+  computed style), overlay present with no auto-dismiss, CSS kill-switch
+  active. The deferred item from Phases 6–10 is closed.
+- **Tap targets / inputs:** fixed the Dashboard `Camp day` link (76×17 →
+  44px), Photos' `Compare with current` pill (29px → 44px), and the four
+  Settings + one Onboarding compact inputs (`h-10`/13px → `h-11`/17px,
+  WeeksInput shared). The weight/waist/body-fat 25px `<input>` readings are
+  false positives — each sits inside its 52px `<label>` row, which is the
+  target.
+- **Text scale:** 130% clean everywhere. 175% had real breaks — the input
+  rows blew out to 510px (flexbox `min-width:auto`; fixed with `min-w-0` on
+  the three shared inputs), the BottomNav overflowed 7px (li `min-w-0` +
+  label truncate), and the LevelBadge header row clipped 2px (flex-wrap).
+  All three fixed; 175% now renders without horizontal overflow on Dashboard,
+  Journey, and the re-entry surface. On-device confirmation at Android system
+  scale stays deferred below.
+- **Bundle vs the §5 baseline (Vite gzip report):** entry 132.28 (+5.50 over
+  the whole redesign, +0.03 this phase), CSS 6.77 (+1.00 / +0.13), Progress
+  106.66 (+0.15), Settings 7.59 (−0.13), Photos 4.28 (+0.29), History 2.62
+  (+0.05), Compare 1.63 (+0.17), icon chunk 0.49 (0). **All JS 255.53 kB gz
+  against the < 350 kB hard gate** — ~94 kB headroom. No lab chunk:
+  dead-code elimination re-verified.
+- **Every route walked at 375px, both themes, live** — dashboard, journey,
+  progress, photos, history, settings, compare, onboarding, plus the
+  mid-lapse re-entry state: zero console errors anywhere; the audit
+  screenshot set covers all of it in both themes.
+- **Hallmark anti-generic audit:** 0 critical · 0 major · 3 minor, all
+  recorded not churned (onboarding's circle-chip feature rows are the
+  stock-est pattern in the set; Progress's square checkboxes sit slightly off
+  the pill-toggle idiom; History's dashed empty-state box is common, though
+  it rhymes with the unwalked-route texture). No design-system drift on any
+  screen; the walk strip and serpentine map carry a genuinely distinctive
+  structural fingerprint.
+- **Lab disposition: kept in full** — `src/lab/` stays as the permanent dev
+  gallery and verification harness, including the Ember/Ledger loser folders
+  (the Gate-1 record and the directions README's contrast matrix reference
+  them; zero production cost, re-proven this session). Note their token
+  values predate the Phase 5/14 amendments — the lab renders the Gate-era
+  palette, production renders the contract.
+
+**Deferred to on-device time (owner's phone, Settings → Export first):**
+Android system text scale at 130%/175% (emulated-clean here, real-device
+confirmation outstanding); installed-PWA offline cold start (airplane mode,
+force-stop — the precache now carries the fonts, so this should just pass);
+the stale-shell → redesign update path (the whole-app CSS/JS swap stress
+test); and Phase 5's Android splash-color + maskable-crop check.
 
 ---
 

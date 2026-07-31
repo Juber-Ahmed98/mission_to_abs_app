@@ -183,7 +183,7 @@ function SheetRow({ icon, label, onClick, disabled, hint, tone = 'default' }: Sh
         disabled
           ? 'opacity-50'
           : tone === 'danger'
-            ? 'text-failed hover:bg-failed-bg/60'
+            ? 'text-failed hover:bg-failed-bg-60'
             : 'text-text hover:bg-surface',
       ].join(' ')}
     >

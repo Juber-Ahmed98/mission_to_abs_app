@@ -14,12 +14,12 @@ export default function LevelBadge({ level, tier, xpInLevel, xpToNext }: Props) 
   const pct = xpToNext === 0 ? 0 : Math.max(0, Math.min(1, xpInLevel / xpToNext));
   return (
     <div className="rounded-card border border-border bg-surface px-5 py-4 shadow-panel">
-      <div className="flex items-baseline gap-2">
+      <div className="flex flex-wrap items-baseline gap-2">
         <Mountain size={16} strokeWidth={2} className="self-center text-stage" />
         <span className="text-lg font-semibold tabular">Level {level}</span>
         <span className="text-text-muted">·</span>
         <span className="text-base text-text-muted">{tier}</span>
-        <span className="tabular ml-auto text-xs text-text-subtle">
+        <span className="tabular ml-auto whitespace-nowrap text-xs text-text-subtle">
           {Math.round(pct * 100)}% climbed
         </span>
       </div>

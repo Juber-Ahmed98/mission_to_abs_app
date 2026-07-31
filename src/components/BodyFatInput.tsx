@@ -44,7 +44,7 @@ export default function BodyFatInput({ value, onChange }: Props) {
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         placeholder="—"
-        className="flex-1 bg-transparent text-lg tabular text-text outline-none placeholder:text-text-subtle"
+        className="min-w-0 flex-1 bg-transparent text-lg tabular text-text outline-none placeholder:text-text-subtle"
       />
       <span className="ml-2 select-none text-sm text-text-muted">%</span>
     </label>

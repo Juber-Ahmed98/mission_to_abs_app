@@ -149,7 +149,7 @@ export default function PhotosPage() {
           <button
             type="button"
             onClick={startCompareWithCurrent}
-            className="inline-flex items-center gap-1.5 rounded-pill border border-border bg-surface px-3 py-1.5 text-xs text-text hover:border-accent/40 hover:text-accent transition-colors duration-150 ease-apple"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-border bg-surface px-3 text-xs text-text hover:border-accent-40 hover:text-accent transition-colors duration-150 ease-apple"
           >
             <GitCompareArrows size={14} strokeWidth={1.75} />
             Compare with current

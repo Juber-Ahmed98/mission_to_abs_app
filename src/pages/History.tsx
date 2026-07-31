@@ -87,7 +87,7 @@ export default function HistoryPage() {
       {journey && (
         <Link
           to={`/compare/${journey.first.photoKey}/${journey.last.photoKey}`}
-          className="mb-3 flex min-h-[44px] items-center gap-2 rounded-card border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-text shadow-panel hover:border-accent/50"
+          className="mb-3 flex min-h-[44px] items-center gap-2 rounded-card border border-accent-30 bg-accent-soft px-4 py-3 text-sm text-text shadow-panel hover:border-accent-50"
         >
           <GitCompareArrows size={16} strokeWidth={1.75} className="text-accent" />
           <span className="flex-1">Compare your first &amp; latest photo</span>
@@ -182,7 +182,7 @@ function MissionRow({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3 pr-12 text-left shadow-panel hover:border-accent/40"
+        className="flex w-full items-center gap-3 rounded-card border border-border bg-surface p-3 pr-12 text-left shadow-panel hover:border-accent-40"
       >
         <div className="flex shrink-0 gap-1">
           <Thumb photoKey={firstPhoto?.photoKey} />

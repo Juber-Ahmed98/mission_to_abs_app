@@ -20,7 +20,7 @@ export default function BottomNav() {
     >
       <ul className="flex justify-around px-1 py-1">
         {items.map(({ to, label, icon: Icon, end }) => (
-          <li key={to} className="flex-1">
+          <li key={to} className="min-w-0 flex-1">
             <NavLink
               to={to}
               end={end}
@@ -34,7 +34,7 @@ export default function BottomNav() {
               {({ isActive }) => (
                 <>
                   <Icon size={21} strokeWidth={isActive ? 2.25 : 1.75} />
-                  <span className="text-2xs font-semibold tracking-wide">{label}</span>
+                  <span className="max-w-full truncate text-2xs font-semibold tracking-wide">{label}</span>
                 </>
               )}
             </NavLink>

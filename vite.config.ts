@@ -8,12 +8,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: [
-        'app-icon.svg',
-        'app-icon-maskable.svg',
-        'app-icon-192.png',
-        'app-icon-512.png',
-      ],
+      // The workbox glob below already precaches the icons from dist, so
+      // neither includeAssets nor the plugin's manifest-icon auto-include may
+      // add them again — duplicate manifest entries are benign while the
+      // revisions match, install-breaking if they ever drift.
+      includeManifestIcons: false,
       manifest: {
         name: 'Mission to Abs',
         short_name: 'AbsMission',
@@ -32,7 +31,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // The latin woff2 joins the precache so an offline cold start renders
+        // on-brand — it covers every string the app itself draws (English +
+        // general punctuation, 48 kB). The other six Inter subsets stay
+        // runtime-fetched: they only matter for user-typed notes in non-Latin
+        // scripts, which fall back to system fonts offline.
+        globPatterns: [
+          '**/*.{js,css,html,svg,png,ico}',
+          'assets/inter-latin-wght-normal-*.woff2',
+        ],
         navigateFallback: 'index.html',
       },
     }),
