@@ -1,12 +1,18 @@
-// The medium-register panels in precedence order (DESIGN.md): streak break,
-// then perfect day, then the halfway note. The perfect-day panel never renders
+// The medium-register panels in precedence order (DESIGN.md): re-entry first
+// in flow, then streak break (mutually exclusive by the boundary rule), then
+// perfect day, then the halfway note. The perfect-day panel never renders
 // under a heavy overlay — it waits in flow until the takeover is dismissed.
 
+import { Link } from 'react-router-dom';
 import { Flag, Milestone, Tent } from 'lucide-react';
 import MomentPanel from '../../components/MomentPanel';
 import { XP } from '../../lib/xp';
 
 type Props = {
+  reentryOpen: boolean;
+  campDayNum: number;
+  stageName: string | undefined;
+  daysToSummit: number;
   streakBreakOpen: boolean;
   canUseShelter: boolean;
   priorStreak: number;
@@ -22,10 +28,33 @@ const PERFECT_DAY_XP = XP.diet + XP.exercise + XP.perfectDayBonus;
 
 export default function MomentStack(p: Props) {
   const showPerfect = p.perfectDayOpen && !p.heavyShowing;
-  if (!p.streakBreakOpen && !showPerfect && !p.halfway) return null;
+  if (!p.reentryOpen && !p.streakBreakOpen && !showPerfect && !p.halfway)
+    return null;
 
   return (
     <div className="mx-5 mb-5 space-y-3">
+      {p.reentryOpen && (
+        <MomentPanel
+          icon={<Tent size={18} strokeWidth={2} />}
+          title="Back on the trail."
+        >
+          <p>
+            Camp was Day {p.campDayNum} — the dotted stretch is behind you now.
+            You're standing in {p.stageName ?? 'the walk'} with {p.daysToSummit}{' '}
+            days to the summit.
+          </p>
+          <p className="mt-2 font-medium text-text">
+            Today's log puts you back on the map.
+          </p>
+          <Link
+            to="/journey"
+            className="mt-1 inline-flex min-h-[44px] items-center text-sm font-semibold text-stage underline-offset-4 hover:underline"
+          >
+            Mark the missed stretch
+          </Link>
+        </MomentPanel>
+      )}
+
       {p.streakBreakOpen && (
         <MomentPanel
           icon={<Tent size={18} strokeWidth={2} />}

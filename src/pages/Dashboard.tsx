@@ -27,8 +27,9 @@ export default function Dashboard() {
     level: d.info.level,
     todayStatus: d.todayStatus,
     yesterday: d.yesterday,
-    yesterdayBroke: d.yesterdayBroke,
-    priorStreak: d.priorStreak,
+    isLapse: d.isLapse,
+    isBreak: d.isBreak,
+    lastLogged: d.lastLogged,
   });
   const [shelterOpen, setShelterOpen] = useState(false);
 
@@ -61,6 +62,10 @@ export default function Dashboard() {
       </section>
 
       <MomentStack
+        reentryOpen={cele.reentryOpen}
+        campDayNum={d.campDayNum}
+        stageName={d.stage?.name}
+        daysToSummit={d.total - d.dayNum}
         streakBreakOpen={cele.streakBreakOpen}
         canUseShelter={d.canUseShelter}
         priorStreak={d.priorStreak}
@@ -72,7 +77,7 @@ export default function Dashboard() {
         heavyShowing={cele.heavy !== null}
       />
 
-      <BannerStack suppressed={cele.streakBreakOpen} />
+      <BannerStack suppressed={cele.reentryOpen || cele.streakBreakOpen} />
 
       <TodayCard
         today={d.today}

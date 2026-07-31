@@ -22,8 +22,10 @@
 > the lab gained the shared-primitives verification gallery). Phase 7 ✅
 > shipped 2026-07-31 (Dashboard decomposed to a 127-line container, app-wide
 > XP toast watcher, first-open greeting per contract, perfect day reachable,
-> DayEditor backfills honest). Next session: **Phase 8** (re-entry after a
-> lapse + streak break — the flagship).
+> DayEditor backfills honest). Phase 8 ✅ shipped 2026-07-31 (the flagship:
+> re-entry after a lapse, the lapse boundary in production, streak-break
+> detection fixed). Next session: **Phase 9** (the arc: Journey, stages,
+> level-ups, day 105).
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -457,7 +459,7 @@ re-verifies with instruments).
 
 ---
 
-## Phase 8 — Re-entry after a lapse + streak break — ⏸ Awaiting Gate 3 — *the flagship*
+## Phase 8 — Re-entry after a lapse + streak break — ✅ Shipped 2026-07-31 — *the flagship*
 
 **Goal** — the single most important moment in the redesign, currently undesigned;
 plus the streak-break moment, currently broken for real lapses.
@@ -488,6 +490,36 @@ plus the streak-break moment, currently broken for real lapses.
 - Reduced-motion emulation → re-entry renders its static variant.
 
 **Commit** — `Re-entry: returning after a lapse is a designed moment`
+
+**Shipped notes (2026-07-31)** — the lapse boundary is now production law, in
+`useDashboardData`: `lastLogged` is the max date with `dayStatus() !== 'missed'`
+(never key presence), `gapDays` counts from it, `isLapse` (≥ 2) and `isBreak`
+(exactly 1, prior streak ≥ 2) are mutually exclusive by construction, and a
+never-logged mission has no camp so neither fires. The re-entry surface is the
+Gate-approved Waypoint panel ported verbatim into `MomentStack` through the
+shared `MomentPanel` (tent chip, `Back on the trail.`, the derived-facts body,
+`Today's log puts you back on the map.`, `Mark the missed stretch` →
+`/journey` at a 44px target); it renders first in flow, suppresses the banner
+slot, and stands down the moment today's status leaves `missed` — any honest
+log counts, including rough ground. Armed once per return via
+`mission.reentry.<lastLoggedISO>`; a new camp re-arms. Per precedence rule 2
+the stage takeover is deferred on a re-entry open **without consuming its
+once-flag**, so Phase 9's at-or-after trigger can still fire it later. The
+streak-break effect now keys off `isBreak` (the v2 yesterday-only check that
+never fired for a real lapse is gone); the panel, shelter two-step, and undo
+are unchanged. Verified live at 375px (dev server, seeded fixtures): mid-lapse
+Day 62 shows `Camp was Day 41 — … standing in Push with 43 days to the
+summit.` with the literal derived facts; marking rough ground on today closed
+the panel and fired the `Diet marked rough ground` undo; reload with the flag
+set re-fires nothing (flag observed in localStorage); the 1-day-gap fixture
+fired `A gap in yesterday's tracks. / 60 days walked without a break.` with
+the shelter offer — spend was two-step, yesterday became a camp, shields 1→0,
+and Undo reverted both; zero console errors; the banned-constructions grep
+over the dashboard surfaces returns nothing. Build: entry 129.74 kB gz
+(+0.41 vs Phase 7), CSS 6.61 kB (+0.03), no lab chunk. **Deferred:**
+reduced-motion emulation (hidden browser pane; the panel's static variant is
+the already-wired `MomentPanel` reduced path — Phase 14 re-verifies with
+instruments).
 
 ---
 

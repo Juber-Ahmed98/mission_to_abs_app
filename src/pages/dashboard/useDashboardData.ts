@@ -6,6 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { useMission } from '../../store/mission';
 import {
   dayNumberFor,
+  diffDays,
   halfwayDay,
   todayISO,
   totalDays,
@@ -46,10 +47,19 @@ export function useDashboardData() {
   const yesterdayInMission = yesterday >= settings.startDate && rawDay > 1;
   const yesterdayStatus =
     yesterday < settings.startDate ? ('missed' as const) : dayStatus(yesterdayEntry);
-  const yesterdayBroke =
-    yesterdayInMission &&
-    yesterdayEntry?.rest !== true &&
-    (yesterdayStatus === 'failed' || yesterdayStatus === 'missed');
+
+  // The lapse boundary (DESIGN.md): the gap is counted back from the last
+  // genuinely-logged day — dayStatus() over entries, never key presence (the
+  // mount effect below auto-creates today, and empty entries read 'missed').
+  const lastLogged = useMemo(() => {
+    let best: string | null = null;
+    for (const date of Object.keys(days)) {
+      if (date >= today || date < settings.startDate) continue;
+      if (dayStatus(days[date]) === 'missed') continue;
+      if (best === null || date > best) best = date;
+    }
+    return best;
+  }, [days, today, settings.startDate]);
 
   const streak = useMemo(
     () => calcStreak(days, today, settings.startDate),
@@ -59,6 +69,13 @@ export function useDashboardData() {
     () => calcStreak(days, yesterday, settings.startDate),
     [days, yesterday, settings.startDate],
   );
+
+  // ≥ 2 unlogged days = a lapse (the re-entry treatment); exactly 1 = a streak
+  // break (the shelter offer). Mutually exclusive on any open. A mission with
+  // no logged day yet has no camp to return to — neither treatment fires.
+  const gapDays = lastLogged === null ? null : diffDays(today, lastLogged) - 1;
+  const isLapse = canLogToday && gapDays !== null && gapDays >= 2;
+  const isBreak = canLogToday && gapDays === 1 && priorStreak >= 2;
 
   const xp = useMemo(
     () => totalXp(days, photos, measurements),
@@ -95,7 +112,10 @@ export function useDashboardData() {
     todayHasAny,
     yesterday,
     yesterdayStatus,
-    yesterdayBroke,
+    lastLogged,
+    campDayNum: lastLogged ? dayNumberFor(lastLogged, settings.startDate) : 0,
+    isLapse,
+    isBreak,
     streak,
     priorStreak,
     info,
