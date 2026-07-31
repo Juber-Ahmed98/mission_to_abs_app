@@ -281,6 +281,18 @@ the Phase 4 decision log.
 Next: Phase 3 — the Waypoint Journey render (the page the direction lives or
 dies on), then **Gate 2** pins the winner on the walk.
 
+### 2026-07-31 — Gate 2: Waypoint pinned on the walk
+
+Owner session on the Phase 3 Journey render (375px, mid-lapse fixture first,
+light theme, then day 1, day 104 eve, and dusk). Verdict: **"pinned — go ahead
+with Phase 4."** A clean pin, no amendments — the serpentine stage-band route,
+the lapse as a dotted stretch, the camp-flag/summit/pin grammar, and the
+map-panel backfill all carry into the contract exactly as rendered.
+
+The page the direction could have died on didn't kill it. Phase 4 (the
+DESIGN.md design contract) is unblocked; production remains frozen until
+**Gate 3** signs the contract.
+
 ## 10. Why this order
 
 Exploration goes first because it is reversible — three directions in a dev-only lab

@@ -9,11 +9,11 @@
 > ✅ shipped 2026-07-30. Phase 2 ✅ shipped 2026-07-30 — three directions built;
 > **Gate 1 ✅ passed 2026-07-30: Waypoint wins outright** (Ember and Ledger
 > killed, no merge notes — dated verdict in [update.md](update.md) §9). Phase 3
-> ✅ built 2026-07-30 — the Waypoint Journey render is live in the lab;
-> **GATE 2 pending** (owner session at 375px, mid-lapse first). Everything from
-> Phase 4 onward sits behind an owner gate — `⏸ awaiting gate` means blocked on
-> a sign-off, not abandoned. **No production file changes until Gate 3 (the
-> design contract) signs.**
+> ✅ built 2026-07-30; **Gate 2 ✅ passed 2026-07-31: Waypoint pinned on the
+> walk, no amendments** (dated verdict in [update.md](update.md) §9). Phase 4
+> ✅ shipped 2026-07-31 — DESIGN.md is now the v3 Waypoint design contract with
+> the full decision log; **GATE 3 pending** (owner reads and signs the
+> contract). **No production file changes until Gate 3 signs.**
 
 Each phase is independently shippable and ends with a single commit (owner pushes).
 Sequencing is intentional: exploration is reversible so it goes first; the contract
@@ -130,7 +130,7 @@ unchanged) so a second editor session can run the lab alongside the owner's.
 
 ---
 
-## Phase 3 — Journey render for the finalist (Waypoint) — ✅ Built 2026-07-30 → **GATE 2 pending**
+## Phase 3 — Journey render for the finalist (Waypoint) — ✅ Built 2026-07-30 · **Gate 2 ✅ passed 2026-07-31: pinned**
 
 **Goal** — the Journey page fully rendered in each surviving direction; the core v2
 complaint ("a grid of dots on a card rather than a walk") is only testable here, so a
@@ -148,8 +148,10 @@ direction that works on the Dashboard and fails on the Journey is dead.
 - Each finalist Journey renders the 105-day arc at 375px in its claimed theme(s); the
   day-62 state shows the lapse gap legibly, without shame framing.
 
-**GATE 2** — winner pinned (or a precisely-defined merge). Losing directions' folders
-stay in the lab until Phase 14 disposition.
+**GATE 2** — ✅ passed 2026-07-31: **Waypoint pinned on the walk, no
+amendments** (owner session at 375px: mid-lapse light first, then day 1,
+day 104 eve, and dusk; dated verdict in [update.md](update.md) §9). Losing
+directions' folders stay in the lab until Phase 14 disposition.
 
 **Commit** — `Lab: journey renders for finalist directions`
 
@@ -177,7 +179,7 @@ entry 126.79 kB gz and CSS 5.77 kB gz byte-identical to the baseline.
 
 ---
 
-## Phase 4 — The design contract in DESIGN.md — ⏸ Awaiting Gate 2 → **GATE 3**
+## Phase 4 — The design contract in DESIGN.md — ✅ Shipped 2026-07-31 → **GATE 3 pending**
 
 **Goal** — the winner becomes law before any production restyling; every later phase
 verifies against this document, not against memory.
@@ -216,6 +218,25 @@ verifies against this document, not against memory.
 **GATE 3** — owner reads and signs the contract. Production phases unlock.
 
 **Commit** — `Design contract: pin the <winner> direction in DESIGN.md`
+
+**Shipped notes (2026-07-31)** — DESIGN.md rewritten as the v3 Waypoint
+contract. All three phase verifications pass: "bright, calm, intentional"
+appears exactly once, inside the decision log; all eight moments carry a
+`**Register:**` line; the decision log covers all eight re-decidable rules
+(kept ×2, amended ×3, overturned ×2, superseded ×1) plus the juiced-zen and
+citrus dispositions and the Gate 1/Gate 2 entries; the completion section's
+carry-forward claim cites the pinned career derivation verbatim. Contract
+additions beyond the plan, all derived from the built direction rather than
+invented: a `--track` token and the `--stage-0..4`(+`-soft`) group with the
+`stage-<n>` shell binding; the speck-drift particle bounds (≤8, 1.1s,
+reduced-motion: none); the streak-break demotion from heavy to medium
+(recorded as its own decision-log entry); a `mission.reentry.*` once-flag
+family; the ritual prompt pinned to the mission-week's last day; and two
+drift corrections — the tier table now matches `tierName()` (the v2 doc's
+1–4/5–9/… boundaries never matched code), and the Out-of-scope list stops
+denying the shipped reminder banner and `/history` route (shrinking the
+Phase 13 drift list). Gate 3 is the owner's read-and-sign session on this
+document; production stays frozen until it signs.
 
 ---
 
